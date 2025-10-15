@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Earn Bot Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-6">
+
+  <div class="max-w-lg mx-auto bg-white shadow-md rounded-lg p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">Smart Earn Bot Dashboard</h1>
+
+    <!-- ইউজার ইনফো -->
+    <div class="mb-6 p-4 bg-gray-50 rounded">
+      <p>👤 নাম: <span id="username">Guest</span></p>
+      <p>💰 পয়েন্ট: <span id="points">0</span></p>
+      <p>🔗 রেফারেল লিঙ্ক: <span id="referral">https://t.me/YourBot?start=ref123</span></p>
+    </div>
+
+    <!-- দৈনিক রিওয়ার্ড -->
+    <button id="dailyRewardBtn" class="w-full mb-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+      💰 দৈনিক বোনাস ক্লেইম করুন
+    </button>
+
+    <!-- টাস্ক লিংক -->
+    <a href="https://newspaper.42web.io" target="_blank" class="block w-full mb-4 bg-blue-500 hover:bg-blue-600 text-white text-center font-bold py-2 px-4 rounded">
+      📰 আজকের কাজ / ট্র্যাক
+    </a>
+
+    <!-- উইথড্রয়াল ফর্ম -->
+    <form id="withdrawForm" class="p-4 bg-gray-50 rounded">
+      <label class="block mb-2 font-semibold">পেমেন্ট পদ্ধতি ও আইডি</label>
+      <input type="text" id="paymentInfo" placeholder="বিকাশ, 01XXXXXXXXX" class="w-full mb-2 p-2 border rounded">
+      <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+        💸 উইথড্রয়াল রিকোয়েস্ট
+      </button>
+    </form>
+
+    <p id="message" class="mt-4 text-center text-red-500 font-semibold"></p>
+  </div>
+
+  <script>
+    const pointsEl = document.getElementById('points');
+    const usernameEl = document.getElementById('username');
+    const referralEl = document.getElementById('referral');
+    const messageEl = document.getElementById('message');
+
+    let points = 0;
+
+    document.getElementById('dailyRewardBtn').addEventListener('click', () => {
+      points += 10;
+      pointsEl.textContent = points;
+      messageEl.textContent = "✅ আপনি আজকের রিওয়ার্ড ক্লেইম করেছেন!";
+    });
+
+    document.getElementById('withdrawForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const info = document.getElementById('paymentInfo').value;
+      if(info.trim() === '') {
+        messageEl.textContent = "❌ পেমেন্ট ইনফো দিতে হবে।";
+        return;
+      }
+      messageEl.textContent = `💸 উইথড্রয়াল রিকোয়েস্ট পাঠানো হয়েছে: ${info}`;
+    });
+  </script>
+
+</body>
+</html>
