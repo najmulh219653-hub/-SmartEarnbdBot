@@ -13,14 +13,18 @@ const port = process.env.PORT || 3000;
 const client = new Client({
     connectionString: process.env.DATABASE_URL, 
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false // Neon/Render-এর জন্য দরকারি হতে পারে
     }
 });
 
-// ডেটাবেসে সংযোগ
+// ডেটাবেসে সংযোগ স্থাপন এবং ব্যর্থতা হ্যান্ডলিং
 client.connect()
     .then(() => console.log('Successfully connected to Neon PostgreSQL'))
-    .catch(err => console.error('Connection error', err.stack));
+    .catch(err => {
+        // ডেটাবেস সংযোগে ব্যর্থ হলে প্রক্রিয়া বন্ধ করা
+        console.error('FATAL: Database connection error. Check DATABASE_URL.', err.stack);
+        process.exit(1); 
+    });
 
 // Middleware
 app.use(express.json()); 
@@ -39,7 +43,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
-    // OPTIONS রিকোয়েস্ট হ্যান্ডেল করা
+    // OPTIONS রিকোয়েস্ট হ্যান্ডেল করা (Preflight request)
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
@@ -55,7 +59,7 @@ app.get('/api/user/:userId', async (req, res) => {
         let result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         
         if (result.rows.length === 0) {
-            // নতুন ইউজার তৈরি করুন
+            // নতুন ইউজার তৈরি করুন (ডিফল্ট মান সহ)
             await client.query('INSERT INTO users(telegram_user_id) VALUES($1)', [userId]);
             result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         }
@@ -70,7 +74,7 @@ app.get('/api/user/:userId', async (req, res) => {
 
         res.json(responseData);
     } catch (err) {
-        console.error(err);
+        console.error('Error in /api/user:', err);
         res.status(500).send('Server Error');
     }
 });
@@ -78,6 +82,13 @@ app.get('/api/user/:userId', async (req, res) => {
 // ২. পয়েন্ট আপডেট করা (বিজ্ঞাপন দেখার পর)
 app.post('/api/add_points', async (req, res) => {
     const { userId, points } = req.body; 
+    
+    // ইনপুট ভ্যালিডেশন
+    if (!userId || typeof points !== 'number' || points <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid input data.' });
+    }
+    
+    // পয়েন্টকে টাকা মূল্যে রূপান্তর
     const takaValue = points / 50; 
 
     try {
@@ -93,7 +104,7 @@ app.post('/api/add_points', async (req, res) => {
         const newPoints = Math.round(result.rows[0].earned_points * 50);
         res.json({ success: true, new_points: newPoints });
     } catch (err) {
-        console.error(err);
+        console.error('Error in /api/add_points:', err);
         res.status(500).send('Server Error');
     }
 });
@@ -104,8 +115,9 @@ app.post('/api/withdraw', async (req, res) => {
     const minWithdrawPoints = 1000;
     const amountTakaToDeduct = amountPoints / 50;
 
-    if (amountPoints < minWithdrawPoints) {
-        return res.status(400).json({ success: false, message: 'Minimum withdrawal is 1000 points (৳20).' });
+    // প্রাথমিক ভ্যালিডেশন
+    if (!userId || !paymentMethod || !phoneNumber || typeof amountPoints !== 'number' || amountPoints < minWithdrawPoints) {
+        return res.status(400).json({ success: false, message: `Invalid request or minimum withdrawal is ${minWithdrawPoints} points (৳20).` });
     }
 
     try {
@@ -120,6 +132,7 @@ app.post('/api/withdraw', async (req, res) => {
         
         const currentBalanceTaka = balanceResult.rows[0].earned_points;
 
+        // পর্যাপ্ত ব্যালেন্স আছে কিনা দেখা
         if (amountTakaToDeduct > currentBalanceTaka) {
             await client.query('ROLLBACK');
             return res.status(400).json({ success: false, message: 'Insufficient balance.' });
@@ -142,13 +155,15 @@ app.post('/api/withdraw', async (req, res) => {
         res.json({ success: true, message: 'Withdrawal request submitted successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error(err);
+        await client.query('ROLLBACK'); // কোনো ত্রুটি হলে পরিবর্তন বাতিল করা
+        console.error('Error in /api/withdraw (Transaction failed):', err);
         res.status(500).json({ success: false, message: 'Transaction failed due to server error.' });
     }
 });
 
-// সার্ভার চালু করা
+// --- সার্ভার চালু করা ---
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
-});
+}); // <--- এই বন্ধনীটিই কোডটি শেষ করলো
+
+// কোডটি এখন সম্পূর্ণ।
