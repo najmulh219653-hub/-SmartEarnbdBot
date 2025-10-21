@@ -1,5 +1,4 @@
-// index.js (Final Node.js Server Code)
-
+// index.js (GitHub)
 const express = require('express');
 const { Pool } = require('pg'); 
 const dotenv = require('dotenv');
@@ -11,7 +10,6 @@ const port = process.env.PORT || 10000;
 
 // --- গ্লোবাল কনস্ট্যান্টস ---
 const POINTS_PER_TAKA = 50; 
-const MIN_WITHDRAW_POINTS = 1000; 
 const REFERRAL_BONUS_POINTS = 250; 
 
 // --- PostgreSQL Pool সেটআপ ---
@@ -35,7 +33,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-    // ⚠️ Blogspot URL নিশ্চিত করা হয়েছে
+    // ⚠️ আপনার Blogspot URL এখানে লেখা আছে
     const allowedOrigins = ['https://earnquickofficial.blogspot.com', 'https://t.me', 'http://localhost:3000']; 
     const origin = req.headers.origin;
     
@@ -52,7 +50,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- API Routes (Code remains same as before, ensures stability) ---
+// --- API Routes ---
 
 // ১. ইউজার ডেটা লোড বা তৈরি করা
 app.get('/api/user/:userId', async (req, res) => {
@@ -112,11 +110,6 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ৩. উত্তোলন অনুরোধ API 
-app.post('/api/withdraw', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Withdrawal API is under development.' });
-});
-
 // ৪. রেফারেল বোনাস যোগ করা
 app.post('/api/add_referral', async (req, res) => {
     const { referrerId, newUserId } = req.body; 
@@ -159,6 +152,12 @@ app.post('/api/add_referral', async (req, res) => {
         if (client) client.release();
     }
 });
+
+// ৫. উত্তোলন অনুরোধ API (এখনও ডেভেলপমেন্টে)
+app.post('/api/withdraw', async (req, res) => {
+    res.status(501).json({ success: false, message: 'Withdrawal API is under development.' });
+});
+
 
 // --- সার্ভার চালু করা ---
 app.listen(port, () => {
