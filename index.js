@@ -33,7 +33,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-    // ⚠️ আপনার Blogspot URL এখানে লেখা আছে
+    // Blogspot URL নিশ্চিত করা হয়েছে
     const allowedOrigins = ['https://earnquickofficial.blogspot.com', 'https://t.me', 'http://localhost:3000']; 
     const origin = req.headers.origin;
     
@@ -110,7 +110,7 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ৪. রেফারেল বোনাস যোগ করা
+// ৩. রেফারেল বোনাস যোগ করা
 app.post('/api/add_referral', async (req, res) => {
     const { referrerId, newUserId } = req.body; 
     const takaValue = REFERRAL_BONUS_POINTS / POINTS_PER_TAKA; 
@@ -153,7 +153,7 @@ app.post('/api/add_referral', async (req, res) => {
     }
 });
 
-// ৫. উত্তোলন অনুরোধ API (এখনও ডেভেলপমেন্টে)
+// ৪. উত্তোলন অনুরোধ API (এখনও ডেভেলপমেন্টে)
 app.post('/api/withdraw', async (req, res) => {
     res.status(501).json({ success: false, message: 'Withdrawal API is under development.' });
 });
