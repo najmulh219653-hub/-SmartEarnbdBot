@@ -1,0 +1,5 @@
+# -gitignore
+# Dependencies
+/node_modules
+# Environment Variables (CRITICAL! )
+.env
