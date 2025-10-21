@@ -1,7 +1,7 @@
 {
-  "name": "earnquick-backend",
+  "name": "telegram-mini-app-backend",
   "version": "1.0.0",
-  "description": "Backend API for EarnQuick Telegram Mini App using Neon DB",
+  "description": "Backend server for Telegram Mini App using Node.js and PostgreSQL.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
