@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
     // ⚠️ আপনার ব্লগস্পট ডোমেইন এখানে অবশ্যই যুক্ত থাকতে হবে 
-    const allowedOrigins = ['https://earnquickofficial.blogspot.com', 'https://t.me']; 
+    const allowedOrigins = ['https://earnquickofficial.blogspot.com', 'https://t.me', 'http://localhost:3000']; 
     const origin = req.headers.origin;
     
     if (origin && allowedOrigins.includes(origin)) {
@@ -63,11 +63,13 @@ app.get('/api/user/:userId', async (req, res) => {
         let result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         
         if (result.rows.length === 0) {
+            // নতুন ইউজার তৈরি
             await client.query('INSERT INTO users(telegram_user_id) VALUES($1)', [userId]);
             result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         }
         
         const userData = result.rows[0];
+        // earned_points ডেটাবেসে টাকা হিসেবে থাকে, ক্লায়েন্টে পয়েন্ট হিসেবে পাঠানো হয়
         res.json({
             telegram_user_id: userData.telegram_user_id,
             earned_points: Math.round(userData.earned_points * POINTS_PER_TAKA), 
@@ -84,7 +86,7 @@ app.get('/api/user/:userId', async (req, res) => {
 // ২. পয়েন্ট আপডেট করা (বিজ্ঞাপন দেখার পর)
 app.post('/api/add_points', async (req, res) => {
     const { userId, points } = req.body; 
-    const takaValue = points / POINTS_PER_TAKA; 
+    const takaValue = points / POINTS_PER_TAKA; // 10 points = 0.2 taka
     let client;
     
     if (!userId || typeof points !== 'number' || points <= 0) {
@@ -112,26 +114,31 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ৩. উত্তোলন অনুরোধ API (Withdrawal Request)
+// ৩. উত্তোলন অনুরোধ API (Withdrawal Request - Not fully implemented here)
 app.post('/api/withdraw', async (req, res) => {
-    // ... (Withdrawal logic from previous steps using pool) ...
     res.status(501).json({ success: false, message: 'Withdrawal API is under development.' });
 });
 
 // ৪. রেফারেল বোনাস যোগ করা (খুব জরুরি)
 app.post('/api/add_referral', async (req, res) => {
     const { referrerId, newUserId } = req.body; 
-    const takaValue = REFERRAL_BONUS_POINTS / POINTS_PER_TAKA; 
+    const takaValue = REFERRAL_BONUS_POINTS / POINTS_PER_TAKA; // 250 points = 5 taka
     let client;
     
     if (!referrerId || !newUserId) {
         return res.status(400).json({ success: false, message: 'Missing Referrer ID or New User ID.' });
+    }
+    
+    // রেফারেলকারী এবং নতুন ইউজার এক হওয়া যাবে না
+    if (referrerId === newUserId) {
+        return res.status(400).json({ success: false, message: 'Cannot refer self.' });
     }
 
     try {
         client = await pool.connect();
         await client.query('BEGIN');
 
+        // রেফারেলকারী ইউজারকে পয়েন্ট যোগ করা এবং রেফারেল কাউন্ট বাড়ানো
         const referrerUpdateResult = await client.query(
             'UPDATE users SET earned_points = earned_points + $1, referral_count = referral_count + 1 WHERE telegram_user_id = $2 RETURNING earned_points, referral_count',
             [takaValue, referrerId]
