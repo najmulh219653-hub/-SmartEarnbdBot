@@ -14,32 +14,26 @@ async function sendReferralToServer(referrerId, newUserId) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // নিশ্চিত করুন আইডিগুলি স্ট্রিং হিসেবে যাচ্ছে
                 referrerId: String(referrerId), 
                 newUserId: String(newUserId)
             })
         });
-        // Response হ্যান্ডল করার লজিক এখানে যুক্ত করা যেতে পারে
+        // Response হ্যান্ডল করার লজিক
     } catch (error) {
         console.error(`Failed to call add_referral API: ${error.message}`);
     }
 }
 
-
 // *************** আপনার বটের /start হ্যান্ডলারে এই ফাংশনটি কল করুন ***************
-// (এখানে আপনার বটের লাইব্রেরি অনুযায়ী কোড ভিন্ন হবে)
-
-// উদাহরণ: Telegraf লাইব্রেরি ব্যবহার করলে
+// (আপনার বটের ডেভেলপারকে নিশ্চিত করতে বলুন যে তারা এটি ব্যবহার করছে)
 /*
 bot.start((ctx) => {
     const newUserId = ctx.from.id;
-    const referrerId = ctx.startPayload; // /start এর পরের আইডি স্বয়ংক্রিয়ভাবে সংগ্রহ করে
+    const referrerId = ctx.startPayload; 
     
-    // রেফারেল লজিক কল
     if (referrerId) { 
         sendReferralToServer(referrerId, newUserId);
     }
-    
-    // এখানে ওয়েব অ্যাপ বা স্বাগতম বার্তা পাঠানোর কোড
+    // ...
 });
 */
