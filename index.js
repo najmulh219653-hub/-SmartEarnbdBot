@@ -33,11 +33,11 @@ const pool = new Pool({
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
-// ★★★ চূড়ান্ত CORS সংশোধন ★★★
+// ★★★ CORS সেটিংস ★★★
 app.use((req, res, next) => {
-    // Netlify URL, Render URL এবং Telegram Webview-কে অনুমোদন দেওয়া হলো
+    // Netlify URL এবং Telegram Webview-কে অনুমোদন দেওয়া হলো
     const allowedOrigins = [
-        'https://earnquickofficial.blogspot.com', 
+        'https://earnquickofficial.blogspot.com', // পুরাতন URL, ব্যাকআপের জন্য রাখা হলো
         'https://t.me', 
         'http://localhost:3000', 
         'https://earnquickofficial.netlify.app' // আপনার নতুন Netlify URL
@@ -57,7 +57,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- API Routes (অপরিবর্তিত) ---
+// --- API Routes ---
 
 // ১. ইউজার ডেটা লোড বা তৈরি করা
 app.get('/api/user/:userId', async (req, res) => {
@@ -75,7 +75,7 @@ app.get('/api/user/:userId', async (req, res) => {
         const userData = result.rows[0];
         res.json({
             telegram_user_id: userData.telegram_user_id,
-            earned_points: Math.round(userData.earned_points * POINTS_PER_TAKA), 
+            earned_points: Math.round(userData.earned_points * POINTS_PER_TAKA), // পয়েন্ট হিসেবে পাঠানো হলো
             referral_count: userData.referral_count,
         });
     } catch (err) {
@@ -160,13 +160,12 @@ app.post('/api/add_referral', async (req, res) => {
     }
 });
 
-// ৪. উত্তোলন অনুরোধ API (সম্পূর্ণ এবং সুরক্ষিত)
+// ৪. উত্তোলন অনুরোধ API
 app.post('/api/withdraw', async (req, res) => {
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body; 
 
     const takaToDeduct = pointsToWithdraw / POINTS_PER_TAKA;
 
-    // সর্বনিম্ন উত্তোলনের শর্ত (২০০০ পয়েন্ট)
     if (!userId || pointsToWithdraw < 2000 || !paymentMethod || !paymentNumber) {
         return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (২০০০)।' });
     }
@@ -215,6 +214,59 @@ app.post('/api/withdraw', async (req, res) => {
         if (client) await client.query('ROLLBACK'); 
         console.error('Error in /api/withdraw (Transaction failed):', err);
         res.status(500).json({ success: false, message: 'সার্ভার ত্রুটি। উত্তোলন প্রক্রিয়া করা যায়নি।' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// ৫. ★★★ নতুন API: সকল ইউজার ডেটা দেখা (ড্যাশবোর্ডের জন্য) ★★★
+app.get('/api/admin/all_users', async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect(); 
+        
+        // সকল ইউজারকে তাদের পয়েন্টের ভিত্তিতে সাজিয়ে দেখা
+        const result = await client.query(
+            `SELECT 
+                telegram_user_id, 
+                (earned_points * 50) AS earned_points_in_points, 
+                earned_points AS earned_points_in_taka, 
+                referral_count,
+                created_at
+            FROM users 
+            ORDER BY earned_points DESC`
+        );
+        
+        // উত্তোলনের অনুরোধের সংখ্যা দেখা
+        const withdrawResult = await client.query(
+            `SELECT 
+                user_id, 
+                COUNT(*) as total_requests
+            FROM withdrawals_requests
+            GROUP BY user_id`
+        );
+
+        // উত্তোলনের সংখ্যা ম্যাপ করা
+        const withdrawCounts = withdrawResult.rows.reduce((acc, row) => {
+            acc[row.user_id] = parseInt(row.total_requests);
+            return acc;
+        }, {});
+
+
+        const usersData = result.rows.map(user => ({
+            id: user.telegram_user_id,
+            points: Math.round(user.earned_points_in_points),
+            taka: user.earned_points_in_taka.toFixed(2),
+            referrals: user.referral_count,
+            withdraw_requests: withdrawCounts[user.telegram_user_id] || 0, 
+            joined: user.created_at.toISOString().split('T')[0]
+        }));
+        
+        res.json({ success: true, users: usersData });
+        
+    } catch (err) {
+        console.error('Error in /api/admin/all_users:', err);
+        res.status(500).json({ success: false, message: 'Server Error: Could not fetch user data.' });
     } finally {
         if (client) client.release();
     }
