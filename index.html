@@ -18,7 +18,8 @@
         .balance-card { background-color: var(--primary-blue); color: white; padding: 20px; text-align: center; border-radius: 0 0 15px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px; }
         .balance-card h3 { margin: 0; font-size: 16px; opacity: 0.8; }
         .balance-card span { display: block; font-size: 48px; font-weight: bold; margin: 5px 0 10px 0; }
-        .balance-card p.note { margin: 0; font-size: 14px; opacity: 0.9; }
+        /* ★ পরিবর্তন ১: ন্যূনতম উত্তোলন ডিসপ্লে */
+        .balance-card p.note { margin: 0; font-size: 14px; opacity: 0.9; font-weight: bold; }
 
         #ad-button, #withdraw-button { border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 90%; margin: 10px 5%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         #ad-button { background-color: var(--green-earn); color: white; }
@@ -38,7 +39,7 @@
         <div class="balance-card">
             <h3>আপনার মোট ব্যালেন্স (EarnQuick Points)</h3>
             <span id="user-points">0</span>
-            <p class="note">৳২০০০ পয়েন্ট = ৪০ টাকা</p> 
+            <p class="note">ন্যূনতম উত্তোলন: ২০০০ পয়েন্ট (৳৪০ টাকা)</p> 
         </div>
         
         <div class="ad-container">
@@ -83,11 +84,8 @@
         const SERVER_URL = 'https://smartearnbdbot.onrender.com'; 
         const BOT_USERNAME = "@EarnQuick_Official_bot";
         
-        // ★★★ লস কমানোর জন্য পরিবর্তন ★★★
         const POINTS_PER_AD = 1; 
         const MIN_WITHDRAW = 2000; 
-        // ---------------------------------
-        
         const REFERRAL_POINTS = 250; 
 
         let telegramUserId = null;
@@ -197,7 +195,7 @@
         async function openWithdrawal() {
             if (!telegramUserId) return;
 
-            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (২০০০ পয়েন্ট = ৪০ টাকা)
+            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (২০০০ পয়েন্ট = ৪০ টাকা)
             if (currentPoints < MIN_WITHDRAW) {
                 Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳${(MIN_WITHDRAW/50).toFixed(0)}) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
                 return;
@@ -206,10 +204,10 @@
             const withdrawAmount = MIN_WITHDRAW; 
             const equivalentTaka = (withdrawAmount / 50).toFixed(0); 
             
-            // 2. পেমেন্ট পদ্ধতি নির্বাচনের জন্য পপআপ
+            // ★ পরিবর্তন ২: পপআপ বার্তায় স্পষ্ট টাকার সমতুল্যতা ডিসপ্লে 
             Telegram.WebApp.showPopup({
                 title: "টাকা উত্তোলন করুন",
-                message: `আপনি ${withdrawAmount.toLocaleString()} পয়েন্ট (৳${equivalentTaka} টাকা) উত্তোলন করছেন। দয়া করে আপনার পেমেন্ট পদ্ধতি নির্বাচন করুন:`,
+                message: `**${withdrawAmount.toLocaleString()} পয়েন্ট = ৳${equivalentTaka} টাকা**।\nআপনি এই পরিমাণ উত্তোলন করতে চলেছেন। দয়া করে আপনার পেমেন্ট পদ্ধতি নির্বাচন করুন:`,
                 buttons: [
                     { id: 'bKash', text: 'বিকাশ' },
                     { id: 'Nagad', text: 'নগদ' },
