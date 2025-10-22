@@ -219,7 +219,7 @@ app.post('/api/withdraw', async (req, res) => {
     }
 });
 
-// ৫. ★★★ নতুন API: সকল ইউজার ডেটা দেখা (ড্যাশবোর্ডের জন্য) ★★★
+// ৫. ★★★ নতুন API: সকল ইউজার ডেটা দেখা (ড্যাশবোর্ডের জন্য) - ত্রুটি সমাধান করা হয়েছে ★★★
 app.get('/api/admin/all_users', async (req, res) => {
     let client;
     try {
@@ -256,7 +256,8 @@ app.get('/api/admin/all_users', async (req, res) => {
         const usersData = result.rows.map(user => ({
             id: user.telegram_user_id,
             points: Math.round(user.earned_points_in_points),
-            taka: user.earned_points_in_taka.toFixed(2),
+            // ★★★ ফিক্স: parseFloat() যোগ করা হয়েছে toFixed() কল করার আগে ★★★
+            taka: parseFloat(user.earned_points_in_taka).toFixed(2),
             referrals: user.referral_count,
             withdraw_requests: withdrawCounts[user.telegram_user_id] || 0, 
             joined: user.created_at.toISOString().split('T')[0]
