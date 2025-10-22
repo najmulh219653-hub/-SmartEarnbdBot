@@ -1,4 +1,4 @@
-// index.js (GitHub) - সম্পূর্ণ সংশোধিত কোড
+// index.js (GitHub) - চূড়ান্ত সংশোধিত কোড
 const express = require('express');
 const { Pool } = require('pg'); 
 const dotenv = require('dotenv');
@@ -11,8 +11,6 @@ const port = process.env.PORT || 10000;
 // --- গ্লোবাল কনস্ট্যান্টস ---
 const POINTS_PER_TAKA = 50; 
 const REFERRAL_BONUS_POINTS = 250; 
-
-// ★★★ লস কমানোর জন্য পরিবর্তন ★★★
 const POINTS_PER_AD = 1; 
 
 // --- PostgreSQL Pool সেটআপ ---
@@ -35,9 +33,15 @@ const pool = new Pool({
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
+// ★★★ চূড়ান্ত CORS সংশোধন ★★★
 app.use((req, res, next) => {
-    // Blogspot URL নিশ্চিত করা হয়েছে
-    const allowedOrigins = ['https://earnquickofficial.blogspot.com', 'https://t.me', 'http://localhost:3000']; 
+    // Netlify URL, Render URL এবং Telegram Webview-কে অনুমোদন দেওয়া হলো
+    const allowedOrigins = [
+        'https://earnquickofficial.blogspot.com', 
+        'https://t.me', 
+        'http://localhost:3000', 
+        'https://earnquickofficial.netlify.app' // আপনার নতুন Netlify URL
+    ]; 
     const origin = req.headers.origin;
     
     if (origin && allowedOrigins.includes(origin)) {
@@ -53,7 +57,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- API Routes ---
+// --- API Routes (অপরিবর্তিত) ---
 
 // ১. ইউজার ডেটা লোড বা তৈরি করা
 app.get('/api/user/:userId', async (req, res) => {
@@ -160,7 +164,6 @@ app.post('/api/add_referral', async (req, res) => {
 app.post('/api/withdraw', async (req, res) => {
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body; 
 
-    // ডাটাবেস যেহেতু টাকাতে সেভ করে, তাই পয়েন্টকে টাকায় কনভার্ট করা:
     const takaToDeduct = pointsToWithdraw / POINTS_PER_TAKA;
 
     // সর্বনিম্ন উত্তোলনের শর্ত (২০০০ পয়েন্ট)
@@ -171,9 +174,8 @@ app.post('/api/withdraw', async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // ★ ট্রানজেকশন শুরু
+        await client.query('BEGIN'); 
 
-        // 1. ইউজারের বর্তমান ব্যালেন্স চেক এবং Row লক করা (নিরাপদ উত্তোলন)
         const userResult = await client.query(
             'SELECT earned_points FROM users WHERE telegram_user_id = $1 FOR UPDATE', 
             [userId]
@@ -186,7 +188,6 @@ app.post('/api/withdraw', async (req, res) => {
 
         const currentTakaBalance = userResult.rows[0].earned_points;
 
-        // 2. ব্যালেন্স যথেষ্ট কি না তা নিশ্চিত করা
         if (currentTakaBalance < takaToDeduct) {
             await client.query('ROLLBACK');
             return res.status(400).json({ success: false, message: 'উত্তোলনের জন্য পর্যাপ্ত পয়েন্ট নেই। (ডাটাবেস চেক ফেল)' });
@@ -194,27 +195,24 @@ app.post('/api/withdraw', async (req, res) => {
 
         const newTakaBalance = currentTakaBalance - takaToDeduct;
 
-        // 3. ইউজারের ব্যালেন্স থেকে টাকা কেটে নেওয়া
         await client.query(
             'UPDATE users SET earned_points = $1 WHERE telegram_user_id = $2',
             [newTakaBalance, userId]
         );
 
-        // 4. উত্তোলনের রিকোয়েস্টটি 'withdrawals_requests' টেবিলে রেকর্ড করা
         await client.query(
             'INSERT INTO withdrawals_requests (user_id, amount_points, amount_taka, method, number, status, requested_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
             [userId, pointsToWithdraw, takaToDeduct, paymentMethod, paymentNumber, 'Pending']
         );
 
-        await client.query('COMMIT'); // ★ সব পরিবর্তন ডাটাবেসে সেভ করা
+        await client.query('COMMIT'); 
 
         const newPoints = Math.round(newTakaBalance * POINTS_PER_TAKA);
 
-        // 5. ফ্রন্টএন্ডে সফল বার্তা পাঠানো
         res.json({ success: true, new_points: newPoints, message: "উত্তোলন সফলভাবে জমা হয়েছে।" });
 
     } catch (err) {
-        if (client) await client.query('ROLLBACK'); // ★ কোনো ভুল হলে সব পরিবর্তন বাতিল করা
+        if (client) await client.query('ROLLBACK'); 
         console.error('Error in /api/withdraw (Transaction failed):', err);
         res.status(500).json({ success: false, message: 'সার্ভার ত্রুটি। উত্তোলন প্রক্রিয়া করা যায়নি।' });
     } finally {
