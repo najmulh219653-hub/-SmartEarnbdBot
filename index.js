@@ -1,4 +1,5 @@
-// index.js (GitHub) - চূড়ান্ত সংশোধিত কোড
+// index.js (সম্পূর্ণ সংশোধিত কোড)
+
 const express = require('express');
 const { Pool } = require('pg'); 
 const dotenv = require('dotenv');
@@ -8,10 +9,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 10000; 
 
-// --- গ্লোবাল কনস্ট্যান্টস ---
-const POINTS_PER_TAKA = 50; 
-const REFERRAL_BONUS_POINTS = 250; 
-const POINTS_PER_AD = 1; 
+// --- গ্লোবাল কনস্ট্যান্টস (নতুন লস-প্রুফ রেট) ---
+const POINTS_PER_TAKA = 250; // ২৫০ পয়েন্টে ১ টাকা (আগে ছিল ৫০)
+const REFERRAL_BONUS_POINTS = 250; // ২৫০ পয়েন্ট রেফারেল বোনাস
+const POINTS_PER_AD = 5; // প্রতি বিজ্ঞাপনে ৫ পয়েন্ট
 
 // --- PostgreSQL Pool সেটআপ ---
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -33,14 +34,12 @@ const pool = new Pool({
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
-// ★★★ CORS সেটিংস ★★★
 app.use((req, res, next) => {
-    // Netlify URL এবং Telegram Webview-কে অনুমোদন দেওয়া হলো
     const allowedOrigins = [
-        'https://earnquickofficial.blogspot.com', // পুরাতন URL, ব্যাকআপের জন্য রাখা হলো
+        'https://earnquickofficial.blogspot.com', 
         'https://t.me', 
         'http://localhost:3000', 
-        'https://earnquickofficial.netlify.app' // আপনার নতুন Netlify URL
+        'https://earnquickofficial.netlify.app' // আপনার ফ্রন্টএন্ড ডোমেন
     ]; 
     const origin = req.headers.origin;
     
@@ -68,14 +67,16 @@ app.get('/api/user/:userId', async (req, res) => {
         let result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         
         if (result.rows.length === 0) {
+            // নতুন ইউজার তৈরি
             await client.query('INSERT INTO users(telegram_user_id) VALUES($1)', [userId]);
             result = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
         }
         
         const userData = result.rows[0];
+        // ডাটাবেসে টাকা (taka) হিসেবে সেভ করা আছে, এটিকে পয়েন্ট (points) হিসেবে কনভার্ট করে পাঠানো হলো
         res.json({
             telegram_user_id: userData.telegram_user_id,
-            earned_points: Math.round(userData.earned_points * POINTS_PER_TAKA), // পয়েন্ট হিসেবে পাঠানো হলো
+            earned_points: Math.round(userData.earned_points * POINTS_PER_TAKA), 
             referral_count: userData.referral_count,
         });
     } catch (err) {
@@ -89,7 +90,7 @@ app.get('/api/user/:userId', async (req, res) => {
 // ২. পয়েন্ট আপডেট করা (বিজ্ঞাপন দেখার পর)
 app.post('/api/add_points', async (req, res) => {
     const { userId, points } = req.body; 
-    const takaValue = points / POINTS_PER_TAKA; 
+    const takaValue = points / POINTS_PER_TAKA; // 5 পয়েন্ট / 250 = 0.02 টাকা যোগ হচ্ছে
     let client;
     
     if (!userId || typeof points !== 'number' || points <= 0) {
@@ -117,10 +118,10 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ৩. রেফারেল বোনাস যোগ করা
+// ৩. রেফারেল বোনাস যোগ করা (সমস্যাটি সমাধান করা হয়েছে)
 app.post('/api/add_referral', async (req, res) => {
     const { referrerId, newUserId } = req.body; 
-    const takaValue = REFERRAL_BONUS_POINTS / POINTS_PER_TAKA; 
+    const takaValue = REFERRAL_BONUS_POINTS / POINTS_PER_TAKA; // 250 পয়েন্ট / 250 = 1 টাকা বোনাস 
     let client;
     
     if (!referrerId || !newUserId || referrerId === newUserId) {
@@ -129,8 +130,9 @@ app.post('/api/add_referral', async (req, res) => {
 
     try {
         client = await pool.connect();
-        await client.query('BEGIN');
+        await client.query('BEGIN'); // ট্রানজাকশন শুরু
 
+        // রেফারের পয়েন্ট ও কাউন্ট আপডেট করা হলো
         const referrerUpdateResult = await client.query(
             'UPDATE users SET earned_points = earned_points + $1, referral_count = referral_count + 1 WHERE telegram_user_id = $2 RETURNING earned_points, referral_count',
             [takaValue, referrerId]
@@ -141,7 +143,7 @@ app.post('/api/add_referral', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Referrer not found.' });
         }
         
-        await client.query('COMMIT'); 
+        await client.query('COMMIT'); // ট্রানজাকশন সফল: কমপ্লিট করা হলো
 
         const newPoints = Math.round(referrerUpdateResult.rows[0].earned_points * POINTS_PER_TAKA);
 
@@ -152,7 +154,7 @@ app.post('/api/add_referral', async (req, res) => {
         });
 
     } catch (err) {
-        if (client) await client.query('ROLLBACK');
+        if (client) await client.query('ROLLBACK'); 
         console.error('Error in /api/add_referral (Transaction failed):', err);
         res.status(500).json({ success: false, message: 'Referral transaction failed.' });
     } finally {
@@ -160,14 +162,19 @@ app.post('/api/add_referral', async (req, res) => {
     }
 });
 
-// ৪. উত্তোলন অনুরোধ API
+// ৪. উত্তোলন অনুরোধ API (১০,০০০ পয়েন্ট ন্যূনতম)
 app.post('/api/withdraw', async (req, res) => {
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body; 
 
-    const takaToDeduct = pointsToWithdraw / POINTS_PER_TAKA;
+    // নতুন রেট অনুযায়ী ন্যূনতম উত্তোলন ১০,০০০ পয়েন্ট
+    if (pointsToWithdraw < 10000) {
+         return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (১০০০০)।' });
+    }
+    
+    const takaToDeduct = pointsToWithdraw / POINTS_PER_TAKA; // ১০০০০ পয়েন্ট / ২৫০ = ৪০ টাকা
 
-    if (!userId || pointsToWithdraw < 2000 || !paymentMethod || !paymentNumber) {
-        return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (২০০০)।' });
+    if (!userId || !paymentMethod || !paymentNumber) {
+        return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (১০০০০)।' });
     }
 
     let client;
@@ -219,17 +226,16 @@ app.post('/api/withdraw', async (req, res) => {
     }
 });
 
-// ৫. ★★★ নতুন API: সকল ইউজার ডেটা দেখা (ড্যাশবোর্ডের জন্য) - ত্রুটি সমাধান করা হয়েছে ★★★
+// ৫. API: সকল ইউজার ডেটা দেখা (ড্যাশবোর্ডের জন্য - ত্রুটি সমাধান করা হয়েছে)
 app.get('/api/admin/all_users', async (req, res) => {
     let client;
     try {
         client = await pool.connect(); 
         
-        // সকল ইউজারকে তাদের পয়েন্টের ভিত্তিতে সাজিয়ে দেখা
         const result = await client.query(
             `SELECT 
                 telegram_user_id, 
-                (earned_points * 50) AS earned_points_in_points, 
+                (earned_points * ${POINTS_PER_TAKA}) AS earned_points_in_points, 
                 earned_points AS earned_points_in_taka, 
                 referral_count,
                 created_at
@@ -237,7 +243,6 @@ app.get('/api/admin/all_users', async (req, res) => {
             ORDER BY earned_points DESC`
         );
         
-        // উত্তোলনের অনুরোধের সংখ্যা দেখা
         const withdrawResult = await client.query(
             `SELECT 
                 user_id, 
@@ -246,7 +251,6 @@ app.get('/api/admin/all_users', async (req, res) => {
             GROUP BY user_id`
         );
 
-        // উত্তোলনের সংখ্যা ম্যাপ করা
         const withdrawCounts = withdrawResult.rows.reduce((acc, row) => {
             acc[row.user_id] = parseInt(row.total_requests);
             return acc;
@@ -256,8 +260,8 @@ app.get('/api/admin/all_users', async (req, res) => {
         const usersData = result.rows.map(user => ({
             id: user.telegram_user_id,
             points: Math.round(user.earned_points_in_points),
-            // ★★★ ফিক্স: parseFloat() যোগ করা হয়েছে toFixed() কল করার আগে ★★★
-            taka: parseFloat(user.earned_points_in_taka).toFixed(2),
+            // parseFloat ব্যবহার করে স্ট্রিংকে সংখ্যায় রূপান্তর করে toFixed() ব্যবহার করা হয়েছে
+            taka: parseFloat(user.earned_points_in_taka).toFixed(2), 
             referrals: user.referral_count,
             withdraw_requests: withdrawCounts[user.telegram_user_id] || 0, 
             joined: user.created_at.toISOString().split('T')[0]
