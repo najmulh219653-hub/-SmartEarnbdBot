@@ -14,7 +14,7 @@ const POINTS_PER_TAKA = 250; // ২৫০ পয়েন্টে ১ টাক
 
 // মিডলওয়্যার
 app.use(cors({
-    origin: ['https://earnquickofficial.netlify.app', 'http://localhost:3000'], 
+    origin: ['https://earnquickofficial.netlify.app', 'http://localhost:3000'], // আপনার Netlify ডোমেন
     methods: ['GET', 'POST'],
     credentials: true,
 }));
@@ -213,7 +213,7 @@ app.get('/api/admin/all_users', async (req, res) => {
             return {
                 id: row.telegram_user_id,
                 points: earnedPoints,
-                taka: earnedTaka.toFixed(2),
+                taka: earnedTaka.toFixed(2), // ফিক্সড টু ২ নিশ্চিত করা হলো (toFixed ত্রুটি ফিক্সড)
                 referrals: row.referral_count || 0,
                 withdraw_requests: row.withdraw_requests_count || 0,
                 joined: row.created_at ? new Date(row.created_at).toLocaleDateString() : 'N/A'
