@@ -18,7 +18,6 @@
         .balance-card { background-color: var(--primary-blue); color: white; padding: 20px; text-align: center; border-radius: 0 0 15px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px; }
         .balance-card h3 { margin: 0; font-size: 16px; opacity: 0.8; }
         .balance-card span { display: block; font-size: 48px; font-weight: bold; margin: 5px 0 10px 0; }
-        /* ★ পরিবর্তন ১: ন্যূনতম উত্তোলন ডিসপ্লে */
         .balance-card p.note { margin: 0; font-size: 14px; opacity: 0.9; font-weight: bold; }
 
         #ad-button, #withdraw-button { border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 90%; margin: 10px 5%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -33,7 +32,7 @@
         .ad-container { text-align: center; background-color: #fff; overflow: hidden; margin-bottom: 10px; min-height: 90px; } 
         #status-message { text-align: center; padding: 10px; color: var(--primary-blue); font-weight: bold; }
         
-        /* ★ পরিবর্তন ২: চলমান হেডলাইন/নোটিশ স্টাইল */
+        /* চলমান হেডলাইন/নোটিশ স্টাইল */
         .marquee-container { 
             width: 100%; 
             overflow: hidden; 
@@ -45,7 +44,7 @@
         .marquee {
             display: inline-block;
             white-space: nowrap;
-            animation: marquee 15s linear infinite; /* গতি বাড়ানো হলো */
+            animation: marquee 15s linear infinite; 
         }
         @keyframes marquee {
             0% { transform: translate(100%, 0); }
@@ -106,7 +105,7 @@
     
     <script>
         // --- কনস্ট্যান্টস ---
-        const SERVER_URL = 'https://smartearnbdbot.onrender.com'; 
+        const SERVER_URL = 'https://smartearnbdbot.onrender.com'; // আপনার Render সার্ভার URL
         const BOT_USERNAME = "@EarnQuick_Official_bot";
         
         const POINTS_PER_AD = 1; 
@@ -216,11 +215,10 @@
             }
         }
         
-        // --- সম্পূর্ণ আপডেট করা openWithdrawal() ফাংশন ---
+        // --- উত্তোলন ফাংশন ---
         async function openWithdrawal() {
             if (!telegramUserId) return;
 
-            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (২০০০ পয়েন্ট = ৪০ টাকা)
             if (currentPoints < MIN_WITHDRAW) {
                 Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳${(MIN_WITHDRAW/50).toFixed(0)}) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
                 return;
@@ -229,7 +227,7 @@
             const withdrawAmount = MIN_WITHDRAW; 
             const equivalentTaka = (withdrawAmount / 50).toFixed(0); 
             
-            // ★ পরিবর্তন ২: পপআপ বার্তায় স্পষ্ট টাকার সমতুল্যতা ডিসপ্লে 
+            // পপআপ বার্তায় স্পষ্ট টাকার সমতুল্যতা ডিসপ্লে 
             Telegram.WebApp.showPopup({
                 title: "টাকা উত্তোলন করুন",
                 message: `**${withdrawAmount.toLocaleString()} পয়েন্ট = ৳${equivalentTaka} টাকা**।\nআপনি এই পরিমাণ উত্তোলন করতে চলেছেন। দয়া করে আপনার পেমেন্ট পদ্ধতি নির্বাচন করুন:`,
@@ -241,16 +239,13 @@
             }, async function(paymentMethod) {
                 if (paymentMethod === 'cancel' || !paymentMethod) return;
 
-                // 3. পেমেন্ট নম্বর ইনপুট নেওয়া
                 const paymentNumber = prompt(`আপনার ${paymentMethod} নম্বরটি লিখুন (যেমন: 01xxxxxxxxx):`);
 
-                // বেসিক ভ্যালিডেশন
                 if (!paymentNumber || paymentNumber.length < 10) {
                     Telegram.WebApp.showAlert("নম্বরটি সঠিক নয় অথবা খালি রাখা যাবে না। আবার চেষ্টা করুন।");
                     return;
                 }
                 
-                // 4. উত্তোলন রিকোয়েস্ট সার্ভারে পাঠানো
                 document.getElementById('status-message').innerText = `উত্তোলন রিকোয়েস্ট পাঠানো হচ্ছে...`;
                 document.getElementById('withdraw-button').disabled = true; 
                 
@@ -286,7 +281,7 @@
                 }
             });
         }
-        // --- সম্পূর্ণ আপডেট করা openWithdrawal() ফাংশন শেষ ---
+        // --- উত্তোলন ফাংশন শেষ ---
 
         function openReferral() {
             if (!telegramUserId) return;
