@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EarnQuick_Official</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>EarnQuick 🎯</title> <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
     
@@ -149,7 +148,7 @@
                  }
              } catch (error) {
                  console.error('Fetch Error:', error);
-                 document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন। (নেটওয়ার্ক সমস্যা)";
+                 document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন। (নেটওয়ার্ক সমস্যা)"; // যেমন: CORS error
                  Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। সার্ভার URL বা CORS চেক করুন।");
              }
         }
@@ -220,6 +219,7 @@
             if (!telegramUserId) return;
 
             if (currentPoints < MIN_WITHDRAW) {
+                // MIN_WITHDRAW=2000, 2000/50=40
                 Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳${(MIN_WITHDRAW/50).toFixed(0)}) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
                 return;
             }
@@ -269,7 +269,7 @@
                         document.getElementById('status-message').innerText = `✅ উত্তোলন রিকোয়েস্ট সফলভাবে জমা হয়েছে। মোট: ${currentPoints.toLocaleString()} পয়েন্ট অবশিষ্ট।`;
                         Telegram.WebApp.showAlert("উত্তোলন সফল! পেমেন্ট শীঘ্রই করা হবে।");
                     } else {
-                        document.getElementById('status-message').innerText = `❌ উত্তোলন ব্যর্থ: ${data.message || 'Unknown error'}`;
+                        document.getElementById('status-message').innerText = `❌ উত্তোলন ব্যর্থ: ${data.message || 'Unknown error'}`; // যেমন: 'সার্ভার ত্রুটি। উত্তোলন প্রক্রিয়া করা যায়নি।'
                         Telegram.WebApp.showAlert(`উত্তোলন ব্যর্থ: ${data.message || 'Unknown error'}`);
                     }
                 } catch (error) {
