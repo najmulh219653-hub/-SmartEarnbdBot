@@ -32,14 +32,39 @@
         .menu-icon { font-size: 24px; margin-bottom: 5px; display: block; }
         .ad-container { text-align: center; background-color: #fff; overflow: hidden; margin-bottom: 10px; min-height: 90px; } 
         #status-message { text-align: center; padding: 10px; color: var(--primary-blue); font-weight: bold; }
+        
+        /* ★ পরিবর্তন ২: চলমান হেডলাইন/নোটিশ স্টাইল */
+        .marquee-container { 
+            width: 100%; 
+            overflow: hidden; 
+            background-color: #f7f7f7; 
+            color: var(--primary-blue); 
+            padding: 5px 0; 
+            border-bottom: 1px solid #eee;
+        }
+        .marquee {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 15s linear infinite; /* গতি বাড়ানো হলো */
+        }
+        @keyframes marquee {
+            0% { transform: translate(100%, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="marquee-container">
+            <div class="marquee">
+                📢 সুখবর! EarnQuick-এ প্রতি ক্লিকে ১ পয়েন্ট যোগ হয়েছে। আজই কাজ শুরু করুন। দ্রুত পেমেন্ট পেতে রেফার করুন!
+            </div>
+        </div>
+        
         <div class="balance-card">
             <h3>আপনার মোট ব্যালেন্স (EarnQuick Points)</h3>
             <span id="user-points">0</span>
-            <p class="note">ন্যূনতম উত্তোলন: ২০০০ পয়েন্ট (৳৪০ টাকা)</p> 
+            <p class="note">ন্যূনতম উত্তোলন: ২০০০ পয়েন্ট</p> 
         </div>
         
         <div class="ad-container">
