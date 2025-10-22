@@ -1,8 +1,8 @@
 // --- bot.js / main.js (Telegram Bot Code) ---
 
-const SERVER_URL = 'https://smartearnbdbot.onrender.com'; // নিশ্চিত করুন এটি আপনার সঠিক Render URL
+const SERVER_URL = 'https://smartearnbdbot.onrender.com'; // আপনার Render URL
 
-// *************** এই ফাংশনটি বটের মূল কোডের শুরুতে যুক্ত করুন ***************
+// ★★★ এই ফাংশনটি বটের মূল কোডের শুরুতে যুক্ত করুন ★★★
 async function sendReferralToServer(referrerId, newUserId) {
     if (referrerId === newUserId) {
         console.log(`Self-referral attempt blocked.`);
@@ -18,22 +18,21 @@ async function sendReferralToServer(referrerId, newUserId) {
                 newUserId: String(newUserId)
             })
         });
-        // Response হ্যান্ডল করার লজিক
     } catch (error) {
         console.error(`Failed to call add_referral API: ${error.message}`);
     }
 }
 
-// *************** আপনার বটের /start হ্যান্ডলারে এই ফাংশনটি কল করুন ***************
-// (আপনার বটের ডেভেলপারকে নিশ্চিত করতে বলুন যে তারা এটি ব্যবহার করছে)
+
+// ★★★ আপনার বটের /start হ্যান্ডলারে এই ফাংশনটি কল করুন ★★★
 /*
 bot.start((ctx) => {
     const newUserId = ctx.from.id;
-    const referrerId = ctx.startPayload; 
+    const referrerId = ctx.startPayload; // এটি রেফারেল আইডি হওয়া উচিত
     
     if (referrerId) { 
         sendReferralToServer(referrerId, newUserId);
     }
-    // ...
+    //...
 });
 */
