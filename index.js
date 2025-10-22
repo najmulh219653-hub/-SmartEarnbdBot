@@ -28,7 +28,7 @@ const pool = new Pool({
     max: 10, 
 });
 
-// Middleware and CORS (CORS is critical for Mini App security)
+// Middleware and CORS 
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
