@@ -29,7 +29,6 @@
         .menu-btn-container { text-align: center; }
         .menu-btn { background: none; border: none; color: var(--primary-blue); font-size: 14px; cursor: pointer; display: block; width: 100%; padding: 5px 0; }
         .menu-icon { font-size: 24px; margin-bottom: 5px; display: block; }
-        /* ব্যানার লোড না হলেও ডিজাইন যেন ভেঙ্গে না যায়, তাই একটি ন্যূনতম উচ্চতা */
         .ad-container { text-align: center; background-color: #fff; overflow: hidden; margin-bottom: 10px; min-height: 90px; } 
         #status-message { text-align: center; padding: 10px; color: var(--primary-blue); font-weight: bold; }
     </style>
@@ -39,7 +38,7 @@
         <div class="balance-card">
             <h3>আপনার মোট ব্যালেন্স (EarnQuick Points)</h3>
             <span id="user-points">0</span>
-            <p class="note">৳১০০০ পয়েন্ট = ২০ টাকা</p>
+            <p class="note">৳২০০০ পয়েন্ট = ৪০ টাকা</p> 
         </div>
         
         <div class="ad-container">
@@ -55,7 +54,7 @@
             </script>
         </div>
 
-        <button id="ad-button" disabled>বিজ্ঞাপন দেখুন এবং ১০ পয়েন্ট যোগ করুন</button>
+        <button id="ad-button" disabled>বিজ্ঞাপন দেখুন এবং ১ পয়েন্ট যোগ করুন</button>
         <button id="withdraw-button" onclick="openWithdrawal()">টাকা উত্তোলন করুন (Withdraw)</button>
         <p id="status-message">অ্যাপ লোড হচ্ছে...</p>
 
@@ -83,9 +82,13 @@
         // --- কনস্ট্যান্টস ---
         const SERVER_URL = 'https://smartearnbdbot.onrender.com'; 
         const BOT_USERNAME = "@EarnQuick_Official_bot";
-        const POINTS_PER_AD = 10;
+        
+        // ★★★ লস কমানোর জন্য পরিবর্তন ★★★
+        const POINTS_PER_AD = 1; 
+        const MIN_WITHDRAW = 2000; 
+        // ---------------------------------
+        
         const REFERRAL_POINTS = 250; 
-        const MIN_WITHDRAW = 1000;
 
         let telegramUserId = null;
         let currentPoints = 0;
@@ -110,7 +113,6 @@
         async function fetchUserData() {
              document.getElementById('status-message').innerText = "ডেটা লোড করা হচ্ছে...";
              try {
-                 // Fetch-এর জন্য সার্ভার URL: https://smartearnbdbot.onrender.com
                  const response = await fetch(`${SERVER_URL}/api/user/${telegramUserId}`);
                  
                  if (response.ok) {
@@ -126,8 +128,7 @@
              } catch (error) {
                  console.error('Fetch Error:', error);
                  document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন। (নেটওয়ার্ক সমস্যা)";
-                 // আপনার স্ক্রিনশটের ত্রুটি বার্তাটি এখানে দেখানো হয়েছে
-                 Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। সার্ভার URL বা CORS চেক করুন।"); 
+                 Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। সার্ভার URL বা CORS চেক করুন।");
              }
         }
 
@@ -156,7 +157,6 @@
                 document.getElementById('status-message').innerText = "নেটওয়ার্ক সমস্যা। পয়েন্ট যোগ করা যায়নি।";
                 Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। পয়েন্ট যোগ করা যায়নি।");
              } finally {
-                // 5 সেকেন্ড পর বাটন সচল করা
                 setTimeout(() => { document.getElementById('ad-button').disabled = false; }, 5000); 
              }
         }
@@ -197,14 +197,14 @@
         async function openWithdrawal() {
             if (!telegramUserId) return;
 
-            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (যেমন: 1000 পয়েন্ট)
+            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (২০০০ পয়েন্ট = ৪০ টাকা)
             if (currentPoints < MIN_WITHDRAW) {
-                Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳২০) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
+                Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳${(MIN_WITHDRAW/50).toFixed(0)}) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
                 return;
             }
 
             const withdrawAmount = MIN_WITHDRAW; 
-            const equivalentTaka = (withdrawAmount / 1000) * 20; // 1000 Points = 20 Taka হিসেবে গণনা
+            const equivalentTaka = (withdrawAmount / 50).toFixed(0); 
             
             // 2. পেমেন্ট পদ্ধতি নির্বাচনের জন্য পপআপ
             Telegram.WebApp.showPopup({
@@ -232,7 +232,6 @@
                 document.getElementById('withdraw-button').disabled = true; 
                 
                 try {
-                    // ব্যাকএন্ডে '/api/withdraw' রুটে ডেটা পাঠানো হবে
                     const response = await fetch(`${SERVER_URL}/api/withdraw`, { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
