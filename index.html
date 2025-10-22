@@ -110,6 +110,7 @@
         async function fetchUserData() {
              document.getElementById('status-message').innerText = "ডেটা লোড করা হচ্ছে...";
              try {
+                 // Fetch-এর জন্য সার্ভার URL: https://smartearnbdbot.onrender.com
                  const response = await fetch(`${SERVER_URL}/api/user/${telegramUserId}`);
                  
                  if (response.ok) {
@@ -125,7 +126,8 @@
              } catch (error) {
                  console.error('Fetch Error:', error);
                  document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন। (নেটওয়ার্ক সমস্যা)";
-                 Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। সার্ভার URL বা CORS চেক করুন।");
+                 // আপনার স্ক্রিনশটের ত্রুটি বার্তাটি এখানে দেখানো হয়েছে
+                 Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা। সার্ভার URL বা CORS চেক করুন।"); 
              }
         }
 
@@ -195,14 +197,14 @@
         async function openWithdrawal() {
             if (!telegramUserId) return;
 
-            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক
+            // 1. সর্বনিম্ন পয়েন্টের শর্ত চেক (যেমন: 1000 পয়েন্ট)
             if (currentPoints < MIN_WITHDRAW) {
                 Telegram.WebApp.showAlert(`দুঃখিত! উত্তোলনের জন্য সর্বনিম্ন ${MIN_WITHDRAW} পয়েন্ট (৳২০) প্রয়োজন। আপনার বর্তমান পয়েন্ট: ${currentPoints.toLocaleString()}`);
                 return;
             }
 
             const withdrawAmount = MIN_WITHDRAW; 
-            const equivalentTaka = (withdrawAmount / 1000) * 20; 
+            const equivalentTaka = (withdrawAmount / 1000) * 20; // 1000 Points = 20 Taka হিসেবে গণনা
             
             // 2. পেমেন্ট পদ্ধতি নির্বাচনের জন্য পপআপ
             Telegram.WebApp.showPopup({
@@ -230,7 +232,8 @@
                 document.getElementById('withdraw-button').disabled = true; 
                 
                 try {
-                    const response = await fetch(`${SERVER_URL}/api/submit_withdrawal`, {
+                    // ব্যাকএন্ডে '/api/withdraw' রুটে ডেটা পাঠানো হবে
+                    const response = await fetch(`${SERVER_URL}/api/withdraw`, { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
