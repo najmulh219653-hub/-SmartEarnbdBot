@@ -12,6 +12,9 @@ const port = process.env.PORT || 10000;
 const POINTS_PER_TAKA = 50; 
 const REFERRAL_BONUS_POINTS = 250; 
 
+// ★★★ লস কমানোর জন্য পরিবর্তন ★★★
+const POINTS_PER_AD = 1; 
+
 // --- PostgreSQL Pool সেটআপ ---
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -155,23 +158,22 @@ app.post('/api/add_referral', async (req, res) => {
 
 // ৪. উত্তোলন অনুরোধ API (সম্পূর্ণ এবং সুরক্ষিত)
 app.post('/api/withdraw', async (req, res) => {
-    // ফ্রন্টএন্ড থেকে আসা ডেটা গ্রহণ করা
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body; 
 
     // ডাটাবেস যেহেতু টাকাতে সেভ করে, তাই পয়েন্টকে টাকায় কনভার্ট করা:
     const takaToDeduct = pointsToWithdraw / POINTS_PER_TAKA;
 
-    // প্রাথমিক ভ্যালিডেশন
-    if (!userId || pointsToWithdraw < 1000 || !paymentMethod || !paymentNumber) {
-        return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (১০০০)।' });
+    // সর্বনিম্ন উত্তোলনের শর্ত (২০০০ পয়েন্ট)
+    if (!userId || pointsToWithdraw < 2000 || !paymentMethod || !paymentNumber) {
+        return res.status(400).json({ success: false, message: 'উত্তোলনের ডেটা সম্পূর্ণ নয় বা সর্বনিম্ন পয়েন্ট পূরণ হয়নি (২০০০)।' });
     }
 
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // ★ ট্রানজেকশন শুরু (সুরক্ষার জন্য অত্যন্ত জরুরি)
+        await client.query('BEGIN'); // ★ ট্রানজেকশন শুরু
 
-        // 1. ইউজারের বর্তমান ব্যালেন্স চেক এবং Row লক করা
+        // 1. ইউজারের বর্তমান ব্যালেন্স চেক এবং Row লক করা (নিরাপদ উত্তোলন)
         const userResult = await client.query(
             'SELECT earned_points FROM users WHERE telegram_user_id = $1 FOR UPDATE', 
             [userId]
@@ -199,7 +201,6 @@ app.post('/api/withdraw', async (req, res) => {
         );
 
         // 4. উত্তোলনের রিকোয়েস্টটি 'withdrawals_requests' টেবিলে রেকর্ড করা
-        // **গুরুত্বপূর্ণ:** নিশ্চিত করুন যে এই নামে আপনার টেবিল তৈরি করা আছে।
         await client.query(
             'INSERT INTO withdrawals_requests (user_id, amount_points, amount_taka, method, number, status, requested_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
             [userId, pointsToWithdraw, takaToDeduct, paymentMethod, paymentNumber, 'Pending']
