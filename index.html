@@ -12,24 +12,141 @@
 
     <style>
         /* ------------------ COMMON STYLES ------------------ */
-        :root { --primary-blue: #234d7d; --green-earn: #4CAF50; --orange-withdraw: #FF9800; --secondary-bg: #f5f7f9; --text-color: #333; }
-        body { font-family: 'Arial', sans-serif; background-color: var(--secondary-bg); color: var(--text-color); margin: 0; padding: 0; touch-action: manipulation; overflow-x: hidden; width: 100vw; }
-        .container { padding: 0; max-width: 600px; margin: auto; background-color: white; min-height: 100vh; }
-        .header-container { background: linear-gradient(135deg, #1d2b64, #f8cdda); color: white; padding: 20px 0; text-align: center; border-radius: 0 0 15px 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); margin-bottom: 20px; }
-        .marquee-container { background-color: #e3f2fd; color: #1976d2; padding: 5px 10px; margin: 10px 0; border-radius: 5px; font-size: 0.9em; font-weight: bold; overflow: hidden; border: 1px solid #bbdefb; }
+        :root { 
+            --primary-blue: #234d7d; 
+            --green-earn: #4CAF50; 
+            --orange-withdraw: #FF9800; 
+            --secondary-bg: #f5f7f9; 
+            --text-color: #333; 
+        }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background-color: var(--secondary-bg); 
+            color: var(--text-color); 
+            margin: 0; padding: 0; 
+            touch-action: manipulation; 
+            overflow-x: hidden; 
+            width: 100vw; 
+        }
+        .container { 
+            padding: 0; 
+            max-width: 600px; 
+            margin: auto; 
+            background-color: white; 
+            min-height: 100vh; 
+        }
+        .header-container { 
+            background: linear-gradient(135deg, #1d2b64, #f8cdda); 
+            color: white; 
+            padding: 20px 0; 
+            text-align: center; 
+            border-radius: 0 0 15px 15px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); 
+            margin-bottom: 20px; 
+        }
+        .marquee-container { 
+            background-color: #e3f2fd; 
+            color: #1976d2; 
+            padding: 5px 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-size: 0.9em; 
+            font-weight: bold; 
+            overflow: hidden; 
+            border: 1px solid #bbdefb; 
+        }
         
-        #ad-button, #withdraw-button { border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 90%; margin: 10px 5%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        #ad-button { background-color: var(--green-earn); color: white; }
-        #withdraw-button { background-color: var(--orange-withdraw); color: white; }
-        #withdraw-button.disabled-time { background-color: #FF5722; cursor: not-allowed; } 
+        /* Main Action Buttons Styling */
+        #ad-button, #withdraw-button { 
+            border: none; 
+            padding: 15px 20px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 90%; 
+            margin: 10px 5%; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+        }
+        #ad-button { 
+            background-color: var(--green-earn); 
+            color: white; 
+        }
+        #withdraw-button { 
+            background-color: var(--orange-withdraw); 
+            color: white; 
+        }
+        #withdraw-button.disabled-time { 
+            background-color: #FF5722; 
+            cursor: not-allowed; 
+        } 
         
-        /* Ad View Popup Styles */
-        #ad-view-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background: url('https://i.ibb.co/6P93Y1X/bg-image.jpg') no-repeat center center fixed; background-size: cover; backdrop-filter: blur(5px); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; box-sizing: border-box; overflow-y: auto; touch-action: manipulation; }
-        #cancel-ad-view { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1001; background-color: #f44336; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 95%; max-width: 400px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); margin: 0; }
-        .ad-view-content { background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; width: 95%; max-width: 400px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); text-align: center; margin-top: 60px; margin-bottom: 20px; }
+        /* Menu Grid Buttons */
+        .menu-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 10px 5%;
+        }
+        .menu-btn-container {
+            width: 45%;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .menu-btn {
+            background-color: #e0e0e0;
+            color: var(--text-color);
+            border: none;
+            padding: 10px 5px;
+            font-size: 14px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .menu-icon {
+            margin-right: 5px;
+            font-size: 1.2em;
+        }
 
 
-        /* --- Admin Panel Styles (Updated) --- */
+        /* Ad View Popup Styles (Optimized) */
+        #ad-view-popup { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; 
+            background: #f0f4f7; 
+            background-size: cover; backdrop-filter: blur(5px); 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
+            padding: 0; box-sizing: border-box; overflow-y: auto; touch-action: manipulation; 
+        }
+        #cancel-ad-view { 
+            position: sticky; top: 0; 
+            z-index: 1001; background-color: #f44336; color: white; border: none; 
+            padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; 
+            width: 95%; max-width: 400px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); margin-top: 10px;
+        }
+        .ad-view-content { 
+            background-color: rgba(255, 255, 255, 1); 
+            padding: 20px; border-radius: 15px; width: 95%; max-width: 400px; 
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); text-align: center; margin-top: 10px; margin-bottom: 20px; 
+        }
+        .ad-view-content button.ad-button-new {
+            background-color: #2196F3; 
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Admin Panel Styles --- */
         .admin-view { padding: 10px; background-color: #f0f4f7; min-height: 100vh; }
         .admin-stats-summary { display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 20px; }
         .stat-card { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 48%; margin-bottom: 10px; text-align: center; }
@@ -130,7 +247,7 @@
             </div>
         </div>
         
-        <button id="refresh-withdrawals" onclick="loadWithdrawals('Pending')" style="background-color: #2196F3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 15px;">🔄 পেন্ডিং রিকোয়েস্ট বিস্তারিত দেখুন</button>
+        <button id="refresh-withdrawals" onclick="loadWithdrawals('Pending')" style="background-color: #2196F3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 15px; font-weight: bold;">🔄 পেন্ডিং রিকোয়েস্ট বিস্তারিত দেখুন</button>
         
         <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
             <button onclick="loadWithdrawals('Pending')" style="padding: 8px; background-color: #FFC107; border: none; border-radius: 5px; font-weight: bold;">পেন্ডিং</button>
@@ -143,7 +260,7 @@
             <p style="text-align: center;" id="admin-status-message">রিকোয়েস্ট লোড করার জন্য বাটন প্রেস করুন...</p>
         </div>
         
-        <button onclick="toggleAdminView(false)" style="background-color: #795548; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px;">👤 ইউজার ভিউতে ফিরে যান</button>
+        <button onclick="toggleAdminView(false)" style="background-color: #795548; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px; font-weight: bold;">👤 ইউজার ভিউতে ফিরে যান</button>
     </div>
     
     <script>
@@ -211,14 +328,20 @@
                     document.getElementById('stat-total-points').innerText = data.total_points.toLocaleString();
                     document.getElementById('stat-pending-withdrawals').innerText = data.pending_withdrawals.toLocaleString();
                 } else {
+                    // DB Error handler
                     document.getElementById('stat-total-users').innerText = '0 (DB Error)';
                     document.getElementById('stat-total-points').innerText = '0 (DB Error)';
                     document.getElementById('stat-pending-withdrawals').innerText = '0 (DB Error)';
-                    Telegram.WebApp.showAlert('অ্যাডমিন পরিসংখ্যান লোড ব্যর্থ। সার্ভার/DB চেক করুন।');
+                    document.getElementById('admin-status-message').innerText = 'ডেটাবেস ত্রুটি: পরিসংখ্যান লোড হয়নি। স্টেপ ১ অনুযায়ী ডেটাবেস ফিক্স করুন।';
+                    Telegram.WebApp.showAlert('অ্যাডমিন পরিসংখ্যান লোড ব্যর্থ। ডেটাবেস কনফিগারেশন চেক করুন।');
                 }
             } catch (error) {
                 console.error('Admin Stats Error:', error);
-                Telegram.WebApp.showAlert("নেটওয়ার্ক ত্রুটি। অ্যাডমিন পরিসংখ্যান লোড হয়নি।");
+                document.getElementById('stat-total-users').innerText = '0 (Net Error)';
+                document.getElementById('stat-total-points').innerText = '0 (Net Error)';
+                document.getElementById('stat-pending-withdrawals').innerText = '0 (Net Error)';
+                document.getElementById('admin-status-message').innerText = 'নেটওয়ার্ক ত্রুটি। সার্ভারের সাথে সংযোগ নেই।';
+                Telegram.WebApp.showAlert("নেটওয়ার্ক ত্রুটি। সার্ভার চালু আছে কিনা দেখুন।");
             }
         }
 
@@ -239,7 +362,7 @@
                         return;
                     }
 
-                    document.getElementById('admin-status-message').innerText = `মোট ${data.length}টি রিকোয়েস্ট পাওয়া গেছে।`;
+                    document.getElementById('admin-status-message').innerText = `মোট ${data.length}টি ${status} রিকোয়েস্ট পাওয়া গেছে।`;
                     
                     data.forEach(request => {
                         const card = document.createElement('div');
@@ -293,14 +416,15 @@
                     loadWithdrawals('Pending'); 
                     loadAdminStats(); // স্ট্যাটাস আপডেটের পর পরিসংখ্যান রিফ্রেশ করা
                 } else {
-                    Telegram.WebApp.showAlert(`স্ট্যাটাস আপডেট ব্যর্থ। ত্রুটি: ${response.status}`);
+                    const errorData = await response.json();
+                    Telegram.WebApp.showAlert(`স্ট্যাটাস আপডেট ব্যর্থ। ত্রুটি: ${errorData.message || response.status}`);
                 }
             } catch (error) {
                 Telegram.WebApp.showAlert("নেটওয়ার্ক বা সার্ভার ত্রুটি। স্ট্যাটাস আপডেট হয়নি।");
             }
         }
         
-        // --- ইউজার ডেটা লোড ফাংশন (রেফারেল ফিক্সড ভার্সন) ---
+        // --- ইউজার ডেটা লোড ফাংশন ---
         async function fetchUserData(isRefresh = false) {
              if(!isRefresh) document.getElementById('status-message').innerText = "ডেটা লোড করা হচ্ছে...";
              
@@ -346,12 +470,12 @@
                  }
              } catch (error) {
                  console.error('Fetch Error:', error);
-                 document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন (Render ফ্রি টিয়ার)। দয়া করে ৫-১০ সেকেন্ড অপেক্ষা করে আবার অ্যাপটি চালু করুন।"; 
+                 document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন। দয়া করে ৫-১০ সেকেন্ড অপেক্ষা করে আবার অ্যাপটি চালু করুন।"; 
                  Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা বা সার্ভার চালু হচ্ছে। ৫-১০ সেকেন্ড পর আবার খুলুন।");
              }
         }
 
-        // --- প্লেসহোল্ডার ফাংশন (আপনার আগের লজিক এখানে যুক্ত হবে) ---
+        // --- অন্যান্য ফাংশন ---
         function updateUI() {
             const now = new Date();
             const hour = now.getHours();
@@ -369,15 +493,178 @@
             }
         }
         
-        async function addPointsToUser(points) { /* ... add_points implementation ... */ }
-        function showAdView() { /* ... showAdView implementation ... */ }
-        function hideAdView() { /* ... hideAdView implementation ... */ }
-        function onAdRewardSuccess(adIndex) { /* ... onAdRewardSuccess implementation ... */ }
-        function handleIndividualAdClick(adIndex) { /* ... handleIndividualAdClick implementation ... */ }
-        function openWithdrawal() { /* ... openWithdrawal implementation ... */ }
-        function openReferral() { /* ... openReferral implementation ... */ }
-        function openHistory() { /* ... openHistory implementation ... */ }
-        function openSupport() { /* ... openSupport implementation ... */ }
+        // (addPointsToUser, showAdView, hideAdView, onAdRewardSuccess, handleIndividualAdClick, openWithdrawal, openReferral, openHistory, openSupport functions here)
+        
+        async function addPointsToUser(points) {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/add_points`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: telegramUserId, points: points })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentPoints = data.new_points;
+                    document.getElementById('total-points').innerText = currentPoints.toLocaleString();
+                    Telegram.WebApp.showAlert(`🎉 অভিনন্দন! ${points} পয়েন্ট যোগ হয়েছে।`);
+                    return true;
+                } else {
+                    Telegram.WebApp.showAlert(`পয়েন্ট যোগ ব্যর্থ। সার্ভার ত্রুটি: ${response.status}`);
+                    return false;
+                }
+            } catch (error) {
+                Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা: পয়েন্ট যোগ ব্যর্থ।");
+                return false;
+            }
+        }
+
+        function showAdView() {
+            document.getElementById('ad-view-popup').style.display = 'flex';
+            document.querySelector('.user-view').style.display = 'none';
+        }
+
+        function hideAdView() {
+            document.getElementById('ad-view-popup').style.display = 'none';
+            document.querySelector('.user-view').style.display = 'block';
+        }
+
+        function onAdRewardSuccess(adIndex) {
+            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
+            adBtn.disabled = true;
+            adBtn.innerText = '✅ পয়েন্ট যোগ হচ্ছে...';
+            
+            addPointsToUser(POINTS_PER_AD).then(success => {
+                if (success) {
+                    adBtn.innerText = `পয়েন্ট যোগ হয়েছে! (${POINTS_PER_AD} পয়েন্ট)`;
+                } else {
+                     adBtn.innerText = `❌ যোগ ব্যর্থ, আবার চেষ্টা করুন`;
+                     adBtn.disabled = false;
+                }
+            });
+        }
+
+        function handleIndividualAdClick(adIndex) {
+            
+            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
+            adBtn.disabled = true;
+            adBtn.innerText = 'বিজ্ঞাপন লোড হচ্ছে... (৫ সেকেন্ড অপেক্ষা করুন)';
+
+            // Simulate Adsterra ad loading and reward
+            setTimeout(() => {
+                onAdRewardSuccess(adIndex);
+            }, 5000); // 5 সেকেন্ড পর পয়েন্ট যোগ হবে
+            
+            // You should typically call the Adsterra SDK function here (e.g., show_ad_zone_1)
+        }
+        
+        function openWithdrawal() {
+             // চেক করুন উইথড্রয়াল সময় আছে কিনা
+             const now = new Date();
+             const hour = now.getHours();
+             if (hour < WITHDRAW_START_HOUR || hour >= WITHDRAW_END_HOUR) {
+                 Telegram.WebApp.showAlert(`উত্তোলনের সময় এখন নয়। উত্তোলন চালু হয়: সকাল ${WITHDRAW_START_HOUR}টা এবং বন্ধ হয়: রাত ${WITHDRAW_END_HOUR}টা।`);
+                 return;
+             }
+
+             if (currentPoints < MIN_WITHDRAW_POINTS) {
+                 const needed = MIN_WITHDRAW_POINTS - currentPoints;
+                 Telegram.WebApp.showAlert(`ন্যূনতম ${MIN_WITHDRAW_POINTS} পয়েন্ট (${MIN_WITHDRAW_POINTS / POINTS_PER_TAKA} টাকা) উত্তোলনের জন্য প্রয়োজন। আপনার আরো ${needed} পয়েন্ট দরকার।`);
+                 return;
+             }
+
+             Telegram.WebApp.showPopup({
+                 title: `💰 টাকা উত্তোলন`,
+                 message: `আপনি ${currentPoints} পয়েন্ট (${(currentPoints / POINTS_PER_TAKA).toFixed(2)} টাকা) উত্তোলন করতে পারেন।\n\nপেমেন্ট মেথড (Bkash/Nagad), নাম্বার এবং অ্যামাউন্ট লিখুন:`,
+                 buttons: [
+                     { id: 'proceed', type: 'default', text: 'রিকোয়েস্ট পাঠান' },
+                     { id: 'cancel', type: 'cancel', text: 'বাতিল করুন' }
+                 ]
+             }, (buttonId) => {
+                 if (buttonId === 'proceed') {
+                     // ইউজারকে ইনপুট দিতে বলার জন্য প্রম্পট ব্যবহার
+                     Telegram.WebApp.showPopup({
+                         title: 'উত্তোলনের তথ্য',
+                         message: 'পেমেন্ট মেথড (Bkash/Nagad), নাম্বার এবং কত পয়েন্ট উত্তোলন করতে চান তা নিচে লিখুন (যেমন: Bkash, 01XXXXXXXXX, 10000)',
+                         buttons: [{ id: 'submit', type: 'default', text: 'জমা দিন' }]
+                     }, async (inputButtonId) => {
+                         if (inputButtonId === 'submit') {
+                             const userInput = prompt("পেমেন্ট মেথড, নাম্বার এবং পয়েন্ট কমা দিয়ে লিখুন (যেমন: Bkash, 01XXXXXXXXX, 10000):");
+                             if (!userInput) return;
+
+                             const parts = userInput.split(',').map(p => p.trim());
+                             if (parts.length !== 3) {
+                                 Telegram.WebApp.showAlert("ফর্ম্যাট ভুল। তিনটি অংশ কমা দিয়ে দিন।");
+                                 return;
+                             }
+
+                             const [paymentMethod, paymentNumber, pointsStr] = parts;
+                             const points = parseInt(pointsStr);
+
+                             if (isNaN(points) || points < MIN_WITHDRAW_POINTS || points > currentPoints) {
+                                 Telegram.WebApp.showAlert("পয়েন্ট সংখ্যা ভুল বা আপনার ব্যালেন্সের চেয়ে বেশি!");
+                                 return;
+                             }
+
+                             try {
+                                 const response = await fetch(`${SERVER_URL}/api/withdraw`, {
+                                     method: 'POST',
+                                     headers: { 'Content-Type': 'application/json' },
+                                     body: JSON.stringify({
+                                         userId: telegramUserId,
+                                         pointsToWithdraw: points,
+                                         paymentMethod: paymentMethod,
+                                         paymentNumber: paymentNumber
+                                     })
+                                 });
+
+                                 if (response.ok) {
+                                     const data = await response.json();
+                                     currentPoints = data.new_points;
+                                     document.getElementById('total-points').innerText = currentPoints.toLocaleString();
+                                     Telegram.WebApp.showAlert('✅ উত্তোলন রিকোয়েস্ট সফলভাবে জমা হয়েছে। ২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।');
+                                 } else {
+                                     const errorData = await response.json();
+                                     Telegram.WebApp.showAlert(`❌ উত্তোলন ব্যর্থ: ${errorData.message || 'সার্ভার ত্রুটি।'}`);
+                                 }
+                             } catch (error) {
+                                 Telegram.WebApp.showAlert("নেটওয়ার্ক ত্রুটি। উত্তোলন রিকোয়েস্ট জমা হয়নি।");
+                             }
+                         }
+                     });
+                 }
+             });
+        }
+
+
+        function openReferral() {
+            const referralLink = `https://t.me/${BOT_USERNAME.replace('@', '')}?start=${telegramUserId}`;
+            Telegram.WebApp.showPopup({
+                title: '🤝 আপনার রেফারেল লিংক',
+                message: `আপনার বন্ধুকে এই লিংকটি শেয়ার করুন। প্রতি সফল রেফারেলে আপনি পাবেন ${REFERRAL_BONUS_POINTS} পয়েন্ট!`,
+                buttons: [
+                    { id: 'copy', type: 'default', text: 'কপি করুন' },
+                    { id: 'share', type: 'default', text: 'শেয়ার করুন' },
+                    { id: 'close', type: 'cancel', text: 'বন্ধ করুন' }
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'copy') {
+                    navigator.clipboard.writeText(referralLink).then(() => {
+                        Telegram.WebApp.showAlert('লিংক কপি করা হয়েছে!');
+                    });
+                } else if (buttonId === 'share') {
+                    Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('আমার সাথে যোগ দিন এবং প্রতিদিন টাকা আয় করুন! ')}`);
+                }
+            });
+        }
+
+        function openHistory() {
+             Telegram.WebApp.showAlert('পেমেন্ট হিস্টোরি দেখার অপশনটি এখনো ডেভেলপমেন্টে আছে।');
+        }
+
+        function openSupport() { 
+             Telegram.WebApp.showAlert(`📞 সাপোর্ট টিমের সাথে যোগাযোগ করুন:\n\nফোন: ${CONTACT_NUMBER}\nইমেইল: ${CONTACT_EMAIL}`); 
+        }
 
         // --- অ্যাপ্লিকেশন শুরু করা ---
         document.addEventListener('DOMContentLoaded', () => {
