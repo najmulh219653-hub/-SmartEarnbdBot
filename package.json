@@ -1,9 +1,8 @@
-// আপনার সর্বশেষ users টেবিল তৈরি:
-CREATE TABLE IF NOT EXISTS users (
-    telegram_user_id TEXT PRIMARY KEY,
-    earned_points INTEGER DEFAULT 0,
-    referral_count INTEGER DEFAULT 0,
-    referer_id TEXT,
-    referral_bonus_given INTEGER DEFAULT 0, // <--- এই কলামটি রেফারেল চেক করার জন্য যথেষ্ট
-    joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-)
+{
+  "dependencies": {
+    "express": "^4.19.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3" 
+  }
+}
