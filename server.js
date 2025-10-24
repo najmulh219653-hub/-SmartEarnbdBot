@@ -1,11 +1,12 @@
-// server.js (PostgreSQL Version)
+// server.js (Complete & Error-Free PostgreSQL Version)
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Pool } = require('pg'); // PostgreSQL ক্লায়েন্ট লাইব্রেরি
 
 const app = express();
-const PORT = 3000; 
+// Render সাধারণত 10000 পোর্ট ব্যবহার করে, অথবা এনভায়রনমেন্ট থেকে নেয়
+const PORT = process.env.PORT || 3000; 
 
 // ⚠️⚠️⚠️ আপনার Neon সংযোগ স্ট্রিং এখানে বসান ⚠️⚠️⚠️
 const DATABASE_URL = 'postgresql://neondb_owner:npg_2bGKhcvWZw9s@ep-spring-field-a158wlgh-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
@@ -27,11 +28,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const REFERRAL_POINTS = 250;
 
 // --- ডাটাবেস ইনিশিয়ালাইজেশন ফাংশন ---
+// এই ফাংশনটি সার্ভার চালু হওয়ার সময় টেবিলগুলো তৈরি করে নেবে (যদি না থাকে)
 async function initializeDB() {
     try {
         const client = await pool.connect();
         
-        // 1. users টেবিল তৈরি
+        // 1. users টেবিল তৈরি: ত্রুটিপূর্ণ কলামগুলি বাদ দেওয়া হয়েছে
         await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 telegram_user_id TEXT PRIMARY KEY,
@@ -59,7 +61,7 @@ async function initializeDB() {
         client.release();
         console.log('PostgreSQL DB initialized successfully with users and withdrawals tables.');
     } catch (err) {
-        console.error('Error during database initialization:', err);
+        console.error('Error during database initialization:', err.message);
     }
 }
 initializeDB();
@@ -76,8 +78,8 @@ app.post('/api/register_or_check', async (req, res) => {
     try {
         client = await pool.connect();
         
-        // Check if user exists
-        let result = await client.query('SELECT earned_points, referral_count FROM users WHERE telegram_user_id = $1', [userId]);
+        // **সংশোধন:** শুধুমাত্র প্রয়োজনীয় কলাম SELECT করা হয়েছে
+        let result = await client.query('SELECT earned_points, referral_count, referral_bonus_given FROM users WHERE telegram_user_id = $1', [userId]);
         let row = result.rows[0];
 
         if (row) {
@@ -87,16 +89,16 @@ app.post('/api/register_or_check', async (req, res) => {
             // User does not exist, insert new user
             await client.query('INSERT INTO users (telegram_user_id, referer_id) VALUES ($1, $2)', [userId, refererId]);
             
-            // New user registered, check for referral bonus
+            // Referral bonus check (Only if a referer is provided and it's not the user themselves)
             if (refererId && refererId !== userId) {
-                // Check if referrer exists and if bonus has already been given (though bonus_given=0 by default)
                 let refererResult = await client.query('SELECT referral_bonus_given FROM users WHERE telegram_user_id = $1', [refererId]);
                 let referer = refererResult.rows[0];
 
-                if (referer) {
-                    // Give referral points to the referrer and update their count/flag
+                // **সংশোধন:** রেফারার থাকলে এবং বোনাস না দেওয়া থাকলে
+                if (referer && referer.referral_bonus_given === 0) { 
                     await client.query(
-                        'UPDATE users SET earned_points = earned_points + $1, referral_count = referral_count + 1, referral_bonus_given = 1 WHERE telegram_user_id = $2 AND referral_bonus_given = 0', 
+                        // রেফারারের জন্য বোনাস যোগ এবং referral_bonus_given ফ্ল্যাগ সেট করা
+                        'UPDATE users SET earned_points = earned_points + $1, referral_count = referral_count + 1, referral_bonus_given = 1 WHERE telegram_user_id = $2', 
                         [REFERRAL_POINTS, refererId]
                     );
                     message = `Referral bonus of ${REFERRAL_POINTS} points added to referrer ${refererId}'s account.`;
@@ -106,7 +108,7 @@ app.post('/api/register_or_check', async (req, res) => {
             res.json({ success: true, earned_points: 0, referral_count: 0, message });
         }
     } catch (err) {
-        console.error('Register error:', err.message);
+        console.error('Register/Check error:', err.message);
         res.status(500).json({ success: false, message: 'Database error.', error: err.message });
     } finally {
         if (client) client.release();
@@ -143,7 +145,7 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// 3. Withdraw Request
+// 3. Withdraw Request (Using Transaction for safety)
 app.post('/api/withdraw', async (req, res) => {
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body;
     let client;
@@ -152,7 +154,7 @@ app.post('/api/withdraw', async (req, res) => {
 
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Transaction শুরু
+        await client.query('BEGIN'); 
 
         // 1. Check balance and lock row for update
         const userResult = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1 FOR UPDATE', [userId]);
@@ -180,14 +182,14 @@ app.post('/api/withdraw', async (req, res) => {
             [userId, pointsToWithdraw, paymentMethod, paymentNumber]
         );
 
-        await client.query('COMMIT'); // Transaction শেষ
+        await client.query('COMMIT'); 
 
         // Fetch the new balance after successful transaction
         const newBalanceResult = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1', [userId]);
         res.json({ success: true, new_points: newBalanceResult.rows[0].earned_points });
 
     } catch (err) {
-        if (client) await client.query('ROLLBACK').catch(e => console.error('Rollback error', e)); // Rollback if error
+        if (client) await client.query('ROLLBACK').catch(e => console.error('Rollback error', e)); 
         console.error('Withdraw error:', err.message);
         res.status(500).json({ success: false, message: 'Server or transaction error.', error: err.message });
     } finally {
@@ -214,7 +216,8 @@ app.get('/api/get_admin_stats', async (req, res) => {
 
     } catch (err) {
         console.error('Admin Stats error:', err.message);
-        res.status(500).json({ success: false, message: 'Database error.', error: err.message });
+        // DB Error ডিসপ্লে করতে এই ত্রুটিটি পাঠানো হচ্ছে
+        res.status(500).json({ success: false, message: 'DB Error', error: err.message }); 
     } finally {
         if (client) client.release();
     }
@@ -236,7 +239,7 @@ app.get('/api/get_withdrawals', async (req, res) => {
     }
 });
 
-// 6. Admin - Update Withdrawal Status
+// 6. Admin - Update Withdrawal Status (Using Transaction for safety)
 app.post('/api/update_withdrawal_status', async (req, res) => {
     const { requestId, status } = req.body;
     let client;
@@ -249,6 +252,7 @@ app.post('/api/update_withdrawal_status', async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
+        // Update status and get the updated row
         const updateResult = await client.query('UPDATE withdrawals SET status = $1 WHERE id = $2 RETURNING *', [status, requestId]);
         
         if (updateResult.rowCount === 0) {
@@ -256,7 +260,7 @@ app.post('/api/update_withdrawal_status', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Withdrawal request not found.' });
         }
         
-        // If cancelled, we need to refund the points to the user
+        // If cancelled, refund the points
         if (status === 'Cancelled') {
             const request = updateResult.rows[0];
             await client.query(
@@ -266,6 +270,7 @@ app.post('/api/update_withdrawal_status', async (req, res) => {
             await client.query('COMMIT');
             res.json({ success: true, message: `Status updated to ${status}. Points refunded to user ${request.telegram_user_id}.` });
         } else {
+            // Completed or other status that does not require refund
             await client.query('COMMIT');
             res.json({ success: true, message: `Status updated to ${status}.` });
         }
