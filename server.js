@@ -1,227 +1,282 @@
-// server.js
+// server.js (PostgreSQL Version)
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg'); // PostgreSQL ক্লায়েন্ট লাইব্রেরি
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000; 
+
+// ⚠️⚠️⚠️ আপনার Neon সংযোগ স্ট্রিং এখানে বসান ⚠️⚠️⚠️
+const DATABASE_URL = 'postgresql://neondb_owner:npg_2bGKhcvWZw9s@ep-spring-field-a158wlgh-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+
+// PostgreSQL Pool তৈরি করা
+const pool = new Pool({
+    connectionString: DATABASE_URL,
+    // Neon-এর জন্য SSL আবশ্যক
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Database Setup (SQLite in file mode)
-// Render/Cyclic এ এই ফাইলটি persistant storage এ থাকবে
-const DB_FILE = 'earning_data.db';
-const db = new sqlite3.Database(DB_FILE, (err) => {
-    if (err) {
-        console.error('Database connection error:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        db.run(`
+const REFERRAL_POINTS = 250;
+
+// --- ডাটাবেস ইনিশিয়ালাইজেশন ফাংশন ---
+async function initializeDB() {
+    try {
+        const client = await pool.connect();
+        
+        // 1. users টেবিল তৈরি
+        await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 telegram_user_id TEXT PRIMARY KEY,
                 earned_points INTEGER DEFAULT 0,
                 referral_count INTEGER DEFAULT 0,
                 referer_id TEXT,
                 referral_bonus_given INTEGER DEFAULT 0,
-                joined_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        db.run(`
+
+        // 2. withdrawals টেবিল তৈরি
+        await client.query(`
             CREATE TABLE IF NOT EXISTS withdrawals (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 telegram_user_id TEXT,
                 points INTEGER,
                 payment_method TEXT,
                 payment_number TEXT,
                 status TEXT DEFAULT 'Pending',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
-    }
-});
 
-const REFERRAL_POINTS = 250;
+        client.release();
+        console.log('PostgreSQL DB initialized successfully with users and withdrawals tables.');
+    } catch (err) {
+        console.error('Error during database initialization:', err);
+    }
+}
+initializeDB();
+
 
 // --- API Endpoints ---
 
 // 1. Register or Check User (Referral System Included)
-app.post('/api/register_or_check', (req, res) => {
+app.post('/api/register_or_check', async (req, res) => {
     const { userId, refererId } = req.body;
     let message = 'User loaded successfully.';
+    let client;
     
-    // Check if user exists
-    db.get('SELECT * FROM users WHERE telegram_user_id = ?', [userId], (err, row) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Database error.', error: err.message });
-        }
+    try {
+        client = await pool.connect();
+        
+        // Check if user exists
+        let result = await client.query('SELECT earned_points, referral_count FROM users WHERE telegram_user_id = $1', [userId]);
+        let row = result.rows[0];
 
         if (row) {
             // User exists
             return res.json({ success: true, earned_points: row.earned_points, referral_count: row.referral_count, message });
         } else {
             // User does not exist, insert new user
-            db.run('INSERT INTO users (telegram_user_id, referer_id) VALUES (?, ?)', [userId, refererId], function(err) {
-                if (err) {
-                    console.error('Insert error:', err.message);
-                    return res.status(500).json({ success: false, message: 'Could not register user.' });
-                }
+            await client.query('INSERT INTO users (telegram_user_id, referer_id) VALUES ($1, $2)', [userId, refererId]);
+            
+            // New user registered, check for referral bonus
+            if (refererId && refererId !== userId) {
+                // Check if referrer exists and if bonus has already been given (though bonus_given=0 by default)
+                let refererResult = await client.query('SELECT referral_bonus_given FROM users WHERE telegram_user_id = $1', [refererId]);
+                let referer = refererResult.rows[0];
 
-                // New user registered, check for referral bonus
-                if (refererId && refererId !== userId) {
-                    db.get('SELECT referral_bonus_given FROM users WHERE telegram_user_id = ?', [refererId], (err, referer) => {
-                        if (referer && referer.referral_bonus_given === 0) {
-                            // Give referral points to the referrer and update their count/flag
-                            db.run('UPDATE users SET earned_points = earned_points + ?, referral_count = referral_count + 1, referral_bonus_given = 1 WHERE telegram_user_id = ?', [REFERRAL_POINTS, refererId], (err) => {
-                                if (!err) {
-                                    message = `Referral bonus of ${REFERRAL_POINTS} points added to referrer ${refererId}'s account.`;
-                                }
-                            });
-                        }
-                    });
+                if (referer) {
+                    // Give referral points to the referrer and update their count/flag
+                    await client.query(
+                        'UPDATE users SET earned_points = earned_points + $1, referral_count = referral_count + 1, referral_bonus_given = 1 WHERE telegram_user_id = $2 AND referral_bonus_given = 0', 
+                        [REFERRAL_POINTS, refererId]
+                    );
+                    message = `Referral bonus of ${REFERRAL_POINTS} points added to referrer ${refererId}'s account.`;
                 }
+            }
 
-                res.json({ success: true, earned_points: 0, referral_count: 0, message });
-            });
+            res.json({ success: true, earned_points: 0, referral_count: 0, message });
         }
-    });
+    } catch (err) {
+        console.error('Register error:', err.message);
+        res.status(500).json({ success: false, message: 'Database error.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 // 2. Add Points (For Ads)
-app.post('/api/add_points', (req, res) => {
+app.post('/api/add_points', async (req, res) => {
     const { userId, points } = req.body;
+    let client;
     
     if (points <= 0) return res.status(400).json({ success: false, message: "Invalid points value." });
 
-    db.run('UPDATE users SET earned_points = earned_points + ? WHERE telegram_user_id = ?', [points, userId], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Database error.', error: err.message });
-        }
+    try {
+        client = await pool.connect();
+        
+        // Add points
+        await client.query('UPDATE users SET earned_points = earned_points + $1 WHERE telegram_user_id = $2', [points, userId]);
         
         // Fetch new balance to return
-        db.get('SELECT earned_points FROM users WHERE telegram_user_id = ?', [userId], (err, row) => {
-            if (err || !row) {
-                 return res.status(500).json({ success: false, message: 'Could not fetch new balance.' });
-            }
-            res.json({ success: true, new_points: row.earned_points });
-        });
-    });
+        const result = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1', [userId]);
+        
+        if (result.rows.length === 0) {
+             return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        
+        res.json({ success: true, new_points: result.rows[0].earned_points });
+
+    } catch (err) {
+        console.error('Add points error:', err.message);
+        res.status(500).json({ success: false, message: 'Database error.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 // 3. Withdraw Request
-app.post('/api/withdraw', (req, res) => {
+app.post('/api/withdraw', async (req, res) => {
     const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body;
+    let client;
     
     if (pointsToWithdraw <= 0) return res.status(400).json({ success: false, message: "Invalid points value." });
 
-    db.get('SELECT earned_points FROM users WHERE telegram_user_id = ?', [userId], (err, user) => {
-        if (err || !user) {
-            return res.status(404).json({ success: false, message: 'User not found or database error.' });
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Transaction শুরু
+
+        // 1. Check balance and lock row for update
+        const userResult = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1 FOR UPDATE', [userId]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
         if (user.earned_points < pointsToWithdraw) {
+            await client.query('ROLLBACK');
             return res.status(400).json({ success: false, message: 'Not enough points to withdraw.' });
         }
 
-        // Deduct points and create withdrawal request in one transaction (Best Practice)
-        db.serialize(() => {
-            db.run('BEGIN TRANSACTION;');
-            
-            // Deduct points
-            db.run('UPDATE users SET earned_points = earned_points - ? WHERE telegram_user_id = ?', [pointsToWithdraw, userId], function(err) {
-                if (err) {
-                    db.run('ROLLBACK;');
-                    return res.status(500).json({ success: false, message: 'Failed to deduct points.' });
-                }
+        // 2. Deduct points
+        await client.query(
+            'UPDATE users SET earned_points = earned_points - $1 WHERE telegram_user_id = $2', 
+            [pointsToWithdraw, userId]
+        );
 
-                // Insert withdrawal request
-                db.run('INSERT INTO withdrawals (telegram_user_id, points, payment_method, payment_number) VALUES (?, ?, ?, ?)', 
-                       [userId, pointsToWithdraw, paymentMethod, paymentNumber], function(err) {
-                    if (err) {
-                        db.run('ROLLBACK;');
-                        return res.status(500).json({ success: false, message: 'Failed to record withdrawal request.' });
-                    }
-                    
-                    db.run('COMMIT;', (commitErr) => {
-                        if (commitErr) {
-                             return res.status(500).json({ success: false, message: 'Transaction error.' });
-                        }
-                        
-                        // Fetch the new balance after successful transaction
-                        db.get('SELECT earned_points FROM users WHERE telegram_user_id = ?', [userId], (err, row) => {
-                             res.json({ success: true, new_points: row ? row.earned_points : user.earned_points - pointsToWithdraw });
-                        });
-                    });
-                });
-            });
-        });
-    });
+        // 3. Insert withdrawal request
+        await client.query(
+            'INSERT INTO withdrawals (telegram_user_id, points, payment_method, payment_number) VALUES ($1, $2, $3, $4)', 
+            [userId, pointsToWithdraw, paymentMethod, paymentNumber]
+        );
+
+        await client.query('COMMIT'); // Transaction শেষ
+
+        // Fetch the new balance after successful transaction
+        const newBalanceResult = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1', [userId]);
+        res.json({ success: true, new_points: newBalanceResult.rows[0].earned_points });
+
+    } catch (err) {
+        if (client) await client.query('ROLLBACK').catch(e => console.error('Rollback error', e)); // Rollback if error
+        console.error('Withdraw error:', err.message);
+        res.status(500).json({ success: false, message: 'Server or transaction error.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 // 4. Admin - Get Stats
-app.get('/api/get_admin_stats', (req, res) => {
-    let stats = {};
+app.get('/api/get_admin_stats', async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        
+        const userStats = await client.query('SELECT COUNT(*) AS total_users, SUM(earned_points) AS total_points FROM users');
+        const withdrawalStats = await client.query("SELECT COUNT(*) AS pending_withdrawals FROM withdrawals WHERE status = 'Pending'");
 
-    db.get('SELECT COUNT(*) AS total_users, SUM(earned_points) AS total_points FROM users', (err, row) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error (Users)' });
-        stats.total_users = row.total_users || 0;
-        stats.total_points = row.total_points || 0;
+        const stats = {
+            total_users: parseInt(userStats.rows[0].total_users) || 0,
+            total_points: parseInt(userStats.rows[0].total_points) || 0,
+            pending_withdrawals: parseInt(withdrawalStats.rows[0].pending_withdrawals) || 0
+        };
 
-        db.get("SELECT COUNT(*) AS pending_withdrawals FROM withdrawals WHERE status = 'Pending'", (err, row) => {
-            if (err) return res.status(500).json({ success: false, message: 'DB Error (Withdrawals)' });
-            stats.pending_withdrawals = row.pending_withdrawals || 0;
-            
-            res.json({ success: true, ...stats });
-        });
-    });
+        res.json({ success: true, ...stats });
+
+    } catch (err) {
+        console.error('Admin Stats error:', err.message);
+        res.status(500).json({ success: false, message: 'Database error.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 // 5. Admin - Get Withdrawals by Status
-app.get('/api/get_withdrawals', (req, res) => {
+app.get('/api/get_withdrawals', async (req, res) => {
     const status = req.query.status || 'Pending';
-    db.all('SELECT * FROM withdrawals WHERE status = ? ORDER BY created_at DESC', [status], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Database error.', error: err.message });
-        }
-        res.json(rows);
-    });
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query('SELECT * FROM withdrawals WHERE status = $1 ORDER BY created_at DESC', [status]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Get withdrawals error:', err.message);
+        res.status(500).json({ success: false, message: 'Database error.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 // 6. Admin - Update Withdrawal Status
-app.post('/api/update_withdrawal_status', (req, res) => {
+app.post('/api/update_withdrawal_status', async (req, res) => {
     const { requestId, status } = req.body;
+    let client;
     
     if (!['Completed', 'Cancelled'].includes(status)) {
         return res.status(400).json({ success: false, message: 'Invalid status provided.' });
     }
 
-    db.run('UPDATE withdrawals SET status = ? WHERE id = ?', [status, requestId], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Database update failed.', error: err.message });
-        }
-        if (this.changes === 0) {
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        const updateResult = await client.query('UPDATE withdrawals SET status = $1 WHERE id = $2 RETURNING *', [status, requestId]);
+        
+        if (updateResult.rowCount === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ success: false, message: 'Withdrawal request not found.' });
         }
-
+        
         // If cancelled, we need to refund the points to the user
         if (status === 'Cancelled') {
-            db.get('SELECT telegram_user_id, points FROM withdrawals WHERE id = ?', [requestId], (err, request) => {
-                if (request) {
-                    db.run('UPDATE users SET earned_points = earned_points + ? WHERE telegram_user_id = ?', [request.points, request.telegram_user_id], (err) => {
-                         if (err) console.error('Refund failed for request:', requestId, err.message);
-                         res.json({ success: true, message: `Status updated to ${status}. Points refunded.` });
-                    });
-                } else {
-                     res.json({ success: true, message: `Status updated to ${status}. No refund needed or user not found.` });
-                }
-            });
+            const request = updateResult.rows[0];
+            await client.query(
+                'UPDATE users SET earned_points = earned_points + $1 WHERE telegram_user_id = $2', 
+                [request.points, request.telegram_user_id]
+            );
+            await client.query('COMMIT');
+            res.json({ success: true, message: `Status updated to ${status}. Points refunded to user ${request.telegram_user_id}.` });
         } else {
+            await client.query('COMMIT');
             res.json({ success: true, message: `Status updated to ${status}.` });
         }
-    });
+        
+    } catch (err) {
+        if (client) await client.query('ROLLBACK').catch(e => console.error('Rollback error', e));
+        console.error('Update status error:', err.message);
+        res.status(500).json({ success: false, message: 'Database update failed.', error: err.message });
+    } finally {
+        if (client) client.release();
+    }
 });
 
 
