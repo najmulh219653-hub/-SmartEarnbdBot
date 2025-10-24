@@ -7,12 +7,12 @@
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
-    <script src='//libtl.com/sdk.js' data-zone='9852420' data-sdk='show_9852420'></script>
-    <script src='//libtl.com/sdk.js' data-zone='10085320' data-sdk='show_10085320'></script> 
+    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_ad_zone_1'></script>
+    <script src='//libtl.com/sdk.js' data-zone='9852420' data-sdk='show_ad_zone_2'></script>
+    <script src='//libtl.com/sdk.js' data-zone='10085320' data-sdk='show_ad_zone_3'></script> 
 
     <style>
-        /* ------------------ UPDATED PROFESSIONAL STYLES ------------------ */
+        /* ------------------ PROFESSIONAL STYLES ------------------ */
         :root { 
             --primary-color: #1a73e8; /* Google Blue */
             --secondary-color: #2e7d32; /* Deep Green for Ad Button */
@@ -70,9 +70,9 @@
             margin: 5px 0 10px 0;
         }
 
-        /* Marquee (CSS Animation Replacement) */
+        /* Marquee */
         .marquee-container { 
-            background-color: #fff8e1; /* Light yellow for announcement */
+            background-color: #fff8e1; 
             color: #ffb300; 
             padding: 8px 10px; 
             margin: 50px 15px 20px 15px; 
@@ -111,15 +111,14 @@
         #ad-button { 
             background-color: var(--secondary-color); 
             color: var(--text-light);
-            /* আকর্ষণীয় প্রফেশনাল লুকিং */
-            box-shadow: 0 6px 15px rgba(46, 125, 50, 0.4); /* সবুজ শ্যাডো */
+            box-shadow: 0 6px 15px rgba(46, 125, 50, 0.4); 
         }
         #ad-button:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); }
 
         #withdraw-button { 
-            background-color: #FF5722; /* Deep Orange */
+            background-color: #FF5722; 
             color: var(--text-light);
-            box-shadow: 0 6px 15px rgba(255, 87, 34, 0.4); /* কমলা শ্যাডো */
+            box-shadow: 0 6px 15px rgba(255, 87, 34, 0.4); 
         }
         #withdraw-button:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); }
 
@@ -156,10 +155,10 @@
         }
         .menu-icon { margin-right: 8px; font-size: 1.3em; }
 
-        /* Ad Banner Slots Styling - Ensures mobile fit */
+        /* Ad Banner Slots Styling */
         .ad-container {
              text-align: center; 
-             margin: 15px 5%; /* 5% মার্জিন যোগ করা হলো */
+             margin: 15px 5%; 
              border: 1px solid #eee; 
              padding: 5px;
              background-color: #fff;
@@ -170,12 +169,11 @@
         .ad-banner-slot {
             display: flex;
             justify-content: center;
-            /* iframe যেন স্ক্রল না করে তা নিশ্চিত করার জন্য */
             overflow: hidden; 
             max-width: 100%;
         }
 
-        /* Ad View Popup Styling (Clean) */
+        /* Ad View Popup Styling */
         #ad-view-popup { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; 
             background: var(--background-dark); 
@@ -194,7 +192,7 @@
         }
         .ad-view-content h2 { color: var(--secondary-color); margin-top: 0;}
         .ad-view-content button.ad-button-new {
-            background-color: #FF9800; /* Amber - মনোযোগ আকর্ষণকারী */
+            background-color: #FF9800; /* কমলা রঙ */
             color: white;
             border: none;
             padding: 14px;
@@ -208,7 +206,7 @@
             transition: background-color 0.2s;
         }
         .ad-view-content button.ad-button-new:disabled {
-             background-color: #9E9E9E; /* Grey যখন ডিসেবল থাকবে */
+             background-color: #9E9E9E; 
              cursor: not-allowed;
         }
         /* Admin Styles - অপরিবর্তিত */
@@ -324,12 +322,12 @@
     </div>
     
     <script>
-        // ----------------------------------------------------
         // --- কনস্ট্যান্টস (আপনার তথ্য দিয়ে পরিবর্তন করুন) ---
-        // ----------------------------------------------------
-        const SERVER_URL = 'https://smartearnbdbot.onrender.com'; // ★★★ আপনার সার্ভার URL ★★★
+        // ⚠️ আপনার সার্ভার URL দিন
+        const SERVER_URL = 'https://smartearnbdbot.onrender.com'; 
         const BOT_USERNAME = "@EarnQuick_Official_bot";
-        const ADMIN_ID = '8145444675'; // ★★★ আপনার টেলিগ্রাম ইউজার আইডি ★★★
+        // ⚠️ আপনার টেলিগ্রাম ইউজার আইডি দিন
+        const ADMIN_ID = '8145444675'; 
         const POINTS_PER_TAKA = 250; 
         const POINTS_PER_AD = 5; 
         const MIN_WITHDRAW_POINTS = 10000;
@@ -341,9 +339,10 @@
         let telegramUserId = null;
         let currentPoints = 0;
         
-        // --- ব্যানার অ্যাড লোড করার ফাংশন (সকল ইন্টারফেসে অ্যাড ডিসপ্লে করার জন্য) ---
+        // --- অ্যাড কোড লোড করার ফাংশন (ব্যানার অ্যাড) ---
         function loadBannerAds() {
-            // আপনার দেওয়া ব্যানার অ্যাড কোড
+            // আপনার দেওয়া ব্যানার অ্যাড কোড 
+            // ⚠️ Ad zone key পরিবর্তন করতে পারেন
             const adCode = `
                 <script type="text/javascript">
                     atOptions = {
@@ -357,80 +356,14 @@
                 <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"><\/script>
             `;
             
-            // চারটি স্লটে কোড ইনজেক্ট করা হলো: হোমস্ক্রিনের উপরে ও নিচে, পপআপের উপরে ও নিচে
+            // চারটি স্লটে কোড ইনজেক্ট করা হলো
             document.getElementById('banner-ad-slot-1').innerHTML = adCode;
             document.getElementById('banner-ad-slot-2').innerHTML = adCode;
             document.getElementById('banner-ad-slot-popup').innerHTML = adCode; 
             document.getElementById('banner-ad-slot-popup-bottom').innerHTML = adCode; 
         }
 
-        // --- অ্যাড নেটওয়ার্ক SDK এবং পয়েন্ট লজিক ---
-        function onAdRewardSuccess(adIndex) {
-            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
-            // নিশ্চিত করা হচ্ছে যেন একাধিকবার কল না হয়
-            if (adBtn.dataset.completed === 'true') return; 
-            
-            adBtn.dataset.completed = 'true'; // একাধিকবার ক্লিক প্রতিরোধ
-            adBtn.disabled = true;
-            adBtn.innerText = '✅ পয়েন্ট যোগ হচ্ছে...';
-            
-            // ২ সেকেন্ড বিলম্ব যোগ করা হলো 
-            setTimeout(() => {
-                addPointsToUser(POINTS_PER_AD).then(success => {
-                    if (success) {
-                        adBtn.innerText = `পয়েন্ট যোগ হয়েছে! (${POINTS_PER_AD} পয়েন্ট)`;
-                        adBtn.style.backgroundColor = '#4CAF50'; 
-                    } else {
-                         adBtn.innerText = `❌ যোগ ব্যর্থ, আবার চেষ্টা করুন`;
-                         adBtn.style.backgroundColor = '#FF9800'; 
-                         adBtn.disabled = false; 
-                         adBtn.dataset.completed = 'false';
-                    }
-                });
-            }, 2000); // ২ সেকেন্ডের ডিলে
-        }
-        
-        // --- ৩টি বাটনে ৩টি ভিন্ন অ্যাড কোড কল করার ফাংশন ---
-        function handleIndividualAdClick(adIndex) {
-            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
-            if (adBtn.disabled) return; 
-
-            adBtn.disabled = true;
-            adBtn.innerText = 'বিজ্ঞাপন লোড হচ্ছে... ৫ সেকেন্ড অপেক্ষা করুন...';
-            
-            // libtl.com SDK Mapping (আপনার দেওয়া data-zone ও data-sdk অনুযায়ী)
-            const adZoneMap = {
-                1: 'show_10070523', // data-zone='10070523'
-                2: 'show_9852420',  // data-zone='9852420'
-                3: 'show_10085320'  // data-zone='10085320'
-            };
-            
-            const adSdkName = adZoneMap[adIndex];
-            let adShownSuccessfully = false; 
-            
-            // --- অ্যাড নেটওয়ার্ক SDK কল ---
-            if (window[adSdkName] && typeof window[adSdkName] === 'function') {
-                window[adSdkName]({
-                    onSuccess: function() {
-                        onAdRewardSuccess(adIndex); 
-                        adShownSuccessfully = true; 
-                    },
-                    onError: function() {
-                        // যদি error/close হয়, তবুও ফলব্যাক টাইমার কাজ করবে।
-                    }
-                });
-            }
-            
-            // --- ৫ সেকেন্ডের ফলব্যাক (SDK কল না হলেও নিশ্চিত পয়েন্ট যোগ) ---
-            setTimeout(() => {
-                // যদি ৫ সেকেন্ডের মধ্যে onSuccess কল না হয়ে থাকে, তবে ফলব্যাক হিসেবে পয়েন্ট যোগ করা হবে।
-                if (!adShownSuccessfully) {
-                    onAdRewardSuccess(adIndex);
-                }
-            }, 5000); // ৫ সেকেন্ডের ফলব্যাক
-        }
-        
-        // --- অন্যান্য ইউটিলিটি ও API ফাংশন (পূর্বের কোড অনুযায়ী অপরিবর্তিত) ---
+        // --- ইউটিলিটি ও API ফাংশন (অপরিবর্তিত) ---
         function loadTelegramUser() {
             try {
                 const user = Telegram.WebApp.initDataUnsafe.user;
@@ -643,7 +576,6 @@
                     const data = await response.json();
                     currentPoints = data.new_points;
                     document.getElementById('total-points').innerText = currentPoints.toLocaleString();
-                    Telegram.WebApp.showAlert(`🎉 অভিনন্দন! ${points} পয়েন্ট যোগ হয়েছে।`);
                     return true;
                 } else {
                     Telegram.WebApp.showAlert(`পয়েন্ট যোগ ব্যর্থ। সার্ভার ত্রুটি: ${response.status}`);
@@ -664,6 +596,83 @@
             document.getElementById('ad-view-popup').style.display = 'none';
             document.querySelector('.user-view').style.display = 'block';
         }
+
+        // --- সংশোধিত onAdRewardSuccess ফাংশন: বারবার অ্যাড দেখানোর জন্য ---
+        function onAdRewardSuccess(adIndex) {
+            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
+            
+            // স্ট্যাটাসকে 'pending' করে দিলাম যাতে ডাবল ক্লিক না হয়
+            if (adBtn.dataset.status === 'pending') return; 
+
+            adBtn.dataset.status = 'pending'; 
+            adBtn.disabled = true;
+            adBtn.innerText = '✅ পয়েন্ট যোগ হচ্ছে...';
+            
+            addPointsToUser(POINTS_PER_AD).then(success => {
+                if (success) {
+                    // সফল হলে, বাটনটি সাময়িকভাবে 'পয়েন্ট যোগ হয়েছে' স্ট্যাটাস দেখাবে
+                    adBtn.innerText = `পয়েন্ট যোগ হয়েছে! (${POINTS_PER_AD} পয়েন্ট)`;
+                    adBtn.style.backgroundColor = '#4CAF50'; // সবুজ
+                    
+                    // 💡 ৫ সেকেন্ড পর বাটনটিকে রিসেট করা হলো
+                    setTimeout(() => {
+                        adBtn.innerText = `বিজ্ঞাপন দেখুন ${adIndex} (৫ পয়েন্ট)`;
+                        adBtn.style.backgroundColor = '#FF9800'; // কমলা
+                        adBtn.disabled = false; // আবার দেখার জন্য চালু করা হলো
+                        adBtn.dataset.status = 'ready'; // স্ট্যাটাস রেডি
+                    }, 5000); // ৫ সেকেন্ড পর আবার ক্লিক করার জন্য প্রস্তুত
+                    
+                } else {
+                     // যোগ ব্যর্থ হলে, বাটনটিকে দ্রুত রিসেট করা হলো
+                     adBtn.innerText = `❌ যোগ ব্যর্থ, আবার চেষ্টা করুন`;
+                     adBtn.style.backgroundColor = '#FF9800'; 
+                     adBtn.disabled = false; 
+                     adBtn.dataset.status = 'ready';
+                }
+            });
+        }
+        
+        // --- সংশোধিত handleIndividualAdClick ফাংশন ---
+        function handleIndividualAdClick(adIndex) {
+            const adBtn = document.getElementById(`ad-btn-${adIndex}`);
+            if (adBtn.disabled) return; 
+
+            adBtn.disabled = true;
+            adBtn.innerText = 'বিজ্ঞাপন লোড হচ্ছে... লোড হওয়ার পর স্ক্রিনটি বন্ধ করুন...';
+            
+            // libtl.com থেকে লোড হওয়া ফাংশনের নাম
+            const adZoneMap = {
+                1: 'show_ad_zone_1',
+                2: 'show_ad_zone_2',
+                3: 'show_ad_zone_3'
+            };
+            
+            const adSdkName = adZoneMap[adIndex];
+            let adShownSuccessfully = false; 
+            
+            // --- অ্যাড নেটওয়ার্ক SDK কল ---
+            if (window[adSdkName] && typeof window[adSdkName] === 'function') {
+                window[adSdkName]({
+                    onSuccess: function() {
+                        onAdRewardSuccess(adIndex); 
+                        adShownSuccessfully = true; 
+                    },
+                    onError: function() {
+                        // Ad Network ত্রুটি দিলে ফলব্যাক টাইমার কাজ করবে।
+                    }
+                });
+            }
+            
+            // --- নিশ্চিত পয়েন্ট যোগের জন্য ৫ সেকেন্ডের ফলব্যাক লজিক ---
+            // যদি SDK-এর onSuccess/onError সঠিকভাবে কাজ না করে বা লোড না হয়, 
+            // তবে ৫ সেকেন্ড পর ফলব্যাক হিসেবে পয়েন্ট যোগ হবে।
+            setTimeout(() => {
+                if (!adShownSuccessfully) {
+                    onAdRewardSuccess(adIndex);
+                }
+            }, 5000); 
+        }
+        // --- সমাপ্ত সংশোধিত ফাংশন ---
         
         function openWithdrawal() {
              const now = new Date();
@@ -679,7 +688,6 @@
                  return;
              }
 
-             // (উত্তোলন পপআপ লজিক অপরিবর্তিত)
              Telegram.WebApp.showPopup({
                  title: `💰 টাকা উত্তোলন`,
                  message: `আপনি ${currentPoints} পয়েন্ট (${(currentPoints / POINTS_PER_TAKA).toFixed(2)} টাকা) পর্যন্ত উত্তোলন করতে পারেন।`,
@@ -742,6 +750,7 @@
              });
         }
 
+
         function openReferral() {
             const referralLink = `https://t.me/${BOT_USERNAME.replace('@', '')}?start=${telegramUserId}`;
             Telegram.WebApp.showPopup({
@@ -774,7 +783,7 @@
 
         // --- অ্যাপ্লিকেশন শুরু করা ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadBannerAds(); // ব্যানার অ্যাড লোড করা হলো
+            loadBannerAds(); 
 
             if (loadTelegramUser()) {
                 fetchUserData(); 
@@ -786,4 +795,4 @@
         
     </script>
 </body>
-</html>
+    </html>
