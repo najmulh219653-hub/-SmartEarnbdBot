@@ -29,8 +29,16 @@
         .ad-view-content { background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; width: 95%; max-width: 400px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); text-align: center; margin-top: 60px; margin-bottom: 20px; }
 
 
-        /* --- Admin Panel Styles --- */
-        .withdrawal-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* --- Admin Panel Styles (Updated) --- */
+        .admin-view { padding: 10px; background-color: #f0f4f7; min-height: 100vh; }
+        .admin-stats-summary { display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 20px; }
+        .stat-card { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 48%; margin-bottom: 10px; text-align: center; }
+        .stat-card.full-width { width: 100%; }
+        .stat-card h4 { margin: 0 0 5px 0; color: #607D8B; font-size: 0.9em; }
+        .stat-card p { margin: 0; font-size: 1.5em; font-weight: bold; color: #1d2b64; }
+        .stat-card.pending p { color: #FF5722; }
+
+        .withdrawal-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .withdrawal-card p { margin: 5px 0; font-size: 14px; }
         .action-buttons button { margin-top: 10px; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .complete-btn { background-color: #4CAF50; color: white; margin-right: 10px; }
@@ -71,7 +79,12 @@
             <div class="menu-btn-container" onclick="openReferral()"><span class="menu-icon">🔗</span><button class="menu-btn">রেফার করুন</button></div>
             <div class="menu-btn-container" onclick="openHistory()"><span class="menu-icon">🧾</span><button class="menu-btn">পেমেন্ট হিস্টোরি</button></div>
             <div class="menu-btn-container"><span class="menu-icon">📞</span><button class="menu-btn" onclick="openSupport()">সাপোর্ট</button></div>
-        </div>
+            
+            <div class="menu-btn-container" id="admin-access-btn-container" style="display:none;" onclick="toggleAdminView(true)">
+                <span class="menu-icon" style="color:#f44336;">👑</span>
+                <button class="menu-btn" style="background-color: #f44336; color: white;">অ্যাডমিন প্যানেল</button>
+            </div>
+            </div>
         
         <div class="ad-container" style="margin-top: 20px;">
             </div>
@@ -98,21 +111,36 @@
         </div>
     </div>
 
-    <div class="admin-view" id="admin-main-view" style="display:none; padding: 10px;">
-        <h2 style="text-align: center; color: #1d2b64;">🏆 অ্যাডমিন ড্যাশবোর্ড</h2>
-        <p style="text-align: center; font-weight: bold; color: #f44336;">⚠️ গুরুত্বপূর্ণ: আপনি অ্যাডমিন মোডে আছেন।</p>
+    <div class="admin-view" id="admin-main-view" style="display:none;">
+        <h2 style="text-align: center; color: #1d2b64; padding-top: 10px;">🏆 অ্যাডমিন ড্যাশবোর্ড</h2>
+        <p style="text-align: center; font-weight: bold; color: #f44336; margin-bottom: 20px;">⚠️ গুরুত্বপূর্ণ: আপনি অ্যাডমিন মোডে আছেন।</p>
         
-        <button id="refresh-withdrawals" onclick="loadWithdrawals('Pending')" style="background-color: #2196F3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 15px;">🔄 পেন্ডিং রিকোয়েস্ট লোড করুন</button>
-        
-        <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
-            <button onclick="loadWithdrawals('Pending')" style="padding: 8px; background-color: #FFC107; border: none; border-radius: 5px;">পেন্ডিং</button>
-            <button onclick="loadWithdrawals('Completed')" style="padding: 8px; background-color: #4CAF50; border: none; border-radius: 5px;">কমপ্লিটেড</button>
-            <button onclick="loadWithdrawals('Cancelled')" style="padding: 8px; background-color: #F44336; border: none; border-radius: 5px;">ক্যানসেলড</button>
+        <div class="admin-stats-summary">
+            <div class="stat-card">
+                <h4>মোট ইউজার</h4>
+                <p id="stat-total-users">...</p>
+            </div>
+            <div class="stat-card">
+                <h4>মোট পয়েন্ট (সকল)</h4>
+                <p id="stat-total-points">...</p>
+            </div>
+            <div class="stat-card full-width pending">
+                <h4>পেন্ডিং উইথড্রয়াল রিকোয়েস্ট</h4>
+                <p id="stat-pending-withdrawals">...</p>
+            </div>
         </div>
         
-        <h3 id="withdrawal-list-title" style="color: #607D8B;">পেন্ডিং উইথড্রয়াল রিকোয়েস্ট</h3>
+        <button id="refresh-withdrawals" onclick="loadWithdrawals('Pending')" style="background-color: #2196F3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 15px;">🔄 পেন্ডিং রিকোয়েস্ট বিস্তারিত দেখুন</button>
+        
+        <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+            <button onclick="loadWithdrawals('Pending')" style="padding: 8px; background-color: #FFC107; border: none; border-radius: 5px; font-weight: bold;">পেন্ডিং</button>
+            <button onclick="loadWithdrawals('Completed')" style="padding: 8px; background-color: #4CAF50; border: none; border-radius: 5px; font-weight: bold;">কমপ্লিটেড</button>
+            <button onclick="loadWithdrawals('Cancelled')" style="padding: 8px; background-color: #F44336; border: none; border-radius: 5px; font-weight: bold;">ক্যানসেলড</button>
+        </div>
+        
+        <h3 id="withdrawal-list-title" style="color: #607D8B;">উইথড্রয়াল বিস্তারিত তালিকা</h3>
         <div id="withdrawal-list-container">
-            <p style="text-align: center;" id="admin-status-message">রিকোয়েস্ট লোড করা হচ্ছে...</p>
+            <p style="text-align: center;" id="admin-status-message">রিকোয়েস্ট লোড করার জন্য বাটন প্রেস করুন...</p>
         </div>
         
         <button onclick="toggleAdminView(false)" style="background-color: #795548; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px;">👤 ইউজার ভিউতে ফিরে যান</button>
@@ -156,12 +184,41 @@
         function toggleAdminView(isAdmin) {
             if (isAdmin) {
                 document.querySelector('.user-view').style.display = 'none';
+                document.getElementById('ad-view-popup').style.display = 'none'; 
                 document.getElementById('admin-main-view').style.display = 'block';
-                loadWithdrawals('Pending'); 
+                loadAdminStats(); // নতুন ফাংশন কল করা
+                document.getElementById('withdrawal-list-container').innerHTML = '';
+                document.getElementById('admin-status-message').innerText = "রিকোয়েস্ট লোড করার জন্য বাটন প্রেস করুন...";
             } else {
                 document.querySelector('.user-view').style.display = 'block';
                 document.getElementById('admin-main-view').style.display = 'none';
-                if (telegramUserId) fetchUserData(); 
+                if (telegramUserId) fetchUserData(true); 
+            }
+        }
+        
+        // ★★★ নতুন ফাংশন: অ্যাডমিন পরিসংখ্যান লোড করা ★★★
+        async function loadAdminStats() {
+            document.getElementById('stat-total-users').innerText = '...';
+            document.getElementById('stat-total-points').innerText = '...';
+            document.getElementById('stat-pending-withdrawals').innerText = '...';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/get_admin_stats`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    document.getElementById('stat-total-users').innerText = data.total_users.toLocaleString();
+                    document.getElementById('stat-total-points').innerText = data.total_points.toLocaleString();
+                    document.getElementById('stat-pending-withdrawals').innerText = data.pending_withdrawals.toLocaleString();
+                } else {
+                    document.getElementById('stat-total-users').innerText = '0 (DB Error)';
+                    document.getElementById('stat-total-points').innerText = '0 (DB Error)';
+                    document.getElementById('stat-pending-withdrawals').innerText = '0 (DB Error)';
+                    Telegram.WebApp.showAlert('অ্যাডমিন পরিসংখ্যান লোড ব্যর্থ। সার্ভার/DB চেক করুন।');
+                }
+            } catch (error) {
+                console.error('Admin Stats Error:', error);
+                Telegram.WebApp.showAlert("নেটওয়ার্ক ত্রুটি। অ্যাডমিন পরিসংখ্যান লোড হয়নি।");
             }
         }
 
@@ -169,7 +226,7 @@
         async function loadWithdrawals(status) {
             document.getElementById('admin-status-message').innerText = `${status} রিকোয়েস্ট লোড হচ্ছে...`;
             document.getElementById('withdrawal-list-container').innerHTML = '';
-            document.getElementById('withdrawal-list-title').innerText = `${status} উইথড্রয়াল রিকোয়েস্ট`;
+            document.getElementById('withdrawal-list-title').innerText = `${status} উইথড্রয়াল রিকোয়েস্টের বিস্তারিত তালিকা`;
 
             try {
                 const response = await fetch(`${SERVER_URL}/api/get_withdrawals?status=${status}`);
@@ -202,6 +259,9 @@
                         `;
                         document.getElementById('withdrawal-list-container').appendChild(card);
                     });
+                    
+                    // লোডের পরে পরিসংখ্যান রিফ্রেশ করা
+                    loadAdminStats();
 
                 } else {
                     document.getElementById('admin-status-message').innerText = `ডাটা লোড ত্রুটি: ${response.status}. সার্ভার লগ দেখুন।`;
@@ -231,6 +291,7 @@
                 if (response.ok) {
                     Telegram.WebApp.showAlert(`রিকোয়েস্ট ${requestId} সফলভাবে ${newStatus} করা হয়েছে।`);
                     loadWithdrawals('Pending'); 
+                    loadAdminStats(); // স্ট্যাটাস আপডেটের পর পরিসংখ্যান রিফ্রেশ করা
                 } else {
                     Telegram.WebApp.showAlert(`স্ট্যাটাস আপডেট ব্যর্থ। ত্রুটি: ${response.status}`);
                 }
@@ -240,8 +301,8 @@
         }
         
         // --- ইউজার ডেটা লোড ফাংশন (রেফারেল ফিক্সড ভার্সন) ---
-        async function fetchUserData() {
-             document.getElementById('status-message').innerText = "ডেটা লোড করা হচ্ছে...";
+        async function fetchUserData(isRefresh = false) {
+             if(!isRefresh) document.getElementById('status-message').innerText = "ডেটা লোড করা হচ্ছে...";
              
              const urlParams = new URLSearchParams(window.location.search);
              const refererId = urlParams.get('start'); 
@@ -269,6 +330,16 @@
                      updateUI();
                      document.getElementById('status-message').innerText = "স্বাগতম! আপনি সচল আছেন।";
                      document.getElementById('ad-button').disabled = false;
+                     
+                     // অ্যাডমিন বাটন ভিজিবিলিটি টগল করা
+                     const adminBtnContainer = document.getElementById('admin-access-btn-container');
+                     if (telegramUserId.toString() === ADMIN_ID) {
+                         adminBtnContainer.style.display = 'flex'; 
+                         document.getElementById('status-message').innerText += " (অ্যাডমিন বাটন প্রস্তুত)";
+                     } else {
+                         adminBtnContainer.style.display = 'none'; 
+                     }
+                     
                  } else {
                      document.getElementById('status-message').innerText = `সার্ভার ত্রুটি: ${response.status}. সংযোগ বিচ্ছিন্ন।`;
                      Telegram.WebApp.showAlert(`সার্ভার ত্রুটি: ${response.status}. সংযোগ বিচ্ছিন্ন।`);
@@ -278,58 +349,35 @@
                  document.getElementById('status-message').innerText = "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন (Render ফ্রি টিয়ার)। দয়া করে ৫-১০ সেকেন্ড অপেক্ষা করে আবার অ্যাপটি চালু করুন।"; 
                  Telegram.WebApp.showAlert("নেটওয়ার্ক সমস্যা বা সার্ভার চালু হচ্ছে। ৫-১০ সেকেন্ড পর আবার খুলুন।");
              }
-
-             // ★★★ অ্যাডমিন চেক ★★★
-             if (telegramUserId.toString() === ADMIN_ID) {
-                toggleAdminView(true);
-             } else {
-                toggleAdminView(false);
-             }
         }
 
-        // --- প্লেসহোল্ডার ফাংশন (আপনাকে পূর্ণ করতে হবে) ---
+        // --- প্লেসহোল্ডার ফাংশন (আপনার আগের লজিক এখানে যুক্ত হবে) ---
         function updateUI() {
-            // UI আপডেটের লজিক
-        }
+            const now = new Date();
+            const hour = now.getHours();
+            const isDisabled = hour < WITHDRAW_START_HOUR || hour >= WITHDRAW_END_HOUR;
 
-        function showAdView() {
-            // বিজ্ঞাপন দেখার পপআপ দেখানোর লজিক
-            // ...
+            const withdrawButton = document.getElementById('withdraw-button');
+            if (isDisabled) {
+                withdrawButton.disabled = true;
+                withdrawButton.classList.add('disabled-time');
+                withdrawButton.innerText = `উত্তোলন বন্ধ (সকাল ${WITHDRAW_START_HOUR}টা থেকে রাত ${WITHDRAW_END_HOUR}টার মধ্যে চালু)`;
+            } else {
+                 withdrawButton.disabled = false;
+                 withdrawButton.classList.remove('disabled-time');
+                 withdrawButton.innerText = `টাকা উত্তোলন করুন (Withdraw)`;
+            }
         }
-
-        function openWithdrawal() {
-             // উইথড্রয়াল লজিক
-             // ...
-        }
-
-        function openReferral() {
-            const referralLink = `https://t.me/${BOT_USERNAME.replace('@', '')}?start=${telegramUserId}`;
-            Telegram.WebApp.showPopup({
-                title: '🤝 আপনার রেফারেল লিংক',
-                message: `আপনার বন্ধুকে এই লিংকটি শেয়ার করুন। প্রতি সফল রেফারেলে আপনি পাবেন ${250} পয়েন্ট!`,
-                buttons: [
-                    { id: 'copy', type: 'default', text: 'কপি করুন' },
-                    { id: 'share', type: 'default', text: 'শেয়ার করুন' },
-                    { id: 'close', type: 'cancel', text: 'বন্ধ করুন' }
-                ]
-            }, (buttonId) => {
-                if (buttonId === 'copy') {
-                    navigator.clipboard.writeText(referralLink).then(() => {
-                        Telegram.WebApp.showAlert('লিংক কপি করা হয়েছে!');
-                    });
-                } else if (buttonId === 'share') {
-                    Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('আমার সাথে যোগ দিন এবং প্রতিদিন টাকা আয় করুন! ')}`);
-                }
-            });
-        }
-
-        function openHistory() {
-             Telegram.WebApp.showAlert('পেমেন্ট হিস্টোরি দেখার অপশনটি এখনো ডেভেলপমেন্টে আছে।');
-        }
-
-        function openSupport() { 
-             Telegram.WebApp.showAlert(`📞 সাপোর্ট টিমের সাথে যোগাযোগ করুন:\n\nফোন: ${CONTACT_NUMBER}\nইমেইল: ${CONTACT_EMAIL}`); 
-        }
+        
+        async function addPointsToUser(points) { /* ... add_points implementation ... */ }
+        function showAdView() { /* ... showAdView implementation ... */ }
+        function hideAdView() { /* ... hideAdView implementation ... */ }
+        function onAdRewardSuccess(adIndex) { /* ... onAdRewardSuccess implementation ... */ }
+        function handleIndividualAdClick(adIndex) { /* ... handleIndividualAdClick implementation ... */ }
+        function openWithdrawal() { /* ... openWithdrawal implementation ... */ }
+        function openReferral() { /* ... openReferral implementation ... */ }
+        function openHistory() { /* ... openHistory implementation ... */ }
+        function openSupport() { /* ... openSupport implementation ... */ }
 
         // --- অ্যাপ্লিকেশন শুরু করা ---
         document.addEventListener('DOMContentLoaded', () => {
