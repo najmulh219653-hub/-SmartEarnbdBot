@@ -1,24 +1,16 @@
 {
-  "name": "earnquick-bot-backend",
+  "name": "earnquick-mini-app",
   "version": "1.0.0",
-  "description": "Telegram Mini App Backend for earning points.",
+  "description": "Telegram Mini App for rewarded ad earnings using Node.js and PostgreSQL.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
+    "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "pg": "^8.11.5",
-    "telegraf": "^4.16.1"
-  },
-  "keywords": [
-    "telegram",
-    "mini-app",
-    "node",
-    "express"
-  ],
-  "author": "Your Name",
-  "license": "ISC"
+    "node-telegram-bot-api": "^0.66.0",
+    "pg": "^8.11.5"
+  }
 }
