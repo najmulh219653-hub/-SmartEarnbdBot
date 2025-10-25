@@ -1,115 +1,77 @@
-// api.js - মিনি অ্যাপের ডেটাবেস অ্যাক্সেসের জন্য API রুট হ্যান্ডেল করে।
+// api.js
 const express = require('express');
 const router = express.Router();
-const db = require('./db');
+const { pool } = require('./db'); 
+const { pointsToBdt, handleWithdrawRequest } = require('./logic');
+const { Telegraf } = require('telegraf');
+require('dotenv').config();
 
-// --- কনফিগারেশন ---
-// MONETAG_SECRET_KEY পরিবেশ ভেরিয়েবল থেকে লোড হচ্ছে
-const MONETAG_SECRET_KEY = process.env.MONETAG_SECRET_KEY || 'MyEarnQuickSecretKey123'; 
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const ADMIN_ID = process.env.ADMIN_ID;
 
-/**
- * নিরাপত্তা এবং অথেনটিকেশন মিডলওয়্যার
- * নিশ্চিত করে যে অনুরোধটি অনুমোদিত এবং একটি বৈধ ইউজার আইডি ধারণ করে।
- */
-const authMiddleware = (req, res, next) => {
-    const secretKey = req.headers['secret-key'];
-    // ইউজার আইডি Authorization Header বা Query Parameter থেকে নেওয়া হচ্ছে
-    const userId = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : req.query.userId;
+// --- ১. মনিটেগ S2S কলব্যাক API রুট ---
+router.post('/monetag-callback', async (req, res) => {
+    const { user_id, transaction_id, status } = req.body; 
     
-    // ১. সিক্রেট কী চেক করা
-    if (!secretKey || secretKey !== MONETAG_SECRET_KEY) {
-        console.warn("Unauthorized API access attempt: Invalid Secret Key.");
-        return res.status(401).json({ message: "Unauthorized: Invalid Secret Key" });
-    }
+    if (status === 'success' && user_id) {
+        try {
+            // ডাবল-ক্রেডিট এড়ানোর জন্য ad_view_logs টেবিলে ইনসার্ট চেষ্টা করুন
+            const logResult = await pool.query(
+                'INSERT INTO ad_view_logs (user_id, monetag_transaction_id, points_awarded, is_verified) VALUES ($1, $2, 5, TRUE) ON CONFLICT (monetag_transaction_id) DO NOTHING RETURNING log_id',
+                [user_id, transaction_id]
+            );
 
-    // ২. ইউজার আইডি চেক করা
-    if (!userId) {
-        return res.status(400).json({ message: "Bad Request: User ID is required" });
-    }
-
-    req.userId = userId;
-    next();
-};
-
-router.use(authMiddleware);
-
-// --- ১. ব্যালেন্স দেখা এবং ইউজার তৈরি করা ---
-// GET /api/balance
-router.get('/balance', async (req, res) => {
-    const userId = req.userId;
-    
-    try {
-        // ইউজার খুঁজে বের করা
-        let result = await db.query('SELECT balance FROM users WHERE user_id = $1', [userId]);
-        let balance = 0;
-
-        if (result.rows.length === 0) {
-            // ইউজার না থাকলে নতুন ইউজার তৈরি করা
-            await db.query('INSERT INTO users (user_id) VALUES ($1)', [userId]);
-            console.log(`New user created: ${userId}`);
-            balance = 0;
-        } else {
-            // ইউজার থাকলে ব্যালেন্স নেওয়া
-            balance = result.rows[0].balance;
+            if (logResult.rows.length > 0) {
+                // ইউজারকে ৫ পয়েন্ট প্রদান
+                await pool.query(
+                    'UPDATE users SET total_points = total_points + 5 WHERE telegram_id = $1',
+                    [user_id]
+                );
+                return res.json({ status: 'ok', message: 'পয়েন্ট দেওয়া হয়েছে' }); 
+            }
+        } catch (error) {
+            console.error('Monetag Callback Error:', error);
         }
+    }
+    res.json({ status: 'error', message: 'ব্যর্থ ট্রানজেকশন বা ডুপ্লিকেট' }); 
+});
 
-        res.status(200).json({ userId, balance });
+// --- ২. উইথড্র রিকোয়েস্ট API রুট ---
+router.post('/withdraw', async (req, res) => {
+    const { telegramId, points, paymentAddress } = req.body;
 
-    } catch (error) {
-        console.error(`Error fetching/creating user ${userId}:`, error.message);
-        res.status(500).json({ message: "Internal Server Error during balance fetch" });
+    const result = await handleWithdrawRequest(telegramId, points, paymentAddress);
+    
+    if (result.success) {
+        // উইথড্র সফল হলে অ্যাডমিনকে নোটিফাই করুন
+        const message = `🚨 নতুন উইথড্র রিকোয়েস্ট!\nইউজার ID: ${telegramId}\nপয়েন্ট: ${points}\nটাকা: ${pointsToBdt(points)} BDT\nপেমেন্ট অ্যাড্রেস: ${paymentAddress}`;
+        bot.telegram.sendMessage(ADMIN_ID, message);
+        
+        return res.status(200).json(result);
+    } else {
+        return res.status(400).json(result); 
     }
 });
 
-// --- ২. রিওয়ার্ড প্রদান করা (পয়েন্ট যুক্ত করা) ---
-// POST /api/grant-reward
-router.post('/grant-reward', async (req, res) => {
-    const userId = req.userId;
-    const { points, transactionId } = req.body;
-
-    // ভ্যালিডেশন
-    if (!points || typeof points !== 'number' || points <= 0 || !transactionId) {
-        return res.status(400).json({ message: "Invalid request parameters." });
-    }
+// --- ৩. ইউজার ডেটা API রুট (পয়েন্ট দেখানোর জন্য) ---
+router.get('/user-data', async (req, res) => {
+    const telegramId = req.query.id;
 
     try {
-        // ডাবল রিওয়ার্ড আটকাতে ট্রানজেকশন আইডি চেক করা
-        const transactionCheck = await db.query('SELECT * FROM transactions WHERE transaction_id = $1', [transactionId]);
-        if (transactionCheck.rows.length > 0) {
-            console.warn(`Attempted duplicate reward for Transaction ID: ${transactionId}`);
-            return res.status(409).json({ message: "Duplicate reward detected." });
-        }
-
-        // ডেটাবেস ট্রানজেকশন শুরু করা
-        await db.query('BEGIN');
-
-        // ১. ব্যালেন্স আপডেট করা
-        const updateResult = await db.query(
-            'UPDATE users SET balance = balance + $1 WHERE user_id = $2 RETURNING balance',
-            [points, userId]
-        );
+        const result = await pool.query('SELECT total_points, referral_code FROM users WHERE telegram_id = $1', [telegramId]);
         
-        // ২. ট্রানজেকশন লগ করা
-        await db.query(
-            'INSERT INTO transactions (transaction_id, user_id, points_granted) VALUES ($1, $2, $3)',
-            [transactionId, userId, points]
-        );
-
-        // কমিট করা
-        await db.query('COMMIT');
-
-        const newBalance = updateResult.rows[0].balance;
-        res.status(200).json({ 
-            message: "Reward granted successfully.", 
-            newBalance,
-            pointsGranted: points 
-        });
+        if (result.rows.length > 0) {
+            return res.json({ 
+                success: true, 
+                points: result.rows[0].total_points,
+                referral_code: result.rows[0].referral_code 
+            });
+        }
+        return res.status(404).json({ success: false, message: "ইউজার খুঁজে পাওয়া যায়নি।" });
 
     } catch (error) {
-        // কোনো ত্রুটি হলে রোলব্যাক করা
-        await db.query('ROLLBACK');
-        console.error(`Error granting reward for user ${userId}:`, error.message);
-        res.status(500).json({ message: "Internal Server Error during reward grant" });
+        console.error("ইউজার ডেটা ত্রুটি:", error);
+        res.status(500).json({ success: false, message: "অভ্যন্তরীণ সার্ভার ত্রুটি।" });
     }
 });
 
