@@ -1,8 +1,14 @@
-dependencies
+ডিপেন্ডেন্সি
 ​/node_modules
-​environment variables
+/dist
+​এনভায়রনমেন্ট
 ​.env
-​logs and cache
-​/logs
-npm-debug.log*
 .DS_Store
+​লগস
+​npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/logs
+​অন্যান্য
+​.vscode/
+*.sqlite
