@@ -1,142 +1,98 @@
-// server.js
+// server.js - প্রধান Express সার্ভার এবং টেলিগ্রাম ওয়েবহুক হ্যান্ডেল করে।
 const express = require('express');
-const { Telegraf } = require('telegraf');
-const { pool } = require('./db'); // db.js থেকে pool আমদানি করা হয়েছে
-require('dotenv').config(); 
+const bodyParser = require('body-parser');
+const TelegramBot = require('node-telegram-bot-api');
+const path = require('path');
+require('dotenv').config(); // .env ফাইল লোড করার জন্য
 
-// মডিউলগুলি ইম্পোর্ট করা
-const { registerUser, MIN_WITHDRAW_POINTS, MAX_WITHDRAW_POINTS } = require('./logic');
-const apiRouter = require('./api'); 
+// --- ১. কনফিগারেশন এবং পরিবেশ ভেরিয়েবল ---
+// !!! আপনার আসল টেলিগ্রাম বট টোকেন দিয়ে পরিবর্তন করুন !!!
+const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE'; 
+// !!! আপনার Render সার্ভিসের সম্পূর্ণ URL দিয়ে পরিবর্তন করুন !!!
+const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL || 'YOUR_RENDER_EXTERNAL_URL'; 
+// !!! আপনার কাস্টম সিক্রেট কী দিয়ে পরিবর্তন করুন !!!
+const MONETAG_SECRET_KEY = process.env.MONETAG_SECRET_KEY || 'MyEarnQuickSecretKey123'; 
+const PORT = process.env.PORT || 10000;
 
-// --- কনফিগারেশন এবং এনভায়রনমেন্ট ভেরিয়েবল ---
-const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = process.env.ADMIN_ID ? process.env.ADMIN_ID.toString() : '8145444675'; 
-const MINI_APP_URL = process.env.MINI_APP_URL || "আপনার_Blogger_বা_ফ্রন্টএন্ড_URL"; 
-const BOT_USERNAME = process.env.BOT_USERNAME; 
-
-if (!BOT_TOKEN) {
-    console.error("❌ BOT_TOKEN সেট করা নেই! সার্ভার বন্ধ হচ্ছে।");
+if (BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' || RENDER_EXTERNAL_URL === 'YOUR_RENDER_EXTERNAL_URL') {
+    console.error("গুরুত্বপূর্ণ কনফিগারেশন ত্রুটি: BOT_TOKEN এবং RENDER_EXTERNAL_URL সেট করুন।");
     process.exit(1);
 }
+
+// --- ২. অ্যাপ ইনিশিয়ালাইজেশন ---
+const bot = new TelegramBot(BOT_TOKEN, { polling: false }); // Webhook মোড
 const app = express();
-const bot = new Telegraf(BOT_TOKEN);
+const db = require('./db');
+const apiRouter = require('./api');
 
-app.use(express.json()); 
+// --- ৩. মিডলওয়্যার ---
+app.use(bodyParser.json());
+// সিক্রেট কী api.js এর জন্য পরিবেশ ভেরিয়েবলে সেট করা
+process.env.MONETAG_SECRET_KEY = MONETAG_SECRET_KEY; 
 
-// Render এর জন্য Webhook URL তৈরি
-const WEBHOOK_BASE = process.env.RENDER_EXTERNAL_HOSTNAME ? 
-    `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 
-    `http://localhost:${PORT}`; 
-const WEBHOOK_PATH = `/bot${BOT_TOKEN}`;
-const WEBHOOK_URL = `${WEBHOOK_BASE}${WEBHOOK_PATH}`;
+// --- ৪. ডেটাবেস ইনিশিয়ালাইজেশন ---
+db.initializeDatabase();
 
+// --- ৫. রুট এবং API ---
 
-// --- ১. টেলিগ্রাম বট লজিক ---
+// API রাউটস ব্যবহার করা
+app.use('/api', apiRouter); 
 
-bot.catch((err, ctx) => {
-    console.error(`[Telegraf] ${ctx.updateType} আপডেটে ত্রুটি:`, err);
-    ctx.reply('দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি হয়েছে।');
-});
+// স্ট্যাটিক ফাইল পরিবেশন করা (Mini App UI - index.html)
+app.use(express.static(path.join(__dirname))); 
 
-// বট স্টার্ট এবং রেফারেল হ্যান্ডেলিং
-bot.start(async (ctx) => {
-    const telegramId = ctx.from.id;
-    const is_admin = telegramId.toString() === ADMIN_ID;
-    
-    const payload = ctx.startPayload; 
-    let referrerCode = null;
-    if (payload && payload.startsWith('r_')) { 
-        referrerCode = payload.substring(2); 
-    }
-    
-    let message = `স্বাগতম ${ctx.from.first_name}! EarnQuick_Official_bot এ অ্যাড দেখে আয় করা শুরু করুন।`;
-    
-    try {
-        const result = await registerUser(telegramId, ctx.from.username, referrerCode); 
-        
-        if (result.isNew) {
-            message += `\n🎉 অভিনন্দন! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।`;
-            if (result.bonus && result.referrerId) {
-                message += `\n🎁 আপনি রেফারেলের মাধ্যমে এসেছেন।`;
-                ctx.telegram.sendMessage(result.referrerId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
-            }
-        } else {
-             message += `\nআপনার অ্যাকাউন্ট ইতিমধ্যে তৈরি আছে।`;
-        }
-    } catch (error) {
-        console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
-    }
-
-    const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল (Coming Soon)', web_app: { url: MINI_APP_URL + '/admin.html' } }] : [];
-    
-    ctx.reply(message, {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
-                [{ text: '🔗 রেফার করুন', callback_data: 'show_referral' }],
-                ...adminButton
-            ]
-        }
-    });
-});
-
-// রেফারেল লজিক দেখানোর জন্য অ্যাকশন
-bot.on('callback_query', async (ctx) => {
-    if (ctx.callbackQuery.data === 'show_referral') {
-        try {
-            const user = await pool.query('SELECT referral_code FROM users WHERE telegram_id = $1', [ctx.from.id]);
-            
-            if (user.rows.length === 0) {
-                return ctx.editMessageText('আপনার ইউজার ডেটা খুঁজে পাওয়া যায়নি। /start লিখে আবার চেষ্টা করুন।');
-            }
-            
-            const refCode = user.rows[0].referral_code;
-            
-            const botUsername = bot.options.username || BOT_USERNAME || (await bot.telegram.getMe()).username; 
-            const referralLink = `https://t.me/${botUsername}?start=r_${refCode}`;
-            
-            ctx.editMessageText(`আপনার রেফারেল লিঙ্ক: \n\`${referralLink}\`\n\nপ্রতি রেফারে আপনি ২৫০ পয়েন্ট পাবেন।`, {
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: 'ক্লিক করে কপি করুন', url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}` }]
-                    ]
-                }
-            });
-        } catch (e) {
-            console.error("রেফারেল লজিক ত্রুটি:", e);
-            ctx.reply('রেফারেল ডেটা আনতে ব্যর্থ।');
-        }
-    }
-});
-
-
-// --- ২. API রুট যুক্ত করা ---
-// bot এবং adminId কে api.js এ পাঠানো হলো
-app.use('/api', apiRouter(bot, ADMIN_ID));
-
-
-// --- ৩. সার্ভার লিসেনিং ---
-
+// মূল রুট, Mini App UI দেখাবে
 app.get('/', (req, res) => {
-    res.send('EarnQuick_Official_bot সার্ভার চালু আছে।');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-bot.telegram.setWebhook(WEBHOOK_URL)
-    .then(() => console.log(`✅ টেলিগ্রাম ওয়েবহুক সেট হয়েছে: ${WEBHOOK_URL}`))
-    .catch((err) => console.error("❌ ওয়েবহুক সেটআপ ত্রুটি:", err));
 
-app.use(bot.webhookCallback(WEBHOOK_PATH));
+// টেলিগ্রাম ওয়েবহুক হ্যান্ডেলার
+app.post('/bot' + BOT_TOKEN, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
 
+// --- ৬. বট লজিক ---
+
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    const telegramUserId = msg.from.id; // ব্যবহারকারীর ID
+
+    // টেলিগ্রাম মিনি অ্যাপের জন্য বাটন তৈরি করা
+    const inlineKeyboard = {
+        inline_keyboard: [
+            [
+                { 
+                    text: '💸 আর্নিং অ্যাপ খুলুন', 
+                    web_app: { 
+                        url: RENDER_EXTERNAL_URL 
+                    } 
+                }
+            ]
+        ]
+    };
+
+    bot.sendMessage(chatId, 
+        `স্বাগতম, *EarnQuick Bot*-এ! আপনার ইউজার আইডি হলো: \`${telegramUserId}\`।\n\nনিচের বাটনটি ক্লিক করে আমাদের ইনস্ট্যান্ট আর্নিং মিনি অ্যাপে প্রবেশ করুন।`, 
+        { 
+            parse_mode: 'Markdown',
+            reply_markup: inlineKeyboard 
+        }
+    );
+});
+
+// --- ৭. সার্ভার চালু করা এবং ওয়েবহুক সেট করা ---
 
 app.listen(PORT, async () => {
-    console.log(`🚀 সার্ভার চালু হয়েছে পোর্ট ${PORT} এ`);
+    console.log(`সার্ভার চালু হয়েছে পোর্টে ${PORT}`);
+
+    const webhookUrl = `${RENDER_EXTERNAL_URL}/bot${BOT_TOKEN}`;
     try {
-        const me = await bot.telegram.getMe();
-        bot.options.username = me.username; 
-        console.log(`বট ইউজারনেম: @${me.username}`); 
-    } catch (e) {
-        console.warn("বটের ইউজারনেম পেতে ব্যর্থ।");
+        // ওয়েবহুক সেট করা
+        await bot.setWebhook(webhookUrl);
+        console.log(`টেলিগ্রাম ওয়েবহুক সফলভাবে সেট হয়েছে: ${webhookUrl}`);
+    } catch (error) {
+        console.error("টেলিগ্রাম ওয়েবহুক সেট করতে ব্যর্থ:", error.message);
     }
 });
