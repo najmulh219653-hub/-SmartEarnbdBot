@@ -1,24 +1,22 @@
-# Node.js Dependencies
+# Dependencies (নির্ভরতা)
 /node_modules
-/npm-debug.log
-/yarn-error.log
-
-# Build/Dist folders (যদি থাকে)
 /dist
 /build
+/out
 
-# Environment variables and secrets
+# Environment Variables & Secrets (গোপন তথ্য)
 .env
 .env.local
-.env.production
 .env.development
+.env.production
+.env.test
 
-# Logs
+# Logs and Temp files (লগ ও টেম্প ফাইল)
 *.log
-
-# Operating System Files
+npm-debug.log*
+yarn-error.log*
 .DS_Store
-Thumbs.db
 
-# Render specific files (যদি প্রয়োজন হয়)
-.render/
+# IDE and OS files (এডিটর ও অপারেটিং সিস্টেম ফাইল)
+.vscode
+.idea
