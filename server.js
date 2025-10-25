@@ -1,321 +1,330 @@
+// server.js
 const express = require('express');
-const cors = require('cors');
+const { Telegraf } = require('telegraf');
 const { Pool } = require('pg');
+// .env ফাইল লোড করার জন্য, যদিও Render এ এটি দরকার নেই, লোকাল টেস্টিং এর জন্য রাখা ভালো।
+require('dotenv').config(); 
 
-const app = express();
+// --- কনফিগারেশন এবং এনভায়রনমেন্ট ভেরিয়েবল ---
 const PORT = process.env.PORT || 3000;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const DATABASE_URL = process.env.DATABASE_URL;
+// আপনার Admin ID স্ট্রিং ফরম্যাটে রাখুন
+const ADMIN_ID = process.env.ADMIN_ID ? process.env.ADMIN_ID.toString() : '8145444675'; 
+const MINI_APP_URL = process.env.MINI_APP_URL || "আপনার_Blogger_বা_ফ্রন্টএন্ড_URL"; 
+const BOT_USERNAME = process.env.BOT_USERNAME; // নতুন: বটের ইউজারনেম সেট করার জন্য
 
-// 🛑 গুরুত্বপূর্ণ: আপনার অ্যাডমিন টেলিগ্রাম আইডি
-const ADMIN_TELEGRAM_ID = '8145444675'; 
-
-// --- PostgreSQL Pool Setup ---
+// --- ডেটাবেস সংযোগ ---
+if (!DATABASE_URL) {
+    console.error("❌ DATABASE_URL সেট করা নেই! সার্ভার বন্ধ হচ্ছে।");
+    process.exit(1);
+}
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-// --- CORS Configuration ---
-const allowedOrigins = [
-    'https://earnquickofficial.blogspot.com', // আপনার ব্লগার ডোমেইন
-    'https://t.me', 
-];
+// ডেটাবেস সংযোগ পরীক্ষা
+pool.query('SELECT NOW()')
+    .then(() => console.log('✅ PostgreSQL ডেটাবেসের সাথে সংযোগ সফল।'))
+    .catch((err) => {
+        console.error('❌ ডেটাবেস সংযোগ ব্যর্থ:', err.stack);
+        process.exit(1); // সংযোগ ব্যর্থ হলে সার্ভার বন্ধ করে দেওয়া ভালো
+    });
 
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true); 
-        
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'CORS policy does not allow access from this Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true); 
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', 
-    credentials: true 
-}));
-// -------------------------------------------------------------------
+// --- অ্যাপ ইনিশিয়ালাইজেশন ---
+if (!BOT_TOKEN) {
+    console.error("❌ BOT_TOKEN সেট করা নেই! সার্ভার বন্ধ হচ্ছে।");
+    process.exit(1);
+}
+const app = express();
+const bot = new Telegraf(BOT_TOKEN);
 
-app.use(express.json()); 
+app.use(express.json()); // JSON ডেটা পার্স করার জন্য
 
-// --- ডেটাবেস ইনিশিয়ালাইজেশন (টেবিল তৈরি) ---
-const initDb = async () => {
-    try {
-        const client = await pool.connect();
-        
-        // users টেবিল তৈরি: সকল প্রয়োজনীয় কলাম সহ
-        const createUsersTable = `
-            CREATE TABLE IF NOT EXISTS users (
-                telegram_user_id VARCHAR(50) PRIMARY KEY,
-                earned_points DECIMAL(19, 2) DEFAULT 0.00,
-                referral_count INTEGER DEFAULT 0,
-                referrer_id VARCHAR(50),
-                referral_bonus_given BOOLEAN DEFAULT FALSE, 
-                telegram_username VARCHAR(100),
-                first_name VARCHAR(100),
-                is_admin BOOLEAN DEFAULT FALSE,
-                joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        `;
-        
-        // withdrawal_requests টেবিল তৈরি
-        const createWithdrawalsTable = `
-            CREATE TABLE IF NOT EXISTS withdrawal_requests (
-                request_id SERIAL PRIMARY KEY,
-                telegram_user_id VARCHAR(50) NOT NULL REFERENCES users(telegram_user_id),
-                points_requested DECIMAL(19, 2) NOT NULL,
-                payment_method VARCHAR(50) NOT NULL,
-                payment_number VARCHAR(50) NOT NULL,
-                status VARCHAR(20) DEFAULT 'pending', 
-                requested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                processed_at TIMESTAMP WITH TIME ZONE
-            );
-        `;
-
-        await client.query(createUsersTable);
-        await client.query(createWithdrawalsTable);
-        
-        // অ্যাডমিন আইডিকে is_admin = TRUE হিসেবে সেট করা
-        await client.query(
-            `INSERT INTO users (telegram_user_id, is_admin) 
-             VALUES ($1, TRUE) 
-             ON CONFLICT (telegram_user_id) 
-             DO UPDATE SET is_admin = TRUE, last_login = CURRENT_TIMESTAMP`,
-            [ADMIN_TELEGRAM_ID]
-        );
-
-        client.release();
-        console.log("PostgreSQL DB initialized successfully with users and withdrawals tables.");
-    } catch (err) {
-        console.error("DB Initialization Error:", err);
-    }
-};
-
-// --- API Endpoints ---
-
-// নতুন: অ্যাডমিন ডেটা এন্ডপয়েন্ট (রিয়েল-টাইম ইনফরমেশনের জন্য)
-app.get('/api/admin/data/:userId', async (req, res) => {
-    const { userId } = req.params;
-
-    // 🛑 শুধুমাত্র অ্যাডমিনই এই ডেটা অ্যাক্সেস করতে পারবে
-    if (userId !== ADMIN_TELEGRAM_ID) {
-        // একটি অতিরিক্ত চেক: যদি DB-তে is_admin = TRUE থাকে, তবেই অনুমতি
-        try {
-            const adminCheck = await pool.query('SELECT is_admin FROM users WHERE telegram_user_id = $1', [userId]);
-            if (adminCheck.rows.length === 0 || !adminCheck.rows[0].is_admin) {
-                 return res.status(403).json({ success: false, message: "Access denied. Not an admin." });
-            }
-        } catch (e) {
-            console.error("Admin check error:", e.message);
-            return res.status(403).json({ success: false, message: "Access denied." });
-        }
-    }
+// Render এর জন্য Webhook URL তৈরি
+const WEBHOOK_BASE = process.env.RENDER_EXTERNAL_HOSTNAME ? 
+    `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 
+    `http://localhost:${PORT}`; // লোকাল টেস্টিং এর জন্য 
+const WEBHOOK_PATH = `/bot${BOT_TOKEN}`;
+const WEBHOOK_URL = `${WEBHOOK_BASE}${WEBHOOK_PATH}`;
 
 
-    try {
-        const client = await pool.connect();
+// --- ১. টেলিগ্রাম বট লজিক ---
 
-        // ১. সকল ইউজার ডেটা
-        const usersResult = await client.query(
-            `SELECT 
-                telegram_user_id, 
-                earned_points, 
-                referral_count, 
-                telegram_username,
-                first_name,
-                joined_at
-             FROM users 
-             ORDER BY earned_points DESC, joined_at ASC
-             LIMIT 100` // টেস্টিং-এর জন্য প্রথম ১০০ জন
-        );
-
-        // ২. পেন্ডিং উইথড্রয়াল রিকোয়েস্ট
-        const withdrawalsResult = await client.query(
-            `SELECT 
-                request_id, 
-                telegram_user_id, 
-                points_requested, 
-                payment_method, 
-                payment_number, 
-                requested_at
-             FROM withdrawal_requests 
-             WHERE status = 'pending' 
-             ORDER BY requested_at ASC`
-        );
-
-        client.release();
-
-        res.json({
-            success: true,
-            users: usersResult.rows,
-            pendingWithdrawals: withdrawalsResult.rows
-        });
-
-    } catch (error) {
-        console.error("Admin data fetch error:", error.message);
-        res.status(500).json({ success: false, message: "Server error fetching admin data." });
-    }
+// ত্রুটি হ্যান্ডেলিং: বট-এর ত্রুটি ধরুন
+bot.catch((err, ctx) => {
+    console.error(`[Telegraf] ${ctx.updateType} আপডেটে ত্রুটি:`, err);
 });
 
-
-// অন্যান্য API এন্ডপয়েন্ট (register_or_check, add_points, withdraw) অপরিবর্তিত আছে।
-
-// 1. ইউজার রেজিস্ট্রেশন বা চেক করা
-app.post('/api/register_or_check', async (req, res) => {
-    const { userId, refererId, username, firstName } = req.body; 
-
-    if (!userId) {
-        return res.status(400).json({ success: false, message: "User ID is required." });
-    }
-
-    try {
-        let message = "Welcome back!";
-        let client = await pool.connect();
-
-        let userResult = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [userId]);
-        let user = userResult.rows[0];
-        let isNewUser = false;
-
-        if (!user) {
-            isNewUser = true;
-            await client.query(
-                `INSERT INTO users (telegram_user_id, earned_points, referral_count, referrer_id, telegram_username, first_name) 
-                 VALUES ($1, $2, $3, $4, $5, $6)`, 
-                [userId, 0, 0, refererId, username || null, firstName || null]
-            );
-            message = "New user registered!";
-
-            if (refererId) {
-                let referrerResult = await client.query('SELECT * FROM users WHERE telegram_user_id = $1', [refererId]);
-                const referrer = referrerResult.rows[0];
-                
-                if (referrer && referrer.telegram_user_id !== userId) {
-                    await client.query(
-                        `UPDATE users 
-                         SET earned_points = earned_points + 250, referral_count = referral_count + 1 
-                         WHERE telegram_user_id = $1`, 
-                        [refererId]
-                    );
-                    message += " Referral bonus granted to referrer.";
-                }
-            }
-        }
-        
-        userResult = await client.query('SELECT earned_points, referral_count, is_admin FROM users WHERE telegram_user_id = $1', [userId]);
-        user = userResult.rows[0];
-
-        client.release();
-        
-        if (!user) {
-             return res.status(404).json({ success: false, message: "User not found after operation." });
-        }
-
-        res.json({ 
-            success: true, 
-            message: message,
-            earned_points: user.earned_points,
-            referral_count: user.referral_count,
-            is_admin: user.is_admin
-        });
-
-    } catch (error) {
-        console.error("Register/Check error:", error.message);
-        res.status(500).json({ success: false, message: "Server error during registration/check. Check DB logs." });
-    }
-});
-
-// 2. পয়েন্ট যোগ করা
-app.post('/api/add_points', async (req, res) => {
-    const { userId, points } = req.body;
-
-    if (!userId || typeof points !== 'number') {
-        return res.status(400).json({ success: false, message: "Invalid input." });
-    }
-
-    try {
-        const client = await pool.connect();
-        
-        const result = await client.query(
-            `UPDATE users 
-             SET earned_points = earned_points + $1, last_login = CURRENT_TIMESTAMP 
-             WHERE telegram_user_id = $2 
-             RETURNING earned_points`,
-            [points, userId]
-        );
-
-        client.release();
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: "User not found." });
-        }
-
-        res.json({ 
-            success: true, 
-            message: `${points} points added.`,
-            new_points: result.rows[0].earned_points
-        });
-
-    } catch (error) {
-        console.error("Add points error:", error.message);
-        res.status(500).json({ success: false, message: "Server error adding points. Check DB logs." });
-    }
-});
-
-
-// 3. উইথড্রয়াল রিকোয়েস্ট
-app.post('/api/withdraw', async (req, res) => {
-    const { userId, pointsToWithdraw, paymentMethod, paymentNumber } = req.body;
-
-    if (!userId || !pointsToWithdraw || !paymentMethod || !paymentNumber) {
-        return res.status(400).json({ success: false, message: "All fields are required for withdrawal." });
+// বট স্টার্ট এবং রেফারেল হ্যান্ডেলিং
+bot.start(async (ctx) => {
+    const telegramId = ctx.from.id;
+    const is_admin = telegramId.toString() === ADMIN_ID;
+    
+    // রেফারেল কোড বের করা
+    const payload = ctx.startPayload; 
+    let referrerCode = null;
+    if (payload && payload.startsWith('r_')) { // Null/undefined চেক যোগ করা হয়েছে
+        referrerCode = payload.substring(2); 
     }
     
-    const points = parseFloat(pointsToWithdraw);
+    let message = `স্বাগতম ${ctx.from.first_name}! EarnQuick_Official_bot এ অ্যাড দেখে আয় করা শুরু করুন।`;
+    
+    // ডেটাবেসে ইউজার নিবন্ধন এবং রেফারেল বোনাস লজিক
+    try {
+        const result = await registerUser(pool, telegramId, ctx.from.username, referrerCode); // Pool পাস করা
+        if (result.isNew && result.bonus && result.referrerId) {
+            message += `\n🎁 অভিনন্দন! আপনি রেফারেলের মাধ্যমে এসেছেন।`;
+            // নিশ্চিত করুন যে রেফারারকে মেসেজ পাঠানো হচ্ছে
+            ctx.telegram.sendMessage(result.referrerId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
+        }
+    } catch (error) {
+        console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
+    }
+
+    // কিবোর্ড বাটন তৈরি
+    const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + '/admin.html' } }] : [];
+    
+    ctx.reply(message, {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
+                [{ text: '🔗 রেফার করুন', callback_data: 'show_referral' }],
+                ...adminButton
+            ]
+        }
+    });
+});
+
+// রেফারেল লজিক দেখানোর জন্য অ্যাকশন
+bot.on('callback_query', async (ctx) => {
+    if (ctx.callbackQuery.data === 'show_referral') {
+        const user = await pool.query('SELECT referral_code FROM users WHERE telegram_id = $1', [ctx.from.id]);
+        
+        if (user.rows.length === 0) {
+            return ctx.editMessageText('আপনার ইউজার ডেটা খুঁজে পাওয়া যায়নি। /start লিখে আবার চেষ্টা করুন।');
+        }
+        
+        const refCode = user.rows[0].referral_code;
+        // সংশোধিত: বটের ইউজারনেম নিশ্চিত করার জন্য try-catch বা BOT_USERNAME ব্যবহার করা হয়েছে
+        const botUsername = BOT_USERNAME || (await bot.telegram.getMe()).username; 
+        const referralLink = `https://t.me/${botUsername}?start=r_${refCode}`;
+        
+        ctx.editMessageText(`আপনার রেফারেল লিঙ্ক: \n${referralLink}\n\nপ্রতি রেফারে আপনি ২৫০ পয়েন্ট পাবেন।`, {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'ক্লিক করে কপি করুন', url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}` }]
+                ]
+            }
+        });
+    }
+});
+
+// --- ২. API রুট (Monetag ও Withdraw) ---
+
+// API রাউটার সেটআপ
+const apiRouter = express.Router();
+
+// ক. মনিটেগ S2S কলব্যাক API
+apiRouter.post('/monetag-callback', async (req, res) => {
+    // SECURITY: আপনাকে অবশ্যই এখানে মনিটেগের সিকিউরিটি টোকেন বা হ্যাশ চেক করতে হবে
+    // if (req.query.secret !== process.env.MONETAG_SECRET_KEY) { return res.status(403).send('Forbidden'); } 
+
+    const { user_id, transaction_id, status } = req.body; 
+
+    if (!user_id || !transaction_id || status !== 'success') {
+        return res.status(400).json({ status: 'error', message: 'ব্যর্থ ট্রানজেকশন বা প্রয়োজনীয় ডেটা অনুপস্থিত' });
+    }
 
     try {
-        const client = await pool.connect();
-        await client.query('BEGIN'); // Transaction শুরু
+        // ডাবল-ক্রেডিট এড়ানোর জন্য ad_view_logs টেবিলে ইনসার্ট চেষ্টা
+        const logResult = await pool.query(
+            'INSERT INTO ad_view_logs (user_id, monetag_transaction_id, points_awarded, is_verified) VALUES ($1, $2, 5, TRUE) ON CONFLICT (monetag_transaction_id) DO NOTHING RETURNING log_id',
+            [user_id, transaction_id]
+        );
 
-        const userCheck = await client.query('SELECT earned_points FROM users WHERE telegram_user_id = $1 FOR UPDATE', [userId]);
-        if (userCheck.rows.length === 0 || userCheck.rows[0].earned_points < points) {
-            await client.query('ROLLBACK');
-            client.release();
-            return res.status(400).json({ success: false, message: "Insufficient balance or user not found." });
+        if (logResult.rows.length > 0) {
+            // ৫ পয়েন্ট প্রদান
+            await pool.query(
+                'UPDATE users SET total_points = total_points + 5 WHERE telegram_id = $1',
+                [user_id]
+            );
+            return res.json({ status: 'ok', message: 'পয়েন্ট দেওয়া হয়েছে' });
+        } else {
+            return res.json({ status: 'info', message: 'ডুপ্লিকেট ট্রানজেকশন আইডি এড়িয়ে যাওয়া হলো' });
         }
-
-        const updateResult = await client.query(
-            'UPDATE users SET earned_points = earned_points - $1 WHERE telegram_user_id = $2 RETURNING earned_points',
-            [points, userId]
-        );
-
-        await client.query(
-            `INSERT INTO withdrawal_requests (telegram_user_id, points_requested, payment_method, payment_number) 
-             VALUES ($1, $2, $3, $4)`,
-            [userId, points, paymentMethod, paymentNumber]
-        );
-
-        await client.query('COMMIT'); 
-
-        client.release();
-        
-        res.json({ 
-            success: true, 
-            message: "Withdrawal request submitted.",
-            new_points: updateResult.rows[0].earned_points 
-        });
-
     } catch (error) {
-        await pool.query('ROLLBACK');
-        console.error("Withdraw error:", error.message);
-        res.status(500).json({ success: false, message: "Server error during withdrawal." });
+        console.error('Monetag কলব্যাক ত্রুটি:', error);
+        res.status(500).json({ status: 'error', message: 'সার্ভার প্রক্রিয়াকরণ ত্রুটি' });
     }
 });
 
 
-// সার্ভার চালু করা
-app.listen(PORT, async () => {
-    console.log(`Server running on port ${PORT}`);
-    await initDb(); 
+// খ. উইথড্র রিকোয়েস্ট API
+apiRouter.post('/withdraw', async (req, res) => {
+    // ইনপুট ভ্যালিডেশন
+    const { telegramId, points, paymentAddress } = req.body;
+    if (!telegramId || !points || !paymentAddress) {
+        return res.status(400).json({ success: false, message: "❌ প্রয়োজনীয় ডেটা অনুপস্থিত।" });
+    }
+    
+    try {
+        const result = await handleWithdrawRequest(pool, telegramId, points, paymentAddress);
+        
+        if (result.success) {
+            // উইথড্র সফল হলে অ্যাডমিনকে নোটিফাই করুন
+            const amountInBdt = pointsToBdt(points);
+            const message = `🚨 নতুন উইথড্র রিকোয়েস্ট!\nইউজার ID: ${telegramId}\nপয়েন্ট: ${points}\nটাকা: ${amountInBdt.toFixed(2)} BDT\nপেমেন্ট অ্যাড্রেস: ${paymentAddress}`;
+            bot.telegram.sendMessage(ADMIN_ID, message);
+            
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json(result);
+        }
+    } catch (error) {
+        console.error("উইথড্র API ত্রুটি:", error);
+        return res.status(500).json({ success: false, message: "❌ একটি অভ্যন্তরীণ ত্রুটি হয়েছে। পরে আবার চেষ্টা করুন।" });
+    }
 });
+
+// সমস্ত API রুট যুক্ত করা
+app.use('/api', apiRouter);
+
+// --- ৩. সার্ভার লিসেনিং এবং ওয়েবহুক সেটআপ ---
+
+// রুট গেট রিকোয়েস্টের জন্য একটি সাধারণ সাড়া (Render চেক করার জন্য)
+app.get('/', (req, res) => {
+    res.send('EarnQuick_Official_bot সার্ভার চালু আছে।');
+});
+
+// টেলিগ্রাম ওয়েবহুক সেট করা
+// bot.telegram.setWebhook() শুধুমাত্র একবার সেট করা উচিত, সার্ভার স্টার্ট হওয়ার পর
+bot.telegram.setWebhook(WEBHOOK_URL)
+    .then(() => console.log(`✅ টেলিগ্রাম ওয়েবহুক সেট হয়েছে: ${WEBHOOK_URL}`))
+    .catch((err) => console.error("❌ ওয়েবহুক সেটআপ ত্রুটি:", err));
+
+app.use(bot.webhookCallback(WEBHOOK_PATH));
+
+
+app.listen(PORT, async () => {
+    console.log(`🚀 সার্ভার চালু হয়েছে পোর্ট ${PORT} এ`);
+    // নিশ্চিত ইউজারনেম প্রিন্ট করার জন্য
+    try {
+        const me = await bot.telegram.getMe();
+        bot.options.username = me.username; // bot.options.username সেট করা হলো
+        console.log(`বট ইউজারনেম: @${me.username}`); 
+    } catch (e) {
+        console.warn("বটের ইউজারনেম পেতে ব্যর্থ।");
+    }
+});
+
+// --- *গুরুত্বপূর্ণ লজিক ফাংশন* ---
+
+// পয়েন্ট কনভার্সন ফাংশন
+function pointsToBdt(points) {
+    return (points / 10000) * 40;
+}
+
+// ইউজার রেজিস্ট্রেশন এবং রেফারেল বোনাস লজিক
+async function registerUser(pool, telegramId, username, referrerCode) { // pool ইনপুট হিসেবে নেওয়া হলো
+    const newReferralCode = 'r_' + telegramId; 
+    let referrerId = null;
+    let bonus = false;
+    let isNewUser = false;
+
+    // ইউজার কি ইতিমধ্যেই আছে? চেক করুন
+    const existingUser = await pool.query('SELECT telegram_id FROM users WHERE telegram_id = $1', [telegramId]);
+    if (existingUser.rows.length > 0) {
+        return { isNew: false };
+    }
+    
+    isNewUser = true;
+
+    // রেফারার চেক এবং বোনাস প্রদান
+    if (referrerCode) {
+        const referrer = await pool.query('SELECT telegram_id FROM users WHERE referral_code = $1', [referrerCode]);
+        if (referrer.rows.length) {
+            referrerId = referrer.rows[0].telegram_id;
+            // রেফারারকে পয়েন্ট দেওয়া
+            await pool.query('UPDATE users SET total_points = total_points + 250 WHERE telegram_id = $1', [referrerId]);
+            bonus = true;
+        }
+    }
+
+    try {
+        await pool.query(
+            'INSERT INTO users (telegram_id, username, total_points, referred_by_id, referral_code) VALUES ($1, $2, $3, $4, $5)',
+            [telegramId, username, 0, referrerId, newReferralCode]
+        );
+        return { isNew: isNewUser, referrerId: referrerId, bonus: bonus };
+    } catch (e) {
+        // যদি ডাটাবেসে অন্য কোনো ত্রুটি হয়
+        console.error("ডাটাবেস INSERT ত্রুটি:", e);
+        return { isNew: false };
+    }
+}
+
+// উইথড্র রিকোয়েস্ট হ্যান্ডেলিং ফাংশন (আগের লজিক অপরিবর্তিত)
+async function handleWithdrawRequest(pool, telegramId, requestedPoints, paymentAddress) {
+    const WITHDRAW_START_HOUR = 6;
+    const WITHDRAW_END_HOUR = 20; 
+    const MIN_WITHDRAW_POINTS = 10000;
+    const MAX_WITHDRAW_POINTS = 100000;
+    const DAILY_LIMIT = 3;
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // টাইম চেক (সার্ভার টাইম অনুযায়ী)
+    if (currentHour < WITHDRAW_START_HOUR || currentHour >= WITHDRAW_END_HOUR) {
+        return { success: false, message: "❌ উইথড্র চালু সকাল ৬টা থেকে রাত ৮টা পর্যন্ত। বর্তমানে বন্ধ আছে।" };
+    }
+    
+    // পয়েন্ট লিমিট চেক
+    if (requestedPoints < MIN_WITHDRAW_POINTS || requestedPoints > MAX_WITHDRAW_POINTS) {
+        return { success: false, message: `পয়েন্ট লিমিট ${MIN_WITHDRAW_POINTS} থেকে ${MAX_WITHDRAW_POINTS} এর মধ্যে হতে হবে।` };
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // ইউজার ডেটা চেক
+        const userResult = await client.query(
+            'SELECT total_points, daily_withdraw_count FROM users WHERE telegram_id = $1 FOR UPDATE',
+            [telegramId]
+        );
+        const user = userResult.rows[0];
+
+        if (!user || user.total_points < requestedPoints) {
+            return { success: false, message: "আপনার অ্যাকাউন্টে যথেষ্ট পয়েন্ট নেই।" };
+        }
+        if (user.daily_withdraw_count >= DAILY_LIMIT) {
+            return { success: false, message: `দৈনিক উইথড্র লিমিট (${DAILY_LIMIT} বার) অতিক্রম করেছেন।` };
+        }
+
+        // রিকোয়েস্ট সেভ
+        const amountInBdt = pointsToBdt(requestedPoints);
+        await client.query(
+            'INSERT INTO withdraw_requests (user_id, points_requested, amount_in_bdt, payment_address) VALUES ($1, $2, $3, $4)',
+            [telegramId, requestedPoints, amountInBdt, paymentAddress]
+        );
+
+        // পয়েন্ট আপডেট
+        await client.query(
+            'UPDATE users SET total_points = total_points - $1, daily_withdraw_count = daily_withdraw_count + 1 WHERE telegram_id = $2',
+            [requestedPoints, telegramId]
+        );
+
+        await client.query('COMMIT');
+        return { success: true, message: `✅ ${requestedPoints} পয়েন্টের (${amountInBdt.toFixed(2)} BDT) উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে।` };
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        return { success: false, message: "❌ একটি অভ্যন্তরীণ ত্রুটি হয়েছে। পরে আবার চেষ্টা করুন।" };
+    } finally {
+        client.release();
+    }
+}
