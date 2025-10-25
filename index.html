@@ -1,134 +1,142 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnQuick Official</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        /* [আপনার স্টাইল কোড এখানে থাকবে - আগের কোড থেকে অপরিবর্তিত] */
-        body { 
-            font-family: 'Arial', sans-serif; 
-            background-color: #f8f9fa; 
-            padding: 0; 
-            margin: 0; 
-            min-height: 100vh;
-        }
-        .app-container { 
-            width: 100%; 
-            min-height: 100vh;
-            margin: 0 auto; 
-            background-color: #ffffff; 
-            padding: 20px; 
-            box-shadow: none; 
-            box-sizing: border-box; 
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 5px; 
-            padding-top: 10px;
-        }
-        .tg-style { color: #007bff; font-weight: bold; } 
+<div style="max-width: 600px; margin: 0 auto;"> 
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+    /* [স্ক্রলবার লুকানো] */
+    body { 
+        font-family: 'Arial', sans-serif; 
+        background-color: #f8f9fa; 
+        padding: 0; 
+        margin: 0; 
+        min-height: 100vh;
+        -ms-overflow-style: none;  
+        scrollbar-width: none;  
+    }
+    body::-webkit-scrollbar {
+        display: none;
+    }
 
-        /* চলমান হেডলাইন (Marquee) স্টাইল */
-        .marquee-container {
-            background-color: #ffeb3b; 
-            border: 1px solid #ffb300;
-            border-radius: 6px;
-            padding: 5px 10px;
-            color: #333;
-            font-weight: bold;
-            overflow: hidden; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 15px !important;
-        }
-        .marquee-text {
-            font-size: 0.9rem;
-            white-space: nowrap; 
-        }
+    .app-container { 
+        width: 100%; 
+        min-height: 100vh;
+        margin: 0 auto; 
+        background-color: #ffffff; 
+        padding: 20px; 
+        box-shadow: none; 
+        box-sizing: border-box; 
+    }
+    .header { 
+        text-align: center; 
+        margin-bottom: 5px; 
+        padding-top: 10px;
+    }
+    .tg-style { color: #007bff; font-weight: bold; } 
 
-        /* অ্যাড ব্যানার স্টাইল */
-        .ad-banner {
-            width: 100%;
-            min-height: 50px; 
-            background-color: #e0e0e0;
-            border: 1px dashed #999;
-            text-align: center;
-            line-height: 50px; 
-            margin-bottom: 20px;
-            overflow: hidden; 
-        }
-        .ad-banner-bottom {
-            margin-top: 20px;
-        }
+    /* চলমান হেডলাইন (Marquee) স্টাইল */
+    .marquee-container {
+        background-color: #ffeb3b; 
+        border: 1px solid #ffb300;
+        border-radius: 6px;
+        padding: 5px 10px;
+        color: #333;
+        font-weight: bold;
+        overflow: hidden; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 15px !important;
+    }
+    .marquee-text {
+        font-size: 0.9rem;
+        white-space: nowrap; 
+    }
 
+    /* অ্যাড ব্যানার স্টাইল */
+    .ad-banner {
+        width: 100%;
+        min-height: 50px; 
+        background-color: #e0e0e0;
+        border: 1px dashed #999;
+        text-align: center;
+        line-height: 50px; 
+        margin-bottom: 20px;
+        overflow: hidden; 
+    }
+    .ad-banner-bottom {
+        margin-top: 20px;
+    }
 
-        /* আকর্ষণীয় ব্যালেন্স কার্ড */
-        .balance-card { 
-            background: linear-gradient(135deg, #007bff, #0056b3); 
-            color: white; 
-            border-radius: 12px; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 6px 12px rgba(0, 50, 150, 0.2);
-        }
-        .balance-card h4, .balance-card p {
-            margin-bottom: 5px;
-        }
-        .balance-card .tg-style {
-            color: #ffeb3b; 
-            font-weight: bold;
-        }
-        .btn-action { 
-            margin: 8px 0; 
-            width: 100%; 
-            border-radius: 8px; 
-            font-size: 1.1rem;
-            padding: 12px;
-        }
-        .text-secondary.small {
-            color: #ddd !important; 
-        }
-        .alert-custom { 
-            margin-top: 15px; 
-            border-radius: 8px;
-        }
-        .hidden { display: none; }
-        
-        /* Loading Spinner */
-        .loading-spinner-area {
-            text-align: center;
-            padding: 50px 0;
-            color: #007bff;
-        }
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            border-width: 0.3em;
-        }
-        
-        /* Admin Button Style */
-        #admin-button {
-            background-color: #dc3545; 
-            color: white;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            padding: 12px;
-            margin-top: 15px;
-            font-weight: bold;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-        }
-    </style>
+    /* আকর্ষণীয় ব্যালেন্স কার্ড */
+    .balance-card { 
+        background: linear-gradient(135deg, #007bff, #0056b3); 
+        color: white; 
+        border-radius: 12px; 
+        padding: 20px; 
+        margin-bottom: 20px; 
+        box-shadow: 0 6px 12px rgba(0, 50, 150, 0.2);
+    }
+    .balance-card h4, .balance-card p {
+        margin-bottom: 5px;
+    }
+    .balance-card .tg-style {
+        color: #ffeb3b; 
+        font-weight: bold;
+    }
+    .btn-action { 
+        margin: 8px 0; 
+        width: 100%; 
+        border-radius: 8px; 
+        font-size: 1.1rem;
+        padding: 12px;
+    }
+    .text-secondary.small {
+        color: #ddd !important; 
+    }
+    .alert-custom { 
+        margin-top: 15px; 
+        border-radius: 8px;
+    }
+    .hidden { display: none; }
     
-    <script src='//libtl.com/sdk.js' async></script>
+    /* Loading Spinner */
+    .loading-spinner-area {
+        text-align: center;
+        padding: 50px 0;
+        color: #007bff;
+    }
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3em;
+    }
+    
+    /* Admin Button Style */
+    #admin-button {
+        background-color: #dc3545; 
+        color: white;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        padding: 12px;
+        margin-top: 15px;
+        font-weight: bold;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    /* Admin Table Styling */
+    .admin-table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .admin-table-container table {
+        margin-bottom: 0;
+    }
+</style>
 
-</head>
-<body>
+<script src='//libtl.com/sdk.js' async></script>
 
 <div class="app-container">
     
@@ -140,7 +148,7 @@
     <div class="marquee-container">
         <marquee behavior="scroll" direction="left" scrollamount="4">
             <span class="marquee-text">
-                ⚠️ উইথড্রয়াল চলছে সকাল ৬:০০ টা থেকে রাত ৮:০০ টা পর্যন্ত। 🔥 যেকোনো প্রয়োজনে: 📞 01913621510 | 📧 najmulh219653@gmail.com | 👤 অ্যাডমিন: @najmulhoqueforhad
+                👉 রেফার করুন এবং প্রতি রেফারে 250 পয়েন্ট বোনাস পান! ⚠️ উইথড্রয়াল চলছে সকাল ৬:০০ টা থেকে রাত ৮:০০ টা পর্যন্ত। 🔥 যেকোনো প্রয়োজনে: 📞 01913621510 | 📧 najmulh219653@gmail.com | 👤 অ্যাডমিন: @najmulhoqueforhad
             </span>
         </marquee>
     </div>
@@ -164,7 +172,7 @@
 
     <div id="main-content" class="hidden">
         <button id="admin-button" class="btn btn-danger btn-action hidden" onclick="showAdminPanel()">
-            ADMIN: ইউজার ইনফো ও উইথড্রয়াল দেখুন
+            ADMIN: রিয়েল-টাইম ডেটা দেখুন
         </button>
 
         <button class="btn btn-success btn-action" onclick="showAdTasks()">
@@ -197,9 +205,23 @@
     </div>
 
     <div id="admin-panel" class="hidden my-4 p-3 border rounded border-danger">
-        <h5 class="text-danger">অ্যাডমিন প্যানেল</h5>
-        <p>এখানে ডেটা লোড হবে (ইউজার ইনফো ও উইথড্রয়াল)।</p>
-        <button class="btn btn-outline-danger btn-block" onclick="hideAdminPanel()">প্যানেল বন্ধ করুন</button>
+        <h5 class="text-danger">🛑 অ্যাডমিন প্যানেল: রিয়েল-টাইম ডেটা</h5>
+        <div id="admin-data-loader" class="text-center p-3">
+             <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+             <p class="small mt-2">ডেটা লোড হচ্ছে...</p>
+        </div>
+        
+        <h6 class="mt-3 text-primary">পেন্ডিং উইথড্রয়াল রিকোয়েস্ট:</h6>
+        <div id="pending-withdrawals-data" class="admin-table-container">
+            <p class="text-muted small p-2">কোনো রিকোয়েস্ট নেই।</p>
+        </div>
+
+        <h6 class="mt-4 text-primary">শীর্ষ ১০০ ইউজার (পয়েন্ট অনুযায়ী):</h6>
+        <div id="top-users-data" class="admin-table-container">
+            <p class="text-muted small p-2">কোনো ইউজার নেই।</p>
+        </div>
+
+        <button class="btn btn-outline-danger btn-block mt-4" onclick="hideAdminPanel()">প্যানেল বন্ধ করুন</button>
     </div>
 
 </div>
@@ -244,26 +266,20 @@
 </div>
 
 <script>
-    // ⚠️ আপনার Render সার্ভার URL এখানে বসান ⚠️
     const SERVER_URL = 'https://smartearnbdbot.onrender.com';
-    const REFERRAL_POINTS = 250;
     const MIN_WITHDRAWAL_POINTS = 10000;
     
-    // 🛑 গুরুত্বপূর্ণ: আপনার টেলিগ্রাম ইউজার আইডি এখানে বসান
+    // 🛑 নিশ্চিত করুন যে এই আইডিটি server.js-এর সাথে মিলে যায় 
     const ADMIN_TELEGRAM_ID = '8145444675'; 
-    
-    // টেস্টিং এর জন্য ব্লগার ইউজার আইডি
     const BLOGGER_TEST_ID = 'blogger_test_user_101'; 
 
-    // উইথড্রয়াল সময়সীমা (২৪ ঘন্টা ফরম্যাট)
-    const WITHDRAWAL_START_HOUR = 6;   // সকাল ৬টা
-    const WITHDRAWAL_END_HOUR = 20;    // রাত ৮টা
+    const WITHDRAWAL_START_HOUR = 6;   
+    const WITHDRAWAL_END_HOUR = 20;    
 
-    // মনিট্যাগ অ্যাড জোন আইডি
     const MONETAG_ZONES = {
-        1: '10085320', // বিজ্ঞাপন দেখুন ১
-        2: '10070523', // বিজ্ঞাপন দেখুন ২
-        3: '9852420'   // বিজ্ঞাপন দেখুন ৩
+        1: '10085320', 
+        2: '10070523', 
+        3: '9852420'   
     };
 
     // --- Global Variables ---
@@ -271,9 +287,6 @@
     let currentBalance = 0;
     let currentReferralCount = 0;
     let isAdmin = false;
-    let currentUsername = null;
-    let currentFirstName = null;
-
 
     // --- Utility Functions ---
     function showMessage(type, message, duration = 3000) {
@@ -292,16 +305,12 @@
             messageArea.classList.add('hidden');
         }, duration);
     }
-    
-    function isWithdrawalTime() {
-        const now = new Date();
-        const hour = now.getHours();
-        return hour >= WITHDRAWAL_START_HOUR && hour < WITHDRAWAL_END_HOUR;
-    }
 
-    function updateBalanceDisplay(points, count) {
+    function updateBalanceDisplay(points, count, userIsAdmin) {
         currentBalance = points;
         currentReferralCount = count;
+        isAdmin = userIsAdmin; // সার্ভার থেকে পাওয়া অ্যাডমিন স্ট্যাটাস আপডেট করা হলো
+        
         document.getElementById('current-balance').innerText = points.toLocaleString('bn-BD');
         document.getElementById('referral-count').innerText = count;
         
@@ -327,7 +336,6 @@
 
     // --- Core Logic ---
 
-    // 1. Register or Check User 
     async function registerOrCheckUser() {
         const params = getQueryParams();
         let userId = params.uid || BLOGGER_TEST_ID; 
@@ -335,7 +343,6 @@
         let username = null;
         let firstName = null;
 
-        // টেলিগ্রাম মিনি অ্যাপ থেকে ডেটা লোড করা
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
             const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
             userId = tgUser.id.toString();
@@ -343,50 +350,145 @@
             firstName = tgUser.first_name || null;
         } 
         
-        // গ্লোবাল ভেরিয়েবল সেট করা
         currentUserId = userId;
-        currentUsername = username;
-        currentFirstName = firstName;
-        
-        // অ্যাডমিন আইডি চেক: টেস্টিং আইডিকে অ্যাডমিন অ্যাক্সেস দেওয়া হলো
-        if (currentUserId === ADMIN_TELEGRAM_ID || currentUserId === BLOGGER_TEST_ID) {
-            isAdmin = true;
-        }
 
-        // API কল: ইউজার ডেটা সার্ভারে পাঠানো
         try {
             const response = await fetch(`${SERVER_URL}/api/register_or_check`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId, refererId, username: currentUsername, firstName: currentFirstName })
+                body: JSON.stringify({ userId: currentUserId, refererId, username, firstName })
             });
 
+            const data = await response.json();
+
+            if (data.success) {
+                // is_admin স্ট্যাটাস সার্ভার থেকে গ্রহণ করা হলো
+                updateBalanceDisplay(data.earned_points, data.referral_count, data.is_admin);
+                showMessage('success', '✅ সার্ভার সংযোগ সফল। ইউজার ডেটা লোড হয়েছে।');
+            } else {
+                updateBalanceDisplay(0, 0, false);
+                showMessage('warning', 'ইউজার লোড করতে ব্যর্থ: ' + (data.message || 'অজানা ত্রুটি।'));
+            }
+        } catch (error) {
+            console.error('Registration/Check error:', error);
+            updateBalanceDisplay(0, 0, false); 
+            showMessage('danger', `❌ সার্ভার সংযোগ ব্যর্থ। ${error.message || 'আপনার GitHub/Render চেক করুন।'}`);
+        }
+    }
+    
+    // 🛑 নতুন: অ্যাডমিন প্যানেল লোড করার ফাংশন
+    async function loadAdminData() {
+        const loader = document.getElementById('admin-data-loader');
+        const usersContainer = document.getElementById('top-users-data');
+        const withdrawalsContainer = document.getElementById('pending-withdrawals-data');
+        
+        loader.classList.remove('hidden');
+        usersContainer.innerHTML = '';
+        withdrawalsContainer.innerHTML = '';
+
+        try {
+            const response = await fetch(`${SERVER_URL}/api/admin/data/${currentUserId}`);
+
+            if (response.status === 403) {
+                showMessage('danger', '🛑 অ্যাক্সেস নেই। আপনি অ্যাডমিন নন।');
+                hideAdminPanel();
+                return;
+            }
+
             if (!response.ok) {
-                // সার্ভার সংযোগ সফল হলেও API এর ভেতরে ত্রুটি
-                const errorData = await response.json();
-                throw new Error(`API Error: ${errorData.message || 'Unknown Server Error'}`);
+                throw new Error('Failed to fetch admin data from server.');
             }
 
             const data = await response.json();
 
             if (data.success) {
-                updateBalanceDisplay(data.earned_points, data.referral_count);
-                showMessage('success', '✅ সার্ভার সংযোগ সফল। ইউজার ডেটা লোড হয়েছে।');
+                renderUsersTable(data.users, usersContainer);
+                renderWithdrawalsTable(data.pendingWithdrawals, withdrawalsContainer);
+                showMessage('success', '✅ অ্যাডমিন ডেটা রিয়েল-টাইমে লোড হয়েছে।');
             } else {
-                showMessage('warning', 'ইউজার লোড করতে ব্যর্থ: ' + (data.message || 'অজানা ত্রুটি। সার্ভার লগ চেক করুন।'));
-                document.getElementById('loading-spinner').classList.add('hidden');
+                showMessage('warning', 'ডেটা লোড ব্যর্থ: ' + (data.message || 'সার্ভার ত্রুটি।'));
             }
+
         } catch (error) {
-            console.error('Registration/Check error:', error);
-            // 🛑 সার্ভার সংযোগ ব্যর্থ বার্তা
-            updateBalanceDisplay(0, 0); // ডেমো ডেটা দেখান
-            showMessage('danger', `❌ সার্ভার সংযোগ ব্যর্থ। ${error.message || 'আপনার GitHub/Render চেক করুন।'}`);
-            document.getElementById('loading-spinner').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
+            console.error('Admin data load error:', error);
+            showMessage('danger', `❌ ডেটা লোডিং ত্রুটি: ${error.message}`);
+        } finally {
+            loader.classList.add('hidden');
         }
     }
+    
+    function renderUsersTable(users, container) {
+        if (users.length === 0) {
+            container.innerHTML = '<p class="text-muted small p-2">কোনো ইউজার পাওয়া যায়নি।</p>';
+            return;
+        }
 
-    // 2. Add Points (API Call)
+        let tableHtml = `
+            <table class="table table-sm table-striped small">
+                <thead>
+                    <tr class="bg-primary text-white">
+                        <th>#</th>
+                        <th>ID / Username</th>
+                        <th>Points</th>
+                        <th>Ref. Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        users.forEach((user, index) => {
+            const usernameDisplay = user.telegram_username ? `@${user.telegram_username}` : (user.first_name || 'N/A');
+            tableHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${usernameDisplay} (ID: ${user.telegram_user_id})</td>
+                    <td>${Math.floor(user.earned_points).toLocaleString('bn-BD')}</td>
+                    <td>${user.referral_count}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+    }
+
+    function renderWithdrawalsTable(withdrawals, container) {
+        if (withdrawals.length === 0) {
+            container.innerHTML = '<p class="text-muted small p-2">কোনো পেন্ডিং উইথড্রয়াল রিকোয়েস্ট নেই।</p>';
+            return;
+        }
+
+        let tableHtml = `
+            <table class="table table-sm table-striped small">
+                <thead>
+                    <tr class="bg-warning text-dark">
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Points</th>
+                        <th>Method/Num</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        withdrawals.forEach((req) => {
+            const time = new Date(req.requested_at).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit', hour12: true });
+            tableHtml += `
+                <tr>
+                    <td>${req.request_id}</td>
+                    <td>${req.telegram_user_id}</td>
+                    <td>${Math.floor(req.points_requested).toLocaleString('bn-BD')}</td>
+                    <td>${req.payment_method} / ${req.payment_number}</td>
+                    <td>${time}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+    }
+
     async function addPoints(points) {
         if (!currentUserId || currentUserId === BLOGGER_TEST_ID) {
             showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ। আসল Telegram ID ব্যবহার করুন।');
@@ -400,15 +502,10 @@
                 body: JSON.stringify({ userId: currentUserId, points })
             });
             
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`API Error: ${errorData.message || 'Unknown Server Error'}`);
-            }
-            
             const data = await response.json();
 
             if (data.success) {
-                updateBalanceDisplay(data.new_points, currentReferralCount);
+                updateBalanceDisplay(data.new_points, currentReferralCount, isAdmin);
                 showMessage('success', `✅ অ্যাড দেখা শেষ। সার্ভার সংযোগ সফল। ${points} পয়েন্ট যোগ হয়েছে!`);
             } else {
                 showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ: ' + (data.message || 'অজানা কারণ'));
@@ -419,22 +516,18 @@
         }
     }
     
-    // 4. Monetag Ad Loading Function (Reward Granting Logic)
     function loadAdTask(adNumber, points) {
         const zoneId = MONETAG_ZONES[adNumber];
         if (!zoneId) return;
         
         showMessage('info', `Monetag/Libtl অ্যাড লোড হচ্ছে (Zone: ${zoneId})। অ্যাড দেখার জন্য অপেক্ষা করুন...`);
 
-        // Monettag-এর show_XXX ফাংশনটিকে ডাইনামিকভাবে কল করা হচ্ছে
         const showFunctionName = `show_${zoneId}`;
 
         if (window[showFunctionName]) {
-            // ymid প্যারামিটার হিসেবে ইউজার আইডি পাঠানো হচ্ছে (ট্র্যাকিং এর জন্য)
             window[showFunctionName]({ ymid: currentUserId })
                 .then(() => {
                     console.log(`Ad ${adNumber} finished successfully.`);
-                    // 🛑 অ্যাড দেখা শেষ হলে পয়েন্ট যোগ করার API কল
                     addPoints(points); 
                 })
                 .catch((error) => {
@@ -446,7 +539,6 @@
         }
     }
 
-    // 3. Withdraw Request Submission (No Change)
     document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const pointsToWithdraw = parseInt(document.getElementById('points-to-withdraw').value);
@@ -456,6 +548,13 @@
         
         withdrawMessageArea.classList.add('hidden');
         
+        // ... (উইথড্রয়াল লজিক অপরিবর্তিত) ...
+        const isWithdrawalTime = () => {
+             const now = new Date();
+             const hour = now.getHours();
+             return hour >= WITHDRAWAL_START_HOUR && hour < WITHDRAWAL_END_HOUR;
+        };
+
         if (!isWithdrawalTime()) {
             withdrawMessageArea.className = 'alert alert-danger mt-3';
             withdrawMessageArea.innerText = `উত্তোলন শুধুমাত্র সকাল ${WITHDRAWAL_START_HOUR}:00 টা থেকে রাত ${WITHDRAWAL_END_HOUR}:00 টা পর্যন্ত চলে।`;
@@ -480,13 +579,13 @@
             const data = await response.json();
 
             if (data.success) {
-                updateBalanceDisplay(data.new_points, currentReferralCount);
+                updateBalanceDisplay(data.new_points, currentReferralCount, isAdmin);
                 withdrawMessageArea.className = 'alert alert-success mt-3';
                 withdrawMessageArea.innerText = 'উত্তোলনের অনুরোধ সফলভাবে জমা হয়েছে!';
                 withdrawMessageArea.classList.remove('hidden');
                 
                 setTimeout(() => {
-                    $('#withdrawModal').modal('hide');
+                    $('#withdrawModal').modal('hide'); 
                     document.getElementById('withdraw-form').reset();
                 }, 2000);
 
@@ -503,8 +602,7 @@
         }
     });
 
-
-    // --- UI/Utility Functions (No Change) ---
+    // --- UI/Utility Functions ---
     function showAdTasks() {
         document.getElementById('main-content').classList.add('hidden');
         document.getElementById('top-ad-banner').classList.add('hidden');
@@ -520,13 +618,19 @@
     }
 
     function showAdminPanel() {
-        if (!isAdmin) return;
+        if (!isAdmin) {
+             showMessage('danger', '🛑 অ্যাক্সেস নেই। আপনি অ্যাডমিন নন।');
+             return;
+        }
+        
         document.getElementById('main-content').classList.add('hidden');
         document.getElementById('ad-tasks').classList.add('hidden');
         document.getElementById('top-ad-banner').classList.add('hidden');
         document.getElementById('bottom-ad-banner').classList.add('hidden');
         document.getElementById('admin-panel').classList.remove('hidden');
-        showMessage('danger', 'অ্যাডমিন প্যানেল লোড হয়েছে।');
+        
+        // রিয়েল-টাইম ডেটা লোড করুন
+        loadAdminData();
     }
 
     function hideAdminPanel() {
@@ -542,7 +646,6 @@
             return;
         }
         
-        // আপনার বট এর ইউজারনেম নিশ্চিত করুন
         const referralLink = `https://t.me/EarnQuick_Official_বত/start?ref=${currentUserId}`;
         
         navigator.clipboard.writeText(referralLink).then(() => {
@@ -555,31 +658,23 @@
 
     // --- Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Load Bootstrap JS dependencies for Modal functionality
-        // Note: These need to load first for Bootstrap's modal/dropdown to work
-        
-        // JQuery (Needed for Bootstrap 4)
+        // Load JS dependencies
         const script1 = document.createElement('script');
         script1.src = "https://code.jquery.com/jquery-3.5.1.slim.min.js";
         document.head.appendChild(script1);
 
-        // Popper.js (Needed for Bootstrap 4)
         const script2 = document.createElement('script');
         script2.src = "https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js";
         document.head.appendChild(script2);
 
-        // Bootstrap JS
         const script3 = document.createElement('script');
         script3.src = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js";
         document.head.appendChild(script3);
 
-        // Wait for all scripts to load, then check user
-        // We set a small timeout to ensure the external scripts (JQuery, Popper, BS) load
         setTimeout(() => {
             registerOrCheckUser();
         }, 300); 
     });
 
 </script>
-</body>
-</html>
+</div>
