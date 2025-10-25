@@ -9,12 +9,11 @@ const REFERRAL_BONUS = 250;
 const WITHDRAW_START_HOUR = 6;
 const WITHDRAW_END_HOUR = 20;
 
-// পয়েন্ট থেকে টাকায় রূপান্তর
 function pointsToBdt(points) {
     return (points / 10000) * 40; 
 }
 
-// --- ১. ইউজার রেজিস্ট্রেশন এবং রেফারেল বোনাস লজিক ---
+// ইউজার রেজিস্ট্রেশন
 async function registerUser(telegramId, username, referrerCode) {
     const newReferralCode = `r_${telegramId}`; 
     let referrerId = null;
@@ -24,7 +23,6 @@ async function registerUser(telegramId, username, referrerCode) {
         const referrer = await pool.query('SELECT telegram_id FROM users WHERE referral_code = $1', [referrerCode]);
         if (referrer.rows.length) {
             referrerId = referrer.rows[0].telegram_id;
-            
             await pool.query(
                 'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2', 
                 [REFERRAL_BONUS, referrerId]
@@ -44,7 +42,7 @@ async function registerUser(telegramId, username, referrerCode) {
     }
 }
 
-// --- ২. উইথড্র রিকোয়েস্ট হ্যান্ডেলিং লজিক ---
+// উইথড্র লজিক
 async function handleWithdrawRequest(telegramId, requestedPoints, paymentAddress) {
     const now = new Date();
     const currentHour = now.getHours();
@@ -60,7 +58,6 @@ async function handleWithdrawRequest(telegramId, requestedPoints, paymentAddress
     const client = await pool.connect();
     try {
         await client.query('BEGIN'); 
-
         const userResult = await client.query(
             'SELECT total_points, daily_withdraw_count FROM users WHERE telegram_id = $1 FOR UPDATE',
             [telegramId]
@@ -68,9 +65,11 @@ async function handleWithdrawRequest(telegramId, requestedPoints, paymentAddress
         const user = userResult.rows[0];
 
         if (!user || user.total_points < requestedPoints) {
+            await client.query('ROLLBACK'); 
             return { success: false, message: "আপনার অ্যাকাউন্টে যথেষ্ট পয়েন্ট নেই।" };
         }
         if (user.daily_withdraw_count >= DAILY_LIMIT) {
+            await client.query('ROLLBACK');
             return { success: false, message: `দৈনিক উইথড্র লিমিট (${DAILY_LIMIT} বার) অতিক্রম করেছেন।` };
         }
 
@@ -96,7 +95,6 @@ async function handleWithdrawRequest(telegramId, requestedPoints, paymentAddress
         client.release();
     }
 }
-
 
 module.exports = {
     pointsToBdt,
