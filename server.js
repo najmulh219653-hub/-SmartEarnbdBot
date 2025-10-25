@@ -3,7 +3,7 @@ const express = require('express');
 const { Telegraf } = require('telegraf');
 const apiRouter = require('./api');
 const { registerUser } = require('./logic');
-const { pool } = require('./db'); 
+const { pool } = require('./db'); // db.js থেকে pool আমদানি করা হলো 
 require('dotenv').config();
 
 // --- কনফিগারেশন ---
@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_ID = process.env.ADMIN_ID;
 const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার নিশ্চিত করা বটের ইউজারনেম
+const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
 // --- অ্যাপ ইনিশিয়ালাইজেশন ---
 const app = express();
@@ -30,7 +30,7 @@ bot.start(async (ctx) => {
         referrerCode = payload; 
     }
     
-    let message = `স্বাগতম ${ctx.from.first_name}! EarnQuick_Official_bot এ অ্যাড দেখে আয় করা শুরু করুন।`;
+    let message = `স্বাগতম ${ctx.from.first_name}! অ্যাড দেখে আয় করা শুরু করুন।`;
     
     try {
         const user = await registerUser(telegramId, ctx.from.username, referrerCode);
@@ -59,6 +59,9 @@ bot.start(async (ctx) => {
 
 bot.on('callback_query', async (ctx) => {
     if (ctx.callbackQuery.data === 'show_referral') {
+        // pool অবজেক্টটি ব্যবহার করার আগে নিশ্চিত করুন যে এটি লোড হয়েছে
+        if (!pool) return ctx.answerCbQuery("সার্ভার এখনও প্রস্তুত নয়।");
+
         const result = await pool.query('SELECT referral_code FROM users WHERE telegram_id = $1', [ctx.from.id]);
         const refCode = result.rows.length ? result.rows[0].referral_code : `r_${ctx.from.id}`;
         
@@ -76,7 +79,6 @@ bot.on('callback_query', async (ctx) => {
 
 
 // --- সার্ভার লিসেনিং ও ওয়েবহুক সেটআপ ---
-// আপনার Render URL ব্যবহার করে Webhook তৈরি
 const RENDER_HOSTNAME = process.env.RENDER_EXTERNAL_HOSTNAME || "smartearnbdbot.onrender.com"; 
 const WEBHOOK_URL = `https://${RENDER_HOSTNAME}/bot${BOT_TOKEN}`;
 
