@@ -6,7 +6,7 @@
     <title>EarnQuick Official Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* CSS কোড */
+        /* CSS কোড (পেশাদারী UI এর জন্য) */
         body { font-family: sans-serif; text-align: center; margin: 0; padding: 0; background: var(--tg-theme-bg-color, #f4f4f4); color: var(--tg-theme-text-color, #000000); padding-bottom: 70px; }
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
         .ad-slot { background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); height: 50px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; width: 100%; z-index: 10; }
@@ -18,7 +18,7 @@
         #adButton { background-color: var(--tg-theme-button-color, #007bff); color: var(--tg-theme-button-text-color, white); border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 90%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         #withdrawForm { background-color: var(--tg-theme-secondary-bg-color, #fff); padding: 20px; border-radius: 10px; margin-top: 20px; text-align: left; }
         #withdrawForm label { display: block; margin-top: 10px; font-weight: 500; }
-        #withdrawForm input, #withdrawForm button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--tg-theme-hint-color, #ccc); border-radius: 5px; box-sizing: border-box; }
+        #withdrawForm input, #withdrawForm button, #withdrawForm select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--tg-theme-hint-color, #ccc); border-radius: 5px; box-sizing: border-box; }
         #withdrawForm button { background-color: var(--tg-theme-link-color, #00bfff); color: white; cursor: pointer; margin-top: 15px; }
         #message { margin-top: 10px; font-weight: bold; text-align: center; }
     </style>
@@ -32,15 +32,29 @@
     </div>
     <div class="container">
         <h1>মোট পয়েন্ট: <span id="userPoints">লোড হচ্ছে...</span></h1>
+        <h3>টাকার পরিমাণ: <span id="bdtAmount">০.০০ BDT</span></h3>
+        <p>আপনার রেফারেল সংখ্যা: <span id="referralCount">লোড হচ্ছে...</span></p> 
+
         <button id="adButton">
             👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন
         </button>
+
         <h2>পয়েন্ট উইথড্র করুন</h2>
         <form id="withdrawForm">
             <label for="points">উইথড্র পয়েন্ট (10,000 - 100,000):</label>
             <input type="number" id="points" name="points" required min="10000" max="100000" placeholder="ন্যূনতম 10000 পয়েন্ট">
-            <label for="paymentAddress">পেমেন্ট নম্বর (Bkash/Nagad):</label>
+            
+            <label for="paymentMethod">পেমেন্ট মেথড নির্বাচন করুন:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="">নির্বাচন করুন</option>
+                <option value="Bkash">Bkash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
+            </select>
+
+            <label for="paymentAddress">পেমেন্ট নম্বর:</label>
             <input type="text" id="paymentAddress" name="paymentAddress" required placeholder="01XXXXXXXXX">
+
             <button type="submit">উইথড্র রিকোয়েস্ট পাঠান</button>
             <div id="message"></div>
         </form>
@@ -55,6 +69,8 @@
         
         const adButton = document.getElementById('adButton');
         const userPointsSpan = document.getElementById('userPoints');
+        const bdtAmountSpan = document.getElementById('bdtAmount'); // BDT
+        const referralCountSpan = document.getElementById('referralCount'); // Referral Count
         const withdrawForm = document.getElementById('withdrawForm');
         const messageDiv = document.getElementById('message');
         let currentUserId = null;
@@ -71,6 +87,8 @@
                 
                 if (response.status === 404) {
                     userPointsSpan.textContent = "0";
+                    bdtAmountSpan.textContent = "০.০০ BDT";
+                    referralCountSpan.textContent = "০";
                     return; 
                 }
 
@@ -78,65 +96,7 @@
                 
                 if (data.success) {
                     userPointsSpan.textContent = data.points.toLocaleString('en-US');
-                } else {
-                    userPointsSpan.textContent = "ত্রুটি";
-                }
-            } catch (error) {
-                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
-            }
-        }
-
-        adButton.onclick = function() {
-            tg.showAlert("বিজ্ঞাপন লোড হচ্ছে... এটি শেষ হলে আপনার অ্যাকাউন্টে পয়েন্ট যুক্ত হবে।");
-        };
-
-        withdrawForm.onsubmit = async function(e) {
-            e.preventDefault();
-            
-            const points = parseInt(document.getElementById('points').value);
-            const paymentAddress = document.getElementById('paymentAddress').value.trim();
-
-            if (points < 10000 || points > 100000) {
-                return tg.showAlert("উইথড্র পয়েন্ট অবশ্যই 10,000 থেকে 100,000 এর মধ্যে হতে হবে।");
-            }
-
-            messageDiv.textContent = "রিকোয়েস্ট পাঠানো হচ্ছে...";
-            tg.MainButton.showProgress();
-
-            try {
-                const response = await fetch(`${RENDER_API_URL}/withdraw`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegramId: currentUserId,
-                        points: points,
-                        paymentAddress: paymentAddress
-                    })
-                });
-
-                const data = await response.json();
-                tg.MainButton.hideProgress();
-
-                if (response.ok) { 
-                    messageDiv.style.color = 'green';
-                    tg.showAlert(`✅ সফল: ${data.message}`);
-                    loadUserData(); 
-                } else {
-                    messageDiv.style.color = 'red';
-                    tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
-                }
-                messageDiv.textContent = data.message;
-                
-            } catch (error) {
-                tg.MainButton.hideProgress();
-                messageDiv.style.color = 'red';
-                messageDiv.textContent = "নেটওয়ার্ক সংযোগে ত্রুটি।";
-            }
-        };
-
-        loadUserData();
-
-        document.body.style.backgroundColor = tg.themeParams.bg_color;
-    </script>
-</body>
-</html>
+                    
+                    // পেশাদারী ফিচার: BDT এবং রেফারেল কাউন্ট আপডেট
+                    const bdt = (data.points / 10000) * 40;
+                    bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`;
