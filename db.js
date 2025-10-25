@@ -1,16 +1,22 @@
-// db.js (বিকল্প কনফিগারেশন)
+// db.js
 const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-    // এই ভেরিয়েবলগুলোও Render এ আলাদাভাবে সেট করতে হবে:
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT || 5432,
+    connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
 });
-// ... rest of the code remains the same ...
+
+// সংযোগ পরীক্ষা
+pool.query('SELECT NOW()', (err) => {
+    if (err) {
+        // যদি সংযোগ ব্যর্থ হয়, আমরা প্রক্রিয়া বন্ধ করব না
+        console.error('❌ Neon ডেটাবেস সংযোগ ব্যর্থ:', err.stack);
+    } else {
+        console.log('✅ Neon ডেটাবেসের সাথে সংযোগ সফল।');
+    }
+});
+
+module.exports = { pool };
