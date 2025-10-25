@@ -1,7 +1,8 @@
 // server.js - প্রধান Express সার্ভার এবং টেলিগ্রাম ওয়েবহুক হ্যান্ডেল করে।
 const express = require('express');
 const bodyParser = require('body-parser');
-const TelegramBot = require('node-telegram-bot-api');
+// node-telegram-bot-api মডিউল লোড করা
+const TelegramBot = require('node-telegram-bot-api'); 
 const path = require('path');
 require('dotenv').config(); // .env ফাইল লোড করার জন্য
 
@@ -20,7 +21,10 @@ if (BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' || RENDER_EXTERNAL_URL === 'YOUR_RENDER_
 }
 
 // --- ২. অ্যাপ ইনিশিয়ালাইজেশন ---
-const bot = new TelegramBot(BOT_TOKEN, { polling: false }); // Webhook মোড
+
+// Webhook মোডে বট ইনিশিয়ালাইজ করা: polling: false
+const bot = new TelegramBot(BOT_TOKEN, { polling: false }); 
+
 const app = express();
 const db = require('./db');
 const apiRouter = require('./api');
@@ -89,8 +93,8 @@ app.listen(PORT, async () => {
 
     const webhookUrl = `${RENDER_EXTERNAL_URL}/bot${BOT_TOKEN}`;
     try {
-        // ওয়েবহুক সেট করা
-        await bot.setWebhook(webhookUrl);
+        // ওয়েবহুক সেট করা: node-telegram-bot-api এর setWebHook() ফাংশন
+        await bot.setWebHook(webhookUrl); // 'setWebHook' (W ক্যাপিটাল) ব্যবহার করুন
         console.log(`টেলিগ্রাম ওয়েবহুক সফলভাবে সেট হয়েছে: ${webhookUrl}`);
     } catch (error) {
         console.error("টেলিগ্রাম ওয়েবহুক সেট করতে ব্যর্থ:", error.message);
