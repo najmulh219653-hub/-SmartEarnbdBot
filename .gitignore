@@ -1,5 +1,24 @@
-# -gitignore
-# Dependencies
+# Node.js Dependencies
 /node_modules
-# Environment Variables (CRITICAL! )
+/npm-debug.log
+/yarn-error.log
+
+# Build/Dist folders (যদি থাকে)
+/dist
+/build
+
+# Environment variables and secrets
 .env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Render specific files (যদি প্রয়োজন হয়)
+.render/
