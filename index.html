@@ -1,680 +1,363 @@
-<div style="max-width: 600px; margin: 0 auto;"> 
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<style>
-    /* [স্ক্রলবার লুকানো] */
-    body { 
-        font-family: 'Arial', sans-serif; 
-        background-color: #f8f9fa; 
-        padding: 0; 
-        margin: 0; 
-        min-height: 100vh;
-        -ms-overflow-style: none;  
-        scrollbar-width: none;  
-    }
-    body::-webkit-scrollbar {
-        display: none;
-    }
-
-    .app-container { 
-        width: 100%; 
-        min-height: 100vh;
-        margin: 0 auto; 
-        background-color: #ffffff; 
-        padding: 20px; 
-        box-shadow: none; 
-        box-sizing: border-box; 
-    }
-    .header { 
-        text-align: center; 
-        margin-bottom: 5px; 
-        padding-top: 10px;
-    }
-    .tg-style { color: #007bff; font-weight: bold; } 
-
-    /* চলমান হেডলাইন (Marquee) স্টাইল */
-    .marquee-container {
-        background-color: #ffeb3b; 
-        border: 1px solid #ffb300;
-        border-radius: 6px;
-        padding: 5px 10px;
-        color: #333;
-        font-weight: bold;
-        overflow: hidden; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 15px !important;
-    }
-    .marquee-text {
-        font-size: 0.9rem;
-        white-space: nowrap; 
-    }
-
-    /* অ্যাড ব্যানার স্টাইল */
-    .ad-banner {
-        width: 100%;
-        min-height: 50px; 
-        background-color: #e0e0e0;
-        border: 1px dashed #999;
-        text-align: center;
-        line-height: 50px; 
-        margin-bottom: 20px;
-        overflow: hidden; 
-    }
-    .ad-banner-bottom {
-        margin-top: 20px;
-    }
-
-    /* আকর্ষণীয় ব্যালেন্স কার্ড */
-    .balance-card { 
-        background: linear-gradient(135deg, #007bff, #0056b3); 
-        color: white; 
-        border-radius: 12px; 
-        padding: 20px; 
-        margin-bottom: 20px; 
-        box-shadow: 0 6px 12px rgba(0, 50, 150, 0.2);
-    }
-    .balance-card h4, .balance-card p {
-        margin-bottom: 5px;
-    }
-    .balance-card .tg-style {
-        color: #ffeb3b; 
-        font-weight: bold;
-    }
-    .btn-action { 
-        margin: 8px 0; 
-        width: 100%; 
-        border-radius: 8px; 
-        font-size: 1.1rem;
-        padding: 12px;
-    }
-    .text-secondary.small {
-        color: #ddd !important; 
-    }
-    .alert-custom { 
-        margin-top: 15px; 
-        border-radius: 8px;
-    }
-    .hidden { display: none; }
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EarnQuick Official Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    /* Loading Spinner */
-    .loading-spinner-area {
-        text-align: center;
-        padding: 50px 0;
-        color: #007bff;
-    }
-    .spinner-border {
-        width: 3rem;
-        height: 3rem;
-        border-width: 0.3em;
-    }
+    <!-- ১. Monetag ইন্টারস্টিশিয়াল SDK লোড করা (বাটন ক্লিকের জন্য) -->
+    <!-- এটি গ্লোবালি show_10070523 ফাংশনটি লোড করবে -->
+    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
     
-    /* Admin Button Style */
-    #admin-button {
-        background-color: #dc3545; 
-        color: white;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        padding: 12px;
-        margin-top: 15px;
-        font-weight: bold;
-        animation: pulse 1s infinite;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-    }
-    /* Admin Table Styling */
-    .admin-table-container {
-        max-height: 400px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        margin-top: 10px;
-    }
-    .admin-table-container table {
-        margin-bottom: 0;
-    }
-</style>
+    <style>
+        /* --- বেসিক ও টেলিগ্রাম থিম ইন্টিগ্রেশন CSS --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 0; 
+            background: var(--tg-theme-bg-color, #f4f4f4); 
+            color: var(--tg-theme-text-color, #000000); 
+            padding-bottom: 70px; 
+        }
+        .container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--tg-theme-text-color, #333);
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
 
-<script src='//libtl.com/sdk.js' async></script>
+        /* --- বিজ্ঞাপন স্লট স্টাইল (ব্যানার) --- */
+        .ad-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+            z-index: 10;
+        }
+        
+        /* অ্যাডের রেসপনসিভনেস নিশ্চিত করার জন্য */
+        .ad-slot > div, .ad-slot iframe {
+            max-width: 100% !important;
+            height: auto !important;
+        }
 
-<div class="app-container">
+        .top-ad {
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background-color: var(--tg-theme-secondary-bg-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 50px; /* যাতে অ্যাড লোড হওয়ার আগে জায়গা থাকে */
+        }
+        .bottom-ad {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--tg-theme-secondary-bg-color);
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 50px;
+        }
+
+        /* --- চলমান হেডলাইন স্টাইল --- */
+        .headline-bar {
+            background-color: #38c172; 
+            color: white;
+            padding: 8px 0;
+            margin-bottom: 20px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .marquee {
+            display: inline-block;
+            padding-left: 100%;
+            animation: scroll 20s linear infinite;
+        }
+        @keyframes scroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* --- বাটন ও ফর্ম স্টাইল --- */
+        #adButton {
+            background-color: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, white);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 90%;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s;
+        }
+        #withdrawForm {
+            background-color: var(--tg-theme-secondary-bg-color, #fff);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        #withdrawForm label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        #withdrawForm input, #withdrawForm button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #withdrawForm button {
+            background-color: var(--tg-theme-link-color, #00bfff);
+            color: white;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
     
-    <div class="header">
-        <h3 class="tg-style">💰 EarnQuick Official - স্বাগতম!</h3>
-        <p class="text-danger small">Telegram Mini App</p>
-    </div>
-    
-    <div class="marquee-container">
-        <marquee behavior="scroll" direction="left" scrollamount="4">
-            <span class="marquee-text">
-                👉 রেফার করুন এবং প্রতি রেফারে 250 পয়েন্ট বোনাস পান! ⚠️ উইথড্রয়াল চলছে সকাল ৬:০০ টা থেকে রাত ৮:০০ টা পর্যন্ত। 🔥 যেকোনো প্রয়োজনে: 📞 01913621510 | 📧 najmulh219653@gmail.com | 👤 অ্যাডমিন: @najmulhoqueforhad
-            </span>
-        </marquee>
-    </div>
-    <div class="ad-banner" id="top-ad-banner" style="height: 90px; line-height: normal;">
+    <!-- টপ অ্যাড স্লট: আপনার দেওয়া ব্যানার অ্যাড কোড -->
+    <div class="ad-slot top-ad" id="topAdSlot">
+        <!-- ২. ব্যানার কোড ইনসার্ট করা হয়েছে -->
         <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
 
-    <div class="balance-card">
-        <p>আপনার রেফারেল কাউন্ট: <span id="referral-count" class="tg-style">...</span> জন</p>
-        <p>রেফারেল বোনাস: <span id="referral-bonus" class="tg-style">250</span> পয়েন্ট</p>
-        <h4 class="mt-2">আপনার মোট ব্যালেন্স: <span id="current-balance" class="tg-style">...</span></h4>
-        <p class="text-secondary small mt-3">ন্যূনতম উত্তোলন: <span id="min-withdraw">10000</span> পয়েন্ট = 40 টাকা</p>
-    </div>
-
-    <div id="loading-spinner" class="loading-spinner-area">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
+    <div class="headline-bar">
+        <div class="marquee">
+            📣 উইথড্র চালু সকাল ৬টা থেকে রাত ৮টা পর্যন্ত | যোগাযোগ: ০১৯১৩৬২১৫১০ | ইমেইল: najmulh219653@gmail.com 📣
         </div>
-        <p class="mt-3">ডেটা লোড হচ্ছে...</p>
     </div>
 
-    <div id="main-content" class="hidden">
-        <button id="admin-button" class="btn btn-danger btn-action hidden" onclick="showAdminPanel()">
-            ADMIN: রিয়েল-টাইম ডেটা দেখুন
-        </button>
+    <div class="container">
+        <h1>মোট পয়েন্ট: <span id="userPoints">লোড হচ্ছে...</span></h1>
 
-        <button class="btn btn-success btn-action" onclick="showAdTasks()">
-            বিজ্ঞাপন দেখুন এবং 5 পয়েন্ট যোগ করুন
+        <!-- এই বাটনে ক্লিক করলে Monetag ইন্টারস্টিশিয়াল অ্যাড দেখাবে এবং পয়েন্ট যোগ করবে -->
+        <button id="adButton">
+            👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন
         </button>
-        <button class="btn btn-warning btn-action" data-toggle="modal" data-target="#withdrawModal">
-            টাকা উত্তোলন করুন (Withdraw)
-        </button>
-        
-        <hr>
+        <p id="adStatus" style="color:var(--tg-theme-hint-color);">অ্যাড দেখার জন্য প্রস্তুত...</p>
 
-        <p class="small text-center text-muted">অন্যান্য মেনু:</p>
-        <button class="btn btn-info btn-sm btn-block" onclick="copyReferralLink()">রেফার করুন (Refer)</button>
-        <button class="btn btn-secondary btn-sm btn-block" onclick="alert('পেমেন্ট হিস্টোরি পেজ শীঘ্রই আসছে!')">পেমেন্ট হিস্টোরি</button>
+
+        <h2>পয়েন্ট উইথড্র করুন</h2>
+        <form id="withdrawForm">
+            <label for="points">উইথড্র পয়েন্ট (10,000 - 100,000):</label>
+            <input type="number" id="points" name="points" required min="10000" max="100000" placeholder="ন্যূনতম 10000 পয়েন্ট">
+            
+            <label for="paymentAddress">পেমেন্ট নম্বর (Bkash/Nagad):</label>
+            <input type="text" id="paymentAddress" name="paymentAddress" required placeholder="01XXXXXXXXX">
+
+            <button type="submit">উইথড্র রিকোয়েস্ট পাঠান</button>
+            <div id="message"></div>
+        </form>
+
     </div>
 
-    <div id="ad-tasks" class="hidden my-4 p-3 border rounded">
-        <h5>আজকের টাস্ক: বিজ্ঞাপন দেখুন</h5>
-        <p class="small text-muted">প্রতিটি বিজ্ঞাপনে **5** পয়েন্ট! অ্যাড দেখার পরেই পয়েন্ট যোগ হবে।</p>
-        
-        <button class="btn btn-outline-primary btn-sm btn-block mt-2" onclick="loadAdTask(1, 5);">বিজ্ঞাপন দেখুন ১ (৫ পয়েন্ট)</button>
-        <button class="btn btn-outline-primary btn-sm btn-block" onclick="loadAdTask(2, 5);">বিজ্ঞাপন দেখুন ২ (৫ পয়েন্ট)</button>
-        <button class="btn btn-outline-primary btn-sm btn-block" onclick="loadAdTask(3, 5);">বিজ্ঞাপন দেখুন ৩ (৫ পয়েন্ট)</button>
-        
-        <button class="btn btn-danger btn-action mt-3" onclick="hideAdTasks()">মূল স্ক্রিনে ফিরে যান (Cancel)</button>
-    </div>
-
-    <div class="ad-banner ad-banner-bottom" id="bottom-ad-banner" style="height: 90px; line-height: normal;">
+    <!-- বটম অ্যাড স্লট: আপনার দেওয়া ব্যানার অ্যাড কোড -->
+    <div class="ad-slot bottom-ad" id="bottomAdSlot">
+        <!-- ৩. ব্যানার কোড ইনসার্ট করা হয়েছে -->
         <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
 
-    <div id="admin-panel" class="hidden my-4 p-3 border rounded border-danger">
-        <h5 class="text-danger">🛑 অ্যাডমিন প্যানেল: রিয়েল-টাইম ডেটা</h5>
-        <div id="admin-data-loader" class="text-center p-3">
-             <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
-             <p class="small mt-2">ডেটা লোড হচ্ছে...</p>
-        </div>
+    <script>
+        const tg = window.Telegram.WebApp;
+        // !!! এখানে আপনার Render সার্ভারের API এর বেস URL বসান !!!
+        const RENDER_API_BASE_URL = "আপনার_RENDER_API_URL_এখানে_বসবে/api"; 
+        const MONETAG_SECRET_KEY = "YOUR_MONETAG_SECRET_KEY"; // অবশ্যই আপনার আসল সিক্রেট কী বসান
         
-        <h6 class="mt-3 text-primary">পেন্ডিং উইথড্রয়াল রিকোয়েস্ট:</h6>
-        <div id="pending-withdrawals-data" class="admin-table-container">
-            <p class="text-muted small p-2">কোনো রিকোয়েস্ট নেই।</p>
-        </div>
+        // Monetag SDK থেকে প্রাপ্ত গ্লোবাল ফাংশন
+        // এটি data-sdk='show_10070523' এর মাধ্যমে লোড হয়
+        const showMonetagAd = typeof show_10070523 === 'function' ? show_10070523 : null;
 
-        <h6 class="mt-4 text-primary">শীর্ষ ১০০ ইউজার (পয়েন্ট অনুযায়ী):</h6>
-        <div id="top-users-data" class="admin-table-container">
-            <p class="text-muted small p-2">কোনো ইউজার নেই।</p>
-        </div>
-
-        <button class="btn btn-outline-danger btn-block mt-4" onclick="hideAdminPanel()">প্যানেল বন্ধ করুন</button>
-    </div>
-
-</div>
-
-<div class="modal fade" id="withdrawModal" tabindex="-1" role="dialog" aria-labelledby="withdrawModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="withdrawModalLabel">টাকা উত্তোলন (Withdraw)</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="withdraw-form">
-                    <div class="form-group">
-                        <label for="points-to-withdraw">উত্তোলনের পয়েন্ট:</label>
-                        <input type="number" class="form-control" id="points-to-withdraw" required min="10000">
-                        <small class="form-text text-muted">ন্যূনতম 10,000 পয়েন্ট উত্তোলন করা যাবে।</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="payment-method">পেমেন্ট পদ্ধতি:</label>
-                        <select class="form-control" id="payment-method" required>
-                            <option value="">নির্বাচন করুন</option>
-                            <option value="bkash">বিকাশ (Bkash)</option>
-                            <option value="nagad">নগদ (Nagad)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="payment-number">পেমেন্ট নম্বর:</label>
-                        <input type="text" class="form-control" id="payment-number" required>
-                    </div>
-                </form>
-                <div id="withdraw-message" class="alert mt-3 hidden" role="alert"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">বাতিল</button>
-                <button type="submit" form="withdraw-form" class="btn btn-success">রিকোয়েস্ট জমা দিন</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const SERVER_URL = 'https://smartearnbdbot.onrender.com';
-    const MIN_WITHDRAWAL_POINTS = 10000;
-    
-    // 🛑 নিশ্চিত করুন যে এই আইডিটি server.js-এর সাথে মিলে যায় 
-    const ADMIN_TELEGRAM_ID = '8145444675'; 
-    const BLOGGER_TEST_ID = 'blogger_test_user_101'; 
-
-    const WITHDRAWAL_START_HOUR = 6;   
-    const WITHDRAWAL_END_HOUR = 20;    
-
-    const MONETAG_ZONES = {
-        1: '10085320', 
-        2: '10070523', 
-        3: '9852420'   
-    };
-
-    // --- Global Variables ---
-    let currentUserId = null;
-    let currentBalance = 0;
-    let currentReferralCount = 0;
-    let isAdmin = false;
-
-    // --- Utility Functions ---
-    function showMessage(type, message, duration = 3000) {
-        let messageArea = document.getElementById('global-message-area');
-        if (!messageArea) {
-            messageArea = document.createElement('div');
-            messageArea.id = 'global-message-area';
-            document.querySelector('.app-container').prepend(messageArea);
-        }
+        tg.ready();
         
-        messageArea.className = `alert alert-${type} alert-custom`;
-        messageArea.innerText = message;
-        messageArea.classList.remove('hidden');
-        
-        setTimeout(() => {
-            messageArea.classList.add('hidden');
-        }, duration);
-    }
+        const adButton = document.getElementById('adButton');
+        const userPointsSpan = document.getElementById('userPoints');
+        const withdrawForm = document.getElementById('withdrawForm');
+        const messageDiv = document.getElementById('message');
+        const adStatusDiv = document.getElementById('adStatus');
+        let currentUserId = null;
 
-    function updateBalanceDisplay(points, count, userIsAdmin) {
-        currentBalance = points;
-        currentReferralCount = count;
-        isAdmin = userIsAdmin; // সার্ভার থেকে পাওয়া অ্যাডমিন স্ট্যাটাস আপডেট করা হলো
-        
-        document.getElementById('current-balance').innerText = points.toLocaleString('bn-BD');
-        document.getElementById('referral-count').innerText = count;
-        
-        // অ্যাডমিন বাটন দেখাও/লুকানো
-        if (isAdmin) {
-            document.getElementById('admin-button').classList.remove('hidden');
-        } else {
-            document.getElementById('admin-button').classList.add('hidden');
+        function generateTransactionId() {
+            // Monetag S2S এর জন্য ইউনিক ট্রানজেকশন আইডি তৈরি
+            return `tx_${currentUserId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
         }
 
-        document.getElementById('loading-spinner').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
-    }
-
-    function getQueryParams() {
-        const params = {};
-        window.location.search.substring(1).split('&').forEach(pair => {
-            const [key, value] = pair.split('=');
-            if (key) params[key] = decodeURIComponent(value || '');
-        });
-        return params;
-    }
-
-    // --- Core Logic ---
-
-    async function registerOrCheckUser() {
-        const params = getQueryParams();
-        let userId = params.uid || BLOGGER_TEST_ID; 
-        let refererId = params.ref || null;
-        let username = null;
-        let firstName = null;
-
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-            userId = tgUser.id.toString();
-            username = tgUser.username || null;
-            firstName = tgUser.first_name || null;
-        } 
-        
-        currentUserId = userId;
-
-        try {
-            const response = await fetch(`${SERVER_URL}/api/register_or_check`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId, refererId, username, firstName })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // is_admin স্ট্যাটাস সার্ভার থেকে গ্রহণ করা হলো
-                updateBalanceDisplay(data.earned_points, data.referral_count, data.is_admin);
-                showMessage('success', '✅ সার্ভার সংযোগ সফল। ইউজার ডেটা লোড হয়েছে।');
-            } else {
-                updateBalanceDisplay(0, 0, false);
-                showMessage('warning', 'ইউজার লোড করতে ব্যর্থ: ' + (data.message || 'অজানা ত্রুটি।'));
-            }
-        } catch (error) {
-            console.error('Registration/Check error:', error);
-            updateBalanceDisplay(0, 0, false); 
-            showMessage('danger', `❌ সার্ভার সংযোগ ব্যর্থ। ${error.message || 'আপনার GitHub/Render চেক করুন।'}`);
-        }
-    }
-    
-    // 🛑 নতুন: অ্যাডমিন প্যানেল লোড করার ফাংশন
-    async function loadAdminData() {
-        const loader = document.getElementById('admin-data-loader');
-        const usersContainer = document.getElementById('top-users-data');
-        const withdrawalsContainer = document.getElementById('pending-withdrawals-data');
-        
-        loader.classList.remove('hidden');
-        usersContainer.innerHTML = '';
-        withdrawalsContainer.innerHTML = '';
-
-        try {
-            const response = await fetch(`${SERVER_URL}/api/admin/data/${currentUserId}`);
-
-            if (response.status === 403) {
-                showMessage('danger', '🛑 অ্যাক্সেস নেই। আপনি অ্যাডমিন নন।');
-                hideAdminPanel();
+        // --- ১. ইউজার ডেটা লোড করা ---
+        async function loadUserData() {
+            if (!tg.initDataUnsafe.user) {
+                userPointsSpan.textContent = "ID নেই।";
                 return;
             }
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch admin data from server.');
+            currentUserId = tg.initDataUnsafe.user.id;
+
+            try {
+                const response = await fetch(`${RENDER_API_BASE_URL}/user-data?id=${currentUserId}`);
+                
+                if (response.status === 404) {
+                    userPointsSpan.textContent = "0";
+                    tg.MainButton.setText("বটে /start করুন").show(); 
+                    tg.MainButton.onClick(() => tg.close()); 
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    userPointsSpan.textContent = data.points.toLocaleString('en-US');
+                    tg.MainButton.hide(); 
+                } else {
+                    userPointsSpan.textContent = "ত্রুটি";
+                    tg.showAlert("ইউজার ডেটা লোড করা যায়নি।");
+                }
+            } catch (error) {
+                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
+                tg.showAlert("নেটওয়ার্ক সংযোগে ত্রুটি।");
+            }
+        }
+
+        // --- ২. অ্যাড বাটন লজিক (Monetag ইন্টারস্টিশিয়াল এবং পয়েন্ট আর্নিং) ---
+        adButton.onclick = function() {
+            if (!currentUserId) {
+                return tg.showAlert("প্রথমে টেলিগ্রাম বটে /start লিখে আপনার অ্যাকাউন্ট সেটআপ করুন।");
             }
 
-            const data = await response.json();
-
-            if (data.success) {
-                renderUsersTable(data.users, usersContainer);
-                renderWithdrawalsTable(data.pendingWithdrawals, withdrawalsContainer);
-                showMessage('success', '✅ অ্যাডমিন ডেটা রিয়েল-টাইমে লোড হয়েছে।');
-            } else {
-                showMessage('warning', 'ডেটা লোড ব্যর্থ: ' + (data.message || 'সার্ভার ত্রুটি।'));
+            if (!showMonetagAd) {
+                return tg.showAlert("Monetag SDK লোড হতে ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।");
             }
 
-        } catch (error) {
-            console.error('Admin data load error:', error);
-            showMessage('danger', `❌ ডেটা লোডিং ত্রুটি: ${error.message}`);
-        } finally {
-            loader.classList.add('hidden');
-        }
-    }
-    
-    function renderUsersTable(users, container) {
-        if (users.length === 0) {
-            container.innerHTML = '<p class="text-muted small p-2">কোনো ইউজার পাওয়া যায়নি।</p>';
-            return;
-        }
-
-        let tableHtml = `
-            <table class="table table-sm table-striped small">
-                <thead>
-                    <tr class="bg-primary text-white">
-                        <th>#</th>
-                        <th>ID / Username</th>
-                        <th>Points</th>
-                        <th>Ref. Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        users.forEach((user, index) => {
-            const usernameDisplay = user.telegram_username ? `@${user.telegram_username}` : (user.first_name || 'N/A');
-            tableHtml += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${usernameDisplay} (ID: ${user.telegram_user_id})</td>
-                    <td>${Math.floor(user.earned_points).toLocaleString('bn-BD')}</td>
-                    <td>${user.referral_count}</td>
-                </tr>
-            `;
-        });
-
-        tableHtml += `</tbody></table>`;
-        container.innerHTML = tableHtml;
-    }
-
-    function renderWithdrawalsTable(withdrawals, container) {
-        if (withdrawals.length === 0) {
-            container.innerHTML = '<p class="text-muted small p-2">কোনো পেন্ডিং উইথড্রয়াল রিকোয়েস্ট নেই।</p>';
-            return;
-        }
-
-        let tableHtml = `
-            <table class="table table-sm table-striped small">
-                <thead>
-                    <tr class="bg-warning text-dark">
-                        <th>ID</th>
-                        <th>User ID</th>
-                        <th>Points</th>
-                        <th>Method/Num</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        withdrawals.forEach((req) => {
-            const time = new Date(req.requested_at).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit', hour12: true });
-            tableHtml += `
-                <tr>
-                    <td>${req.request_id}</td>
-                    <td>${req.telegram_user_id}</td>
-                    <td>${Math.floor(req.points_requested).toLocaleString('bn-BD')}</td>
-                    <td>${req.payment_method} / ${req.payment_number}</td>
-                    <td>${time}</td>
-                </tr>
-            `;
-        });
-
-        tableHtml += `</tbody></table>`;
-        container.innerHTML = tableHtml;
-    }
-
-    async function addPoints(points) {
-        if (!currentUserId || currentUserId === BLOGGER_TEST_ID) {
-            showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ। আসল Telegram ID ব্যবহার করুন।');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${SERVER_URL}/api/add_points`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId, points })
-            });
+            adButton.disabled = true;
+            adStatusDiv.textContent = "বিজ্ঞাপন লোড হচ্ছে... দয়া করে এটি বন্ধ করবেন না।";
             
-            const data = await response.json();
+            // Monetag অ্যাড দেখানো
+            showMonetagAd(); 
 
-            if (data.success) {
-                updateBalanceDisplay(data.new_points, currentReferralCount, isAdmin);
-                showMessage('success', `✅ অ্যাড দেখা শেষ। সার্ভার সংযোগ সফল। ${points} পয়েন্ট যোগ হয়েছে!`);
-            } else {
-                showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ: ' + (data.message || 'অজানা কারণ'));
-            }
-        } catch (error) {
-            console.error('Add points error:', error);
-            showMessage('danger', `❌ পয়েন্ট যোগ করার সময় সার্ভার সংযোগ ত্রুটি: ${error.message}`);
-        }
-    }
-    
-    function loadAdTask(adNumber, points) {
-        const zoneId = MONETAG_ZONES[adNumber];
-        if (!zoneId) return;
-        
-        showMessage('info', `Monetag/Libtl অ্যাড লোড হচ্ছে (Zone: ${zoneId})। অ্যাড দেখার জন্য অপেক্ষা করুন...`);
+            // অ্যাডের জন্য একটি ডিলে (৫ সেকেন্ড)
+            const pointAwardDelay = 5000; 
 
-        const showFunctionName = `show_${zoneId}`;
+            setTimeout(async () => {
+                adStatusDiv.textContent = "অ্যাড দেখা সম্পন্ন হয়েছে। পয়েন্ট যোগ হচ্ছে...";
+                
+                tg.MainButton.setText("পয়েন্ট যোগ হচ্ছে...").showProgress();
+                
+                const transactionId = generateTransactionId();
+                
+                try {
+                    // ক্লায়েন্ট থেকে সিমুলেটেড S2S কলব্যাক ট্রানজেকশন তৈরি
+                    // এটি সার্ভারে যাবে এবং MONETAG_SECRET_KEY দিয়ে ভেরিফাই হবে
+                    const response = await fetch(`${RENDER_API_BASE_URL}/monetag-callback?secret=${MONETAG_SECRET_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            transaction_id: transactionId,
+                            status: 'success'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    tg.MainButton.hideProgress();
 
-        if (window[showFunctionName]) {
-            window[showFunctionName]({ ymid: currentUserId })
-                .then(() => {
-                    console.log(`Ad ${adNumber} finished successfully.`);
-                    addPoints(points); 
-                })
-                .catch((error) => {
-                    console.error(`Ad ${adNumber} failed or skipped:`, error);
-                    showMessage('warning', `⚠️ অ্যাড লোড হয়নি বা বাতিল হয়েছে। ${points} পয়েন্ট যোগ করা হয়নি।`);
-                });
-        } else {
-            showMessage('danger', `Monetag SDK লোড হয়নি। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।`);
-        }
-    }
+                    if (data.status === 'ok') {
+                        tg.showAlert("✅ সফল: ৫ পয়েন্ট যোগ হয়েছে!");
+                        loadUserData();
+                    } else if (data.status === 'info') {
+                        tg.showAlert(`ℹ️ তথ্য: ${data.message}`);
+                    }
+                    else {
+                        tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
+                    }
 
-    document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const pointsToWithdraw = parseInt(document.getElementById('points-to-withdraw').value);
-        const paymentMethod = document.getElementById('payment-method').value;
-        const paymentNumber = document.getElementById('payment-number').value;
-        const withdrawMessageArea = document.getElementById('withdraw-message');
-        
-        withdrawMessageArea.classList.add('hidden');
-        
-        // ... (উইথড্রয়াল লজিক অপরিবর্তিত) ...
-        const isWithdrawalTime = () => {
-             const now = new Date();
-             const hour = now.getHours();
-             return hour >= WITHDRAWAL_START_HOUR && hour < WITHDRAWAL_END_HOUR;
+                } catch (error) {
+                    tg.MainButton.hideProgress();
+                    tg.showAlert("নেটওয়ার্ক ত্রুটি। পয়েন্ট যোগ করা যায়নি।");
+                }
+                
+                adStatusDiv.textContent = "অ্যাড দেখার জন্য প্রস্তুত...";
+                adButton.disabled = false;
+                tg.MainButton.hide();
+
+            }, pointAwardDelay);
+
         };
 
-        if (!isWithdrawalTime()) {
-            withdrawMessageArea.className = 'alert alert-danger mt-3';
-            withdrawMessageArea.innerText = `উত্তোলন শুধুমাত্র সকাল ${WITHDRAWAL_START_HOUR}:00 টা থেকে রাত ${WITHDRAWAL_END_HOUR}:00 টা পর্যন্ত চলে।`;
-            withdrawMessageArea.classList.remove('hidden');
-            return;
-        }
-
-        if (pointsToWithdraw < MIN_WITHDRAWAL_POINTS || pointsToWithdraw > currentBalance) {
-            withdrawMessageArea.className = 'alert alert-warning mt-3';
-            withdrawMessageArea.innerText = 'অপর্যাপ্ত পয়েন্ট বা ন্যূনতম উত্তোলনের চেয়ে কম।';
-            withdrawMessageArea.classList.remove('hidden');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${SERVER_URL}/api/withdraw`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId, pointsToWithdraw, paymentMethod, paymentNumber })
-            });
+        // --- ৩. উইথড্র ফর্ম সাবমিট লজিক ---
+        withdrawForm.onsubmit = async function(e) {
+            e.preventDefault();
             
-            const data = await response.json();
+            const points = parseInt(document.getElementById('points').value);
+            const paymentAddress = document.getElementById('paymentAddress').value.trim();
 
-            if (data.success) {
-                updateBalanceDisplay(data.new_points, currentReferralCount, isAdmin);
-                withdrawMessageArea.className = 'alert alert-success mt-3';
-                withdrawMessageArea.innerText = 'উত্তোলনের অনুরোধ সফলভাবে জমা হয়েছে!';
-                withdrawMessageArea.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    $('#withdrawModal').modal('hide'); 
-                    document.getElementById('withdraw-form').reset();
-                }, 2000);
-
-            } else {
-                withdrawMessageArea.className = 'alert alert-danger mt-3';
-                withdrawMessageArea.innerText = 'উত্তোলন ব্যর্থ: ' + data.message;
-                withdrawMessageArea.classList.remove('hidden');
+            if (!currentUserId) {
+                 return tg.showAlert("প্রথমে টেলিগ্রাম বটে /start লিখে আপনার অ্যাকাউন্ট সেটআপ করুন।");
             }
-        } catch (error) {
-            console.error('Withdraw error:', error);
-            withdrawMessageArea.className = 'alert alert-danger mt-3';
-            withdrawMessageArea.innerText = 'সার্ভার সংযোগ ত্রুটি।';
-            withdrawMessageArea.classList.remove('hidden');
-        }
-    });
+            if (points < 10000 || points > 100000) {
+                return tg.showAlert("উইথড্র পয়েন্ট অবশ্যই 10,000 থেকে 100,000 এর মধ্যে হতে হবে।");
+            }
+            if (paymentAddress.length < 10) {
+                 return tg.showAlert("সঠিক পেমেন্ট নম্বর দিন।");
+            }
 
-    // --- UI/Utility Functions ---
-    function showAdTasks() {
-        document.getElementById('main-content').classList.add('hidden');
-        document.getElementById('top-ad-banner').classList.add('hidden');
-        document.getElementById('bottom-ad-banner').classList.add('hidden');
-        document.getElementById('ad-tasks').classList.remove('hidden');
-    }
-    
-    function hideAdTasks() {
-        document.getElementById('ad-tasks').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
-        document.getElementById('top-ad-banner').classList.remove('hidden');
-        document.getElementById('bottom-ad-banner').classList.remove('hidden');
-    }
+            messageDiv.textContent = "রিকোয়েস্ট পাঠানো হচ্ছে...";
+            tg.MainButton.setText("প্রক্রিয়াকরণ চলছে...").showProgress();
 
-    function showAdminPanel() {
-        if (!isAdmin) {
-             showMessage('danger', '🛑 অ্যাক্সেস নেই। আপনি অ্যাডমিন নন।');
-             return;
-        }
+            try {
+                const response = await fetch(`${RENDER_API_BASE_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: currentUserId,
+                        points: points,
+                        paymentAddress: paymentAddress
+                    })
+                });
+
+                const data = await response.json();
+                tg.MainButton.hideProgress();
+
+                if (response.ok) { 
+                    messageDiv.style.color = 'green';
+                    tg.showAlert(`✅ সফল: ${data.message}`);
+                    loadUserData(); // পয়েন্ট আপডেট করুন
+                } else {
+                    messageDiv.style.color = 'red';
+                    tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
+                }
+                messageDiv.textContent = data.message;
+                
+            } catch (error) {
+                tg.MainButton.hideProgress();
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "নেটওয়ার্ক সংযোগে ত্রুটি। নিশ্চিত করুন Render সার্ভার চালু আছে।";
+            }
+            tg.MainButton.hide();
+        };
+
+        // Mini App লোড হলে ডেটা লোড করুন
+        loadUserData();
+
+        // টেলিগ্রাম ইন্টারফেসের রঙ থিমের সাথে মিলিয়ে নেওয়া
+        document.body.style.backgroundColor = tg.themeParams.bg_color;
         
-        document.getElementById('main-content').classList.add('hidden');
-        document.getElementById('ad-tasks').classList.add('hidden');
-        document.getElementById('top-ad-banner').classList.add('hidden');
-        document.getElementById('bottom-ad-banner').classList.add('hidden');
-        document.getElementById('admin-panel').classList.remove('hidden');
-        
-        // রিয়েল-টাইম ডেটা লোড করুন
-        loadAdminData();
-    }
+    </script>
+</body>
+</html>
 
-    function hideAdminPanel() {
-        document.getElementById('admin-panel').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
-        document.getElementById('top-ad-banner').classList.remove('hidden');
-        document.getElementById('bottom-ad-banner').classList.remove('hidden');
-    }
-
-    function copyReferralLink() {
-        if (!currentUserId) {
-            showMessage('warning', 'ইউজার আইডি লোড হয়নি।');
-            return;
-        }
-        
-        const referralLink = `https://t.me/EarnQuick_Official_বত/start?ref=${currentUserId}`;
-        
-        navigator.clipboard.writeText(referralLink).then(() => {
-            showMessage('info', 'রেফারেল লিঙ্ক কপি করা হয়েছে! লিঙ্ক: ' + referralLink);
-        }).catch(err => {
-            console.error('Copy failed:', err);
-            showMessage('warning', 'কপি করা যায়নি। লিঙ্কটি ম্যানুয়ালি কপি করুন।');
-        });
-    }
-
-    // --- Initialization ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Load JS dependencies
-        const script1 = document.createElement('script');
-        script1.src = "https://code.jquery.com/jquery-3.5.1.slim.min.js";
-        document.head.appendChild(script1);
-
-        const script2 = document.createElement('script');
-        script2.src = "https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js";
-        document.head.appendChild(script2);
-
-        const script3 = document.createElement('script');
-        script3.src = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js";
-        document.head.appendChild(script3);
-
-        setTimeout(() => {
-            registerOrCheckUser();
-        }, 300); 
-    });
-
-</script>
-</div>
