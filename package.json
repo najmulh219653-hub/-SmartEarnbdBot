@@ -1,16 +1,70 @@
-{
-  "name": "earnquick-mini-app",
-  "version": "1.0.0",
-  "description": "Telegram Mini App for rewarded ad earnings using Node.js and PostgreSQL.",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "node-telegram-bot-api": "^0.66.0",
-    "pg": "^8.11.5"
-  }
+// db.js - PostgreSQL ডেটাবেস সংযোগ এবং ইনিশিয়ালাইজেশন হ্যান্ডেল করে।
+
+// dotenv প্যাকেজ দিয়ে নিশ্চিত করা হচ্ছে যে রেন্ডার/লোকাল এনভায়রনমেন্ট ভেরিয়েবল লোড হবে।
+require('dotenv').config(); 
+
+const { Pool } = require('pg');
+
+// DATABASE_URL পরিবেশ ভেরিয়েবল থেকে সংযোগ স্ট্রিং নেওয়া
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+    // যদি DATABASE_URL না থাকে, তবে একটি স্পষ্ট ত্রুটি দেখানো
+    console.error("FATAL ERROR: DATABASE_URL এনভায়রনমেন্ট ভেরিয়েবল সেট করা নেই। ডেটাবেস সংযোগ করা অসম্ভব।");
+    // এই কারণে সার্ভার শুরু হতে ব্যর্থ হবে
+    process.exit(1);
 }
+
+// নতুন Pool তৈরি করা
+const pool = new Pool({
+    connectionString: connectionString,
+    // Render-এর জন্য SSL প্রয়োজন হতে পারে
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+// ডেটাবেস টেবিল ইনিশিয়ালাইজ করার ফাংশন
+async function initializeDatabase() {
+    console.log("ডেটাবেস ইনিশিয়ালাইজ করা হচ্ছে...");
+    try {
+        const client = await pool.connect();
+        
+        // ইউজার এবং তাদের ব্যালেন্সের জন্য টেবিল তৈরি করা
+        const userTableQuery = `
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                balance INTEGER NOT NULL DEFAULT 0
+            );
+        `;
+
+        // ট্রানজেকশন আইডি ট্র্যাক করার জন্য টেবিল তৈরি করা (ডাবল স্পেন্ডিং প্রোটেকশনের জন্য)
+        const transactionsTableQuery = `
+            CREATE TABLE IF NOT EXISTS transactions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                points_granted INTEGER NOT NULL,
+                timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        
+        await client.query(userTableQuery);
+        await client.query(transactionsTableQuery);
+        client.release();
+        console.log("PostgreSQL ডেটাবেসের সাথে সংযোগ সফল। (db.js)");
+    } catch (err) {
+        console.error("❌ ডেটাবেস ইনিশিয়ালাইজেশন ব্যর্থ:", err.message);
+        // মারাত্মক ত্রুটির ক্ষেত্রে process.exit(1) ব্যবহার না করে শুধু error log করা
+        throw err; 
+    }
+}
+
+// ডেটাবেস থেকে কুয়েরি করার ফাংশন
+function query(text, params) {
+    return pool.query(text, params);
+}
+
+module.exports = {
+    initializeDatabase,
+    query,
+};
