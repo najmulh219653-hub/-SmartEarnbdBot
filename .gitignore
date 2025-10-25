@@ -1,22 +1,8 @@
-# Dependencies (নির্ভরতা)
-/node_modules
-/dist
-/build
-/out
-
-# Environment Variables & Secrets (গোপন তথ্য)
-.env
-.env.local
-.env.development
-.env.production
-.env.test
-
-# Logs and Temp files (লগ ও টেম্প ফাইল)
-*.log
+dependencies
+​/node_modules
+​environment variables
+​.env
+​logs and cache
+​/logs
 npm-debug.log*
-yarn-error.log*
 .DS_Store
-
-# IDE and OS files (এডিটর ও অপারেটিং সিস্টেম ফাইল)
-.vscode
-.idea
