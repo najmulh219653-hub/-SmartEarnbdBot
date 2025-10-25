@@ -1,21 +1,31 @@
 // db.js
 const { Pool } = require('pg');
+require('dotenv').config();
 
-// গুরুত্বপূর্ণ: এখানে সরাসরি সংযোগ URL ব্যবহার করা হচ্ছে
-// Render এ ডিপ্লয়মেন্টের সময় এটি 'DATABASE_URL' এনভায়রনমেন্ট ভ্যারিয়বল থেকে আসবে
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+    console.error("❌ DATABASE_URL এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!");
+    // প্রজেক্টের জন্য ডেটাবেস কনফিগারেশন আবশ্যক
+    process.exit(1); 
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, 
-  ssl: {
-    rejectUnauthorized: false // Render-এ সংযোগের জন্য সাধারণত এটি প্রয়োজন হয়
-  }
+    connectionString: DATABASE_URL,
+    ssl: {
+        // Render/Neon ব্যবহার করার জন্য SSL মোড প্রয়োজন
+        rejectUnauthorized: false
+    }
 });
 
-// পুল কানেকশন সফল হয়েছে কিনা তা একবার পরীক্ষা করুন
-pool.on('connect', () => {
-  console.log('PostgreSQL connected to Pool.');
-});
+// ডেটাবেস সংযোগ পরীক্ষা
+pool.query('SELECT NOW()')
+    .then(() => console.log('✅ PostgreSQL ডেটাবেসের সাথে সংযোগ সফল। (db.js)'))
+    .catch((err) => {
+        console.error('❌ ডেটাবেস সংযোগ ব্যর্থ:', err.stack);
+        process.exit(1); 
+    });
 
 module.exports = {
-  // এই ফাংশনটি server.js বা অন্যান্য ফাইলে query করার জন্য ব্যবহার করা হবে
-  query: (text, params) => pool.query(text, params),
+    pool
 };
