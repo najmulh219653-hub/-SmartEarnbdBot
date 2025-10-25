@@ -2,362 +2,243 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>EarnQuick Official Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- ১. Monetag ইন্টারস্টিশিয়াল SDK লোড করা (বাটন ক্লিকের জন্য) -->
-    <!-- এটি গ্লোবালি show_10070523 ফাংশনটি লোড করবে -->
-    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarnQuick Mini App</title>
+    <!-- Tailwind CSS লোড করা হচ্ছে -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter ফন্ট ব্যবহার করা হচ্ছে -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* --- বেসিক ও টেলিগ্রাম থিম ইন্টিগ্রেশন CSS --- */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            text-align: center; 
-            margin: 0; 
-            padding: 0; 
-            background: var(--tg-theme-bg-color, #f4f4f4); 
-            color: var(--tg-theme-text-color, #000000); 
-            padding-bottom: 70px; 
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* হালকা নীল ব্যাকগ্রাউন্ড */
+            color: #1f2937;
         }
-        .container {
-            padding: 15px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: var(--tg-theme-text-color, #333);
-            font-size: 1.5rem;
-            margin: 10px 0;
-        }
-
-        /* --- বিজ্ঞাপন স্লট স্টাইল (ব্যানার) --- */
-        .ad-slot {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            width: 100%;
-            z-index: 10;
-        }
-        
-        /* অ্যাডের রেসপনসিভনেস নিশ্চিত করার জন্য */
-        .ad-slot > div, .ad-slot iframe {
-            max-width: 100% !important;
-            height: auto !important;
-        }
-
-        .top-ad {
-            margin-bottom: 15px;
-            position: sticky;
-            top: 0;
-            background-color: var(--tg-theme-secondary-bg-color);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            min-height: 50px; /* যাতে অ্যাড লোড হওয়ার আগে জায়গা থাকে */
-        }
-        .bottom-ad {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: var(--tg-theme-secondary-bg-color);
-            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-            min-height: 50px;
-        }
-
-        /* --- চলমান হেডলাইন স্টাইল --- */
-        .headline-bar {
-            background-color: #38c172; 
-            color: white;
-            padding: 8px 0;
-            margin-bottom: 20px;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        .marquee {
-            display: inline-block;
-            padding-left: 100%;
-            animation: scroll 20s linear infinite;
-        }
-        @keyframes scroll {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-
-        /* --- বাটন ও ফর্ম স্টাইল --- */
-        #adButton {
-            background-color: var(--tg-theme-button-color, #007bff);
-            color: var(--tg-theme-button-text-color, white);
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 90%;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.2s;
-        }
-        #withdrawForm {
-            background-color: var(--tg-theme-secondary-bg-color, #fff);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: left;
-        }
-        #withdrawForm label {
-            display: block;
-            margin-top: 10px;
-            font-weight: 500;
-        }
-        #withdrawForm input, #withdrawForm button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid var(--tg-theme-hint-color, #ccc);
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        #withdrawForm button {
-            background-color: var(--tg-theme-link-color, #00bfff);
-            color: white;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        #message {
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: center;
+        /* বাটন শ্যাডো ইফেক্ট */
+        .btn-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
         }
     </style>
+    <!-- Monetag SDK লোড করা হচ্ছে। Zone ID: 10070523 -->
+    <script async src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523' data-format='interstitial' data-options='{"rewarded": true}'></script>
 </head>
-<body>
-    
-    <!-- টপ অ্যাড স্লট: আপনার দেওয়া ব্যানার অ্যাড কোড -->
-    <div class="ad-slot top-ad" id="topAdSlot">
-        <!-- ২. ব্যানার কোড ইনসার্ট করা হয়েছে -->
-        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
-    </div>
+<body class="min-h-screen flex flex-col items-center p-4">
 
-    <div class="headline-bar">
-        <div class="marquee">
-            📣 উইথড্র চালু সকাল ৬টা থেকে রাত ৮টা পর্যন্ত | যোগাযোগ: ০১৯১৩৬২১৫১০ | ইমেইল: najmulh219653@gmail.com 📣
+    <!-- প্রধান কন্টেইনার -->
+    <div id="app" class="w-full max-w-md bg-white shadow-xl rounded-xl p-6 transition-all duration-300">
+
+        <!-- লোডিং ইন্ডিকেটর -->
+        <div id="loadingIndicator" class="text-center py-10">
+            <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-sm font-semibold text-gray-600">ডেটা লোড হচ্ছে...</p>
+        </div>
+
+        <!-- প্রধান UI (লোডের পরে দেখা যাবে) -->
+        <div id="mainUI" class="hidden">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl font-extrabold text-indigo-700">EarnQuick</h1>
+                <p class="text-gray-500 text-sm">রিওয়ার্ড অ্যাড দেখে ইনস্ট্যান্ট ইনকাম করুন।</p>
+            </header>
+            
+            <!-- বর্তমান ব্যালেন্স কার্ড -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-xl shadow-lg mb-6 border-b-4 border-indigo-800">
+                <p class="text-sm font-medium text-indigo-200">আপনার মোট ব্যালেন্স</p>
+                <p class="text-4xl font-black text-white mt-1">
+                    <span id="userBalance">0</span> কয়েন
+                </p>
+            </div>
+
+            <!-- বাটন সেকশন -->
+            <div class="space-y-4">
+                <button id="adButton" class="w-full py-4 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-extrabold text-lg rounded-xl btn-shadow hover:from-green-600 hover:to-emerald-700 transition duration-200 ease-in-out transform hover:scale-[1.03] flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed" disabled>
+                    <svg class="w-6 h-6 mr-3 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m5.65-4.47l-4.24-4.24M3 12h.01M21 12h.01M9 3v.01M9 21v.01M15 3v.01M15 21v.01M6.34 6.34l-2.83 2.83M17.66 6.34l-2.83 2.83M6.34 17.66l-2.83-2.83M17.66 17.66l-2.83-2.83"></path></svg>
+                    রিওয়ার্ডেড অ্যাড দেখুন (ক্লিক করুন!)
+                    <span class="ml-2 bg-yellow-300 text-black text-xs font-bold px-2 py-0.5 rounded-full">+10</span>
+                </button>
+                
+                <!-- উইথড্র বাটন -->
+                <button id="withdrawButton" class="w-full py-3 px-4 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition duration-150 ease-in-out transform hover:scale-[1.01] flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 0v-4m0 16v-4m-9-3h-4m16 0h-4m-7-9l-2.83-2.83m11.31 0l-2.83 2.83M12 16h.01"></path></svg>
+                    উইথড্র রিকোয়েস্ট দিন
+                </button>
+            </div>
+
+            <!-- স্ট্যাটাস মেসেজ বক্স -->
+            <div id="statusMessage" class="mt-6 p-3 hidden rounded-lg text-sm font-medium transition duration-300 border"></div>
+
+            <!-- ইউজার আইডি ডিসপ্লে -->
+            <div class="mt-8 text-center bg-gray-50 p-3 rounded-xl text-sm break-words border border-dashed border-gray-300">
+                <p class="font-semibold text-gray-700">ইউজার আইডি (রেফারেন্সের জন্য):</p>
+                <code id="userIdDisplay" class="text-indigo-600 font-mono select-all text-xs block mt-1"></code>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monetag ব্যানার ইন্টিগ্রেশন (ঐচ্ছিক) -->
+    <div class="mt-6 w-full max-w-md text-center">
+        <div data-zone="10080881" class="w-full h-auto text-center text-gray-500 text-xs">
+            <!-- ব্যানার অ্যাড এখানে লোড হবে -->
+            <p>বিজ্ঞাপনের স্থান (ব্যানার)</p>
         </div>
     </div>
 
-    <div class="container">
-        <h1>মোট পয়েন্ট: <span id="userPoints">লোড হচ্ছে...</span></h1>
+    <script type="module">
+        // UUID জেনারেট করার জন্য মডিউল
+        import { v4 as uuidv4 } from 'https://jspm.dev/uuid';
 
-        <!-- এই বাটনে ক্লিক করলে Monetag ইন্টারস্টিশিয়াল অ্যাড দেখাবে এবং পয়েন্ট যোগ করবে -->
-        <button id="adButton">
-            👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন
-        </button>
-        <p id="adStatus" style="color:var(--tg-theme-hint-color);">অ্যাড দেখার জন্য প্রস্তুত...</p>
+        // === ১. কনফিগারেশন ===
+        // !!! এখানে আপনার Render সার্ভারের সম্পূর্ণ URL /api সহ বসান !!!
+        const RENDER_API_BASE_URL = 'YOUR_RENDER_EXTERNAL_URL/api'; 
+        // !!! এখানে আপনার সেট করা কাস্টম সিক্রেট কী বসান !!!
+        const MONETAG_SECRET_KEY = "MyEarnQuickSecretKey123"; 
+        const REWARD_POINTS = 10; // প্রতিটি অ্যাড দেখার জন্য পয়েন্ট
 
-
-        <h2>পয়েন্ট উইথড্র করুন</h2>
-        <form id="withdrawForm">
-            <label for="points">উইথড্র পয়েন্ট (10,000 - 100,000):</label>
-            <input type="number" id="points" name="points" required min="10000" max="100000" placeholder="ন্যূনতম 10000 পয়েন্ট">
-            
-            <label for="paymentAddress">পেমেন্ট নম্বর (Bkash/Nagad):</label>
-            <input type="text" id="paymentAddress" name="paymentAddress" required placeholder="01XXXXXXXXX">
-
-            <button type="submit">উইথড্র রিকোয়েস্ট পাঠান</button>
-            <div id="message"></div>
-        </form>
-
-    </div>
-
-    <!-- বটম অ্যাড স্লট: আপনার দেওয়া ব্যানার অ্যাড কোড -->
-    <div class="ad-slot bottom-ad" id="bottomAdSlot">
-        <!-- ৩. ব্যানার কোড ইনসার্ট করা হয়েছে -->
-        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
-    </div>
-
-    <script>
+        // === ২. গ্লোবাল ভেরিয়েবল এবং উপাদানসমূহ ===
         const tg = window.Telegram.WebApp;
-        // !!! এখানে আপনার Render সার্ভারের API এর বেস URL বসান !!!
-        const RENDER_API_BASE_URL = "আপনার_RENDER_API_URL_এখানে_বসবে/api"; 
-        const MONETAG_SECRET_KEY = "YOUR_MONETAG_SECRET_KEY"; // অবশ্যই আপনার আসল সিক্রেট কী বসান
-        
-        // Monetag SDK থেকে প্রাপ্ত গ্লোবাল ফাংশন
-        // এটি data-sdk='show_10070523' এর মাধ্যমে লোড হয়
-        const showMonetagAd = typeof show_10070523 === 'function' ? show_10070523 : null;
-
-        tg.ready();
-        
         const adButton = document.getElementById('adButton');
-        const userPointsSpan = document.getElementById('userPoints');
-        const withdrawForm = document.getElementById('withdrawForm');
-        const messageDiv = document.getElementById('message');
-        const adStatusDiv = document.getElementById('adStatus');
+        const userBalanceSpan = document.getElementById('userBalance');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const mainUI = document.getElementById('mainUI');
+        const statusMessage = document.getElementById('statusMessage');
+
         let currentUserId = null;
-
-        function generateTransactionId() {
-            // Monetag S2S এর জন্য ইউনিক ট্রানজেকশন আইডি তৈরি
-            return `tx_${currentUserId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-        }
-
-        // --- ১. ইউজার ডেটা লোড করা ---
-        async function loadUserData() {
-            if (!tg.initDataUnsafe.user) {
-                userPointsSpan.textContent = "ID নেই।";
-                return;
-            }
-
-            currentUserId = tg.initDataUnsafe.user.id;
-
-            try {
-                const response = await fetch(`${RENDER_API_BASE_URL}/user-data?id=${currentUserId}`);
-                
-                if (response.status === 404) {
-                    userPointsSpan.textContent = "0";
-                    tg.MainButton.setText("বটে /start করুন").show(); 
-                    tg.MainButton.onClick(() => tg.close()); 
-                    return;
-                }
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    userPointsSpan.textContent = data.points.toLocaleString('en-US');
-                    tg.MainButton.hide(); 
-                } else {
-                    userPointsSpan.textContent = "ত্রুটি";
-                    tg.showAlert("ইউজার ডেটা লোড করা যায়নি।");
-                }
-            } catch (error) {
-                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
-                tg.showAlert("নেটওয়ার্ক সংযোগে ত্রুটি।");
-            }
-        }
-
-        // --- ২. অ্যাড বাটন লজিক (Monetag ইন্টারস্টিশিয়াল এবং পয়েন্ট আর্নিং) ---
-        adButton.onclick = function() {
-            if (!currentUserId) {
-                return tg.showAlert("প্রথমে টেলিগ্রাম বটে /start লিখে আপনার অ্যাকাউন্ট সেটআপ করুন।");
-            }
-
-            if (!showMonetagAd) {
-                return tg.showAlert("Monetag SDK লোড হতে ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।");
-            }
-
-            adButton.disabled = true;
-            adStatusDiv.textContent = "বিজ্ঞাপন লোড হচ্ছে... দয়া করে এটি বন্ধ করবেন না।";
-            
-            // Monetag অ্যাড দেখানো
-            showMonetagAd(); 
-
-            // অ্যাডের জন্য একটি ডিলে (৫ সেকেন্ড)
-            const pointAwardDelay = 5000; 
-
-            setTimeout(async () => {
-                adStatusDiv.textContent = "অ্যাড দেখা সম্পন্ন হয়েছে। পয়েন্ট যোগ হচ্ছে...";
-                
-                tg.MainButton.setText("পয়েন্ট যোগ হচ্ছে...").showProgress();
-                
-                const transactionId = generateTransactionId();
-                
-                try {
-                    // ক্লায়েন্ট থেকে সিমুলেটেড S2S কলব্যাক ট্রানজেকশন তৈরি
-                    // এটি সার্ভারে যাবে এবং MONETAG_SECRET_KEY দিয়ে ভেরিফাই হবে
-                    const response = await fetch(`${RENDER_API_BASE_URL}/monetag-callback?secret=${MONETAG_SECRET_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: currentUserId,
-                            transaction_id: transactionId,
-                            status: 'success'
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    tg.MainButton.hideProgress();
-
-                    if (data.status === 'ok') {
-                        tg.showAlert("✅ সফল: ৫ পয়েন্ট যোগ হয়েছে!");
-                        loadUserData();
-                    } else if (data.status === 'info') {
-                        tg.showAlert(`ℹ️ তথ্য: ${data.message}`);
-                    }
-                    else {
-                        tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
-                    }
-
-                } catch (error) {
-                    tg.MainButton.hideProgress();
-                    tg.showAlert("নেটওয়ার্ক ত্রুটি। পয়েন্ট যোগ করা যায়নি।");
-                }
-                
-                adStatusDiv.textContent = "অ্যাড দেখার জন্য প্রস্তুত...";
-                adButton.disabled = false;
-                tg.MainButton.hide();
-
-            }, pointAwardDelay);
-
-        };
-
-        // --- ৩. উইথড্র ফর্ম সাবমিট লজিক ---
-        withdrawForm.onsubmit = async function(e) {
-            e.preventDefault();
-            
-            const points = parseInt(document.getElementById('points').value);
-            const paymentAddress = document.getElementById('paymentAddress').value.trim();
-
-            if (!currentUserId) {
-                 return tg.showAlert("প্রথমে টেলিগ্রাম বটে /start লিখে আপনার অ্যাকাউন্ট সেটআপ করুন।");
-            }
-            if (points < 10000 || points > 100000) {
-                return tg.showAlert("উইথড্র পয়েন্ট অবশ্যই 10,000 থেকে 100,000 এর মধ্যে হতে হবে।");
-            }
-            if (paymentAddress.length < 10) {
-                 return tg.showAlert("সঠিক পেমেন্ট নম্বর দিন।");
-            }
-
-            messageDiv.textContent = "রিকোয়েস্ট পাঠানো হচ্ছে...";
-            tg.MainButton.setText("প্রক্রিয়াকরণ চলছে...").showProgress();
-
-            try {
-                const response = await fetch(`${RENDER_API_BASE_URL}/withdraw`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegramId: currentUserId,
-                        points: points,
-                        paymentAddress: paymentAddress
-                    })
-                });
-
-                const data = await response.json();
-                tg.MainButton.hideProgress();
-
-                if (response.ok) { 
-                    messageDiv.style.color = 'green';
-                    tg.showAlert(`✅ সফল: ${data.message}`);
-                    loadUserData(); // পয়েন্ট আপডেট করুন
-                } else {
-                    messageDiv.style.color = 'red';
-                    tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
-                }
-                messageDiv.textContent = data.message;
-                
-            } catch (error) {
-                tg.MainButton.hideProgress();
-                messageDiv.style.color = 'red';
-                messageDiv.textContent = "নেটওয়ার্ক সংযোগে ত্রুটি। নিশ্চিত করুন Render সার্ভার চালু আছে।";
-            }
-            tg.MainButton.hide();
-        };
-
-        // Mini App লোড হলে ডেটা লোড করুন
-        loadUserData();
-
-        // টেলিগ্রাম ইন্টারফেসের রঙ থিমের সাথে মিলিয়ে নেওয়া
-        document.body.style.backgroundColor = tg.themeParams.bg_color;
+        let isAdShowing = false;
         
+        // --- ইউটিলিটি ফাংশন ---
+        function showStatus(message, type = 'success') {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'border-red-300', 'bg-green-100', 'text-green-700', 'border-green-300', 'bg-yellow-100', 'text-yellow-700', 'border-yellow-300');
+
+            if (type === 'success') {
+                statusMessage.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+            } else if (type === 'error') {
+                statusMessage.classList.add('bg-red-100', 'text-red-700', 'border-red-300');
+            } else if (type === 'info') {
+                statusMessage.classList.add('bg-yellow-100', 'text-yellow-700', 'border-yellow-300');
+            }
+        }
+
+        // API কল ফাংশন
+        async function fetchAPI(endpoint, method = 'GET', data = null) {
+            try {
+                const url = `${RENDER_API_BASE_URL}${endpoint}`;
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentUserId}`,
+                        'Secret-Key': MONETAG_SECRET_KEY
+                    },
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `API ত্রুটি: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error("API কল ব্যর্থ:", error.message);
+                showStatus(`API ত্রুটি: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // --- প্রধান ফাংশনালিটি ---
+
+        // ইউজার ব্যালেন্স লোড করা
+        async function loadUserBalance() {
+            try {
+                const data = await fetchAPI(`/balance?userId=${currentUserId}`);
+                userBalanceSpan.textContent = data.balance;
+                showStatus("ব্যালেন্স সফলভাবে লোড হয়েছে।", 'success');
+            } catch (error) {
+                userBalanceSpan.textContent = '0';
+            } finally {
+                adButton.disabled = false;
+            }
+        }
+        
+        // পয়েন্ট প্রদান লজিক
+        async function grantReward(transactionId) {
+            try {
+                const data = await fetchAPI('/grant-reward', 'POST', {
+                    userId: currentUserId,
+                    points: REWARD_POINTS,
+                    transactionId: transactionId
+                });
+                
+                userBalanceSpan.textContent = data.newBalance;
+                showStatus(`সফল! আপনি ${REWARD_POINTS} কয়েন অর্জন করেছেন।`, 'success');
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (error) {
+                showStatus(`রিওয়ার্ড প্রদানে ত্রুটি: ${error.message}`, 'error');
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        // অ্যাড দেখানোর ইভেন্ট হ্যান্ডলার
+        adButton.onclick = function() {
+            if (isAdShowing || !window.show_10070523) return;
+
+            const transactionId = uuidv4(); 
+            showStatus("বিজ্ঞাপন লোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।", 'info');
+            adButton.disabled = true;
+            isAdShowing = true;
+
+            // Monetag অ্যাড দেখানো এবং প্রমিস হ্যান্ডেল করা
+            window.show_10070523({ ymid: currentUserId })
+                .then(() => {
+                    showStatus("অ্যাড দেখা শেষ হয়েছে। পয়েন্ট যুক্ত হচ্ছে...", 'info');
+                    grantReward(transactionId);
+                })
+                .catch((error) => {
+                    console.error('Ad failed, skipped, or user dismissed:', error);
+                    showStatus("বিজ্ঞাপনটি সফল হয়নি বা স্কিপ করা হয়েছে।", 'error');
+                    tg.HapticFeedback.notificationOccurred('warning');
+                })
+                .finally(() => {
+                    adButton.disabled = false;
+                    isAdShowing = false;
+                });
+        };
+
+        // উইথড্র বাটন ফাংশন
+        document.getElementById('withdrawButton').onclick = function() {
+            tg.showAlert('উইথড্র ফাংশনালিটি এখনও ডেভেলপ করা হচ্ছে।');
+        };
+
+        // --- প্রাথমিক ইনিশিয়ালাইজেশন ---
+        function initApp() {
+            tg.ready();
+            tg.expand(); 
+            
+            const user = tg.initDataUnsafe.user;
+            if (user) {
+                currentUserId = user.id.toString();
+                userIdDisplay.textContent = currentUserId;
+                
+                loadingIndicator.classList.add('hidden');
+                mainUI.classList.remove('hidden');
+                loadUserBalance();
+            } else {
+                loadingIndicator.textContent = "ত্রুটি: টেলিগ্রাম ব্যবহারকারীর ডেটা পাওয়া যায়নি।";
+                tg.showAlert("গুরুত্বপূর্ণ ত্রুটি: ইউজার আইডি লোড হয়নি।");
+            }
+        }
+
+        window.onload = initApp;
+
     </script>
 </body>
 </html>
-
