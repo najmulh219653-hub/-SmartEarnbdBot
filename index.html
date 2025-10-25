@@ -6,7 +6,7 @@
     <title>EarnQuick Official</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        /* উন্নত CSS যা আপনার মিনি অ্যাপটিকে আরও আকর্ষণীয় করে তুলবে */
+        /* [আপনার স্টাইল কোড এখানে থাকবে - আগের কোড থেকে অপরিবর্তিত] */
         body { 
             font-family: 'Arial', sans-serif; 
             background-color: #f8f9fa; 
@@ -47,18 +47,16 @@
             white-space: nowrap; 
         }
 
-        /* অ্যাড ব্যানার স্টাইল (প্লেসহোল্ডার) */
+        /* অ্যাড ব্যানার স্টাইল */
         .ad-banner {
             width: 100%;
-            height: 50px;
+            min-height: 50px; 
             background-color: #e0e0e0;
             border: 1px dashed #999;
             text-align: center;
-            line-height: 50px;
-            font-weight: bold;
-            color: #666;
+            line-height: 50px; 
             margin-bottom: 20px;
-            font-size: 0.8rem;
+            overflow: hidden; 
         }
         .ad-banner-bottom {
             margin-top: 20px;
@@ -126,6 +124,9 @@
           100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
         }
     </style>
+    
+    <script src='//libtl.com/sdk.js' async></script>
+
 </head>
 <body>
 
@@ -143,8 +144,8 @@
             </span>
         </marquee>
     </div>
-    <div class="ad-banner" id="top-ad-banner">
-        এড প্লেসহোল্ডার ১ (Adsterra/Ads)
+    <div class="ad-banner" id="top-ad-banner" style="height: 90px; line-height: normal;">
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
 
     <div class="balance-card">
@@ -182,17 +183,17 @@
 
     <div id="ad-tasks" class="hidden my-4 p-3 border rounded">
         <h5>আজকের টাস্ক: বিজ্ঞাপন দেখুন</h5>
-        <p class="small text-muted">প্রতিটি বিজ্ঞাপনে **5** পয়েন্ট!</p>
+        <p class="small text-muted">প্রতিটি বিজ্ঞাপনে **5** পয়েন্ট! অ্যাড দেখার পরেই পয়েন্ট যোগ হবে।</p>
         
-        <button class="btn btn-outline-primary btn-sm btn-block mt-2" onclick="addPoints(5)">বিজ্ঞাপন দেখুন ১ (৫ পয়েন্ট)</button>
-        <button class="btn btn-outline-primary btn-sm btn-block" onclick="addPoints(5)">বিজ্ঞাপন দেখুন ২ (৫ পয়েন্ট)</button>
-        <button class="btn btn-outline-primary btn-sm btn-block" onclick="addPoints(5)">বিজ্ঞাপন দেখুন ৩ (৫ পয়েন্ট)</button>
+        <button class="btn btn-outline-primary btn-sm btn-block mt-2" onclick="loadAdTask(1, 5);">বিজ্ঞাপন দেখুন ১ (৫ পয়েন্ট)</button>
+        <button class="btn btn-outline-primary btn-sm btn-block" onclick="loadAdTask(2, 5);">বিজ্ঞাপন দেখুন ২ (৫ পয়েন্ট)</button>
+        <button class="btn btn-outline-primary btn-sm btn-block" onclick="loadAdTask(3, 5);">বিজ্ঞাপন দেখুন ৩ (৫ পয়েন্ট)</button>
         
         <button class="btn btn-danger btn-action mt-3" onclick="hideAdTasks()">মূল স্ক্রিনে ফিরে যান (Cancel)</button>
     </div>
 
-    <div class="ad-banner ad-banner-bottom" id="bottom-ad-banner">
-        এড প্লেসহোল্ডার ২ (Adsterra/Ads)
+    <div class="ad-banner ad-banner-bottom" id="bottom-ad-banner" style="height: 90px; line-height: normal;">
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
 
     <div id="admin-panel" class="hidden my-4 p-3 border rounded border-danger">
@@ -249,24 +250,44 @@
     const MIN_WITHDRAWAL_POINTS = 10000;
     
     // 🛑 গুরুত্বপূর্ণ: আপনার টেলিগ্রাম ইউজার আইডি এখানে বসান
-    const ADMIN_TELEGRAM_ID = '8145444675'; // Najmul Hoque Forhad এর ID
+    const ADMIN_TELEGRAM_ID = '8145444675'; 
     
+    // টেস্টিং এর জন্য ব্লগার ইউজার আইডি
+    const BLOGGER_TEST_ID = 'blogger_test_user_101'; 
+
     // উইথড্রয়াল সময়সীমা (২৪ ঘন্টা ফরম্যাট)
     const WITHDRAWAL_START_HOUR = 6;   // সকাল ৬টা
     const WITHDRAWAL_END_HOUR = 20;    // রাত ৮টা
+
+    // মনিট্যাগ অ্যাড জোন আইডি
+    const MONETAG_ZONES = {
+        1: '10085320', // বিজ্ঞাপন দেখুন ১
+        2: '10070523', // বিজ্ঞাপন দেখুন ২
+        3: '9852420'   // বিজ্ঞাপন দেখুন ৩
+    };
 
     // --- Global Variables ---
     let currentUserId = null;
     let currentBalance = 0;
     let currentReferralCount = 0;
     let isAdmin = false;
+    let currentUsername = null;
+    let currentFirstName = null;
+
 
     // --- Utility Functions ---
     function showMessage(type, message, duration = 3000) {
-        const messageArea = document.getElementById('message-area');
+        let messageArea = document.getElementById('global-message-area');
+        if (!messageArea) {
+            messageArea = document.createElement('div');
+            messageArea.id = 'global-message-area';
+            document.querySelector('.app-container').prepend(messageArea);
+        }
+        
         messageArea.className = `alert alert-${type} alert-custom`;
         messageArea.innerText = message;
         messageArea.classList.remove('hidden');
+        
         setTimeout(() => {
             messageArea.classList.add('hidden');
         }, duration);
@@ -309,54 +330,66 @@
     // 1. Register or Check User 
     async function registerOrCheckUser() {
         const params = getQueryParams();
-        let userId = params.uid || 'blogger_test_user_101'; 
+        let userId = params.uid || BLOGGER_TEST_ID; 
         let refererId = params.ref || null;
-        
+        let username = null;
+        let firstName = null;
+
+        // টেলিগ্রাম মিনি অ্যাপ থেকে ডেটা লোড করা
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            userId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+            const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+            userId = tgUser.id.toString();
+            username = tgUser.username || null;
+            firstName = tgUser.first_name || null;
         } 
-        // 🛑 অ্যাডমিন আইডি চেক
-        if (userId === ADMIN_TELEGRAM_ID) {
+        
+        // গ্লোবাল ভেরিয়েবল সেট করা
+        currentUserId = userId;
+        currentUsername = username;
+        currentFirstName = firstName;
+        
+        // অ্যাডমিন আইডি চেক: টেস্টিং আইডিকে অ্যাডমিন অ্যাক্সেস দেওয়া হলো
+        if (currentUserId === ADMIN_TELEGRAM_ID || currentUserId === BLOGGER_TEST_ID) {
             isAdmin = true;
         }
 
-        currentUserId = userId;
-        
-        // যদি এটি একটি টেস্টিং আইডি না হয়, তবে API কল করুন
-        if (userId !== 'blogger_test_user_101' || isAdmin) {
-             try {
-                const response = await fetch(`${SERVER_URL}/api/register_or_check`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, refererId })
-                });
-                const data = await response.json();
+        // API কল: ইউজার ডেটা সার্ভারে পাঠানো
+        try {
+            const response = await fetch(`${SERVER_URL}/api/register_or_check`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, refererId, username: currentUsername, firstName: currentFirstName })
+            });
 
-                if (data.success) {
-                    updateBalanceDisplay(data.earned_points, data.referral_count);
-                    if (data.message && data.message.includes('Referral bonus')) {
-                        showMessage('success', data.message, 5000);
-                    }
-                } else {
-                    showMessage('danger', 'ইউজার লোড করতে ব্যর্থ: ' + (data.message || 'সার্ভার ত্রুটি'));
-                    document.getElementById('loading-spinner').classList.add('hidden');
-                }
-            } catch (error) {
-                console.error('Registration/Check error:', error);
-                showMessage('danger', 'সার্ভার সংযোগ ত্রুটি (500). অনুগ্রহ করে পরে চেষ্টা করুন।');
+            if (!response.ok) {
+                // সার্ভার সংযোগ সফল হলেও API এর ভেতরে ত্রুটি
+                const errorData = await response.json();
+                throw new Error(`API Error: ${errorData.message || 'Unknown Server Error'}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                updateBalanceDisplay(data.earned_points, data.referral_count);
+                showMessage('success', '✅ সার্ভার সংযোগ সফল। ইউজার ডেটা লোড হয়েছে।');
+            } else {
+                showMessage('warning', 'ইউজার লোড করতে ব্যর্থ: ' + (data.message || 'অজানা ত্রুটি। সার্ভার লগ চেক করুন।'));
                 document.getElementById('loading-spinner').classList.add('hidden');
             }
-        } else {
-            // যদি API কল না করে তবে ডেমো ডেটা দেখান
-            updateBalanceDisplay(0, 0); 
-            showMessage('warning', 'টেলিগ্রাম অ্যাপের বাইরে চলছে (পরীক্ষার জন্য)।', 5000);
+        } catch (error) {
+            console.error('Registration/Check error:', error);
+            // 🛑 সার্ভার সংযোগ ব্যর্থ বার্তা
+            updateBalanceDisplay(0, 0); // ডেমো ডেটা দেখান
+            showMessage('danger', `❌ সার্ভার সংযোগ ব্যর্থ। ${error.message || 'আপনার GitHub/Render চেক করুন।'}`);
+            document.getElementById('loading-spinner').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
         }
     }
 
-    // 2. Add Points (Simulating Ad Click)
+    // 2. Add Points (API Call)
     async function addPoints(points) {
-        if (!currentUserId) {
-            showMessage('danger', 'ইউজার লোড হয়নি। পেজটি রিফ্রেশ করুন।');
+        if (!currentUserId || currentUserId === BLOGGER_TEST_ID) {
+            showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ। আসল Telegram ID ব্যবহার করুন।');
             return;
         }
 
@@ -366,21 +399,54 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUserId, points })
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`API Error: ${errorData.message || 'Unknown Server Error'}`);
+            }
+            
             const data = await response.json();
 
             if (data.success) {
                 updateBalanceDisplay(data.new_points, currentReferralCount);
-                showMessage('success', `${points} পয়েন্ট সফলভাবে যোগ হয়েছে!`);
+                showMessage('success', `✅ অ্যাড দেখা শেষ। সার্ভার সংযোগ সফল। ${points} পয়েন্ট যোগ হয়েছে!`);
             } else {
-                showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ: ' + data.message);
+                showMessage('danger', 'পয়েন্ট যোগ করতে ব্যর্থ: ' + (data.message || 'অজানা কারণ'));
             }
         } catch (error) {
             console.error('Add points error:', error);
-            showMessage('danger', 'পয়েন্ট যোগ করার সময় সার্ভার সংযোগ ত্রুটি।');
+            showMessage('danger', `❌ পয়েন্ট যোগ করার সময় সার্ভার সংযোগ ত্রুটি: ${error.message}`);
         }
     }
     
-    // 3. Withdraw Request Submission (Time Check Added)
+    // 4. Monetag Ad Loading Function (Reward Granting Logic)
+    function loadAdTask(adNumber, points) {
+        const zoneId = MONETAG_ZONES[adNumber];
+        if (!zoneId) return;
+        
+        showMessage('info', `Monetag/Libtl অ্যাড লোড হচ্ছে (Zone: ${zoneId})। অ্যাড দেখার জন্য অপেক্ষা করুন...`);
+
+        // Monettag-এর show_XXX ফাংশনটিকে ডাইনামিকভাবে কল করা হচ্ছে
+        const showFunctionName = `show_${zoneId}`;
+
+        if (window[showFunctionName]) {
+            // ymid প্যারামিটার হিসেবে ইউজার আইডি পাঠানো হচ্ছে (ট্র্যাকিং এর জন্য)
+            window[showFunctionName]({ ymid: currentUserId })
+                .then(() => {
+                    console.log(`Ad ${adNumber} finished successfully.`);
+                    // 🛑 অ্যাড দেখা শেষ হলে পয়েন্ট যোগ করার API কল
+                    addPoints(points); 
+                })
+                .catch((error) => {
+                    console.error(`Ad ${adNumber} failed or skipped:`, error);
+                    showMessage('warning', `⚠️ অ্যাড লোড হয়নি বা বাতিল হয়েছে। ${points} পয়েন্ট যোগ করা হয়নি।`);
+                });
+        } else {
+            showMessage('danger', `Monetag SDK লোড হয়নি। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।`);
+        }
+    }
+
+    // 3. Withdraw Request Submission (No Change)
     document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const pointsToWithdraw = parseInt(document.getElementById('points-to-withdraw').value);
@@ -390,10 +456,9 @@
         
         withdrawMessageArea.classList.add('hidden');
         
-        // 🛑 উইথড্রয়াল সময় চেক
         if (!isWithdrawalTime()) {
             withdrawMessageArea.className = 'alert alert-danger mt-3';
-            withdrawMessageArea.innerText = `উত্তোলন শুধুমাত্র সকাল ${WITHDRAWAL_START_HOUR}:00 টা থেকে রাত ${WITHDRAWAL_END_HOUR}:00 টা পর্যন্ত চলে। এখন চেষ্টা করুন।`;
+            withdrawMessageArea.innerText = `উত্তোলন শুধুমাত্র সকাল ${WITHDRAWAL_START_HOUR}:00 টা থেকে রাত ${WITHDRAWAL_END_HOUR}:00 টা পর্যন্ত চলে।`;
             withdrawMessageArea.classList.remove('hidden');
             return;
         }
@@ -411,6 +476,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUserId, pointsToWithdraw, paymentMethod, paymentNumber })
             });
+            
             const data = await response.json();
 
             if (data.success) {
@@ -419,7 +485,6 @@
                 withdrawMessageArea.innerText = 'উত্তোলনের অনুরোধ সফলভাবে জমা হয়েছে!';
                 withdrawMessageArea.classList.remove('hidden');
                 
-                // Hide modal after a delay
                 setTimeout(() => {
                     $('#withdrawModal').modal('hide');
                     document.getElementById('withdraw-form').reset();
@@ -438,7 +503,8 @@
         }
     });
 
-    // --- UI/Utility Functions ---
+
+    // --- UI/Utility Functions (No Change) ---
     function showAdTasks() {
         document.getElementById('main-content').classList.add('hidden');
         document.getElementById('top-ad-banner').classList.add('hidden');
@@ -453,7 +519,6 @@
         document.getElementById('bottom-ad-banner').classList.remove('hidden');
     }
 
-    // --- Admin Panel Handlers (Placeholder) ---
     function showAdminPanel() {
         if (!isAdmin) return;
         document.getElementById('main-content').classList.add('hidden');
@@ -462,8 +527,6 @@
         document.getElementById('bottom-ad-banner').classList.add('hidden');
         document.getElementById('admin-panel').classList.remove('hidden');
         showMessage('danger', 'অ্যাডমিন প্যানেল লোড হয়েছে।');
-
-        // Note: এখানে অ্যাডমিন প্যানেলের ডেটা লোডিং কোড যুক্ত করতে হবে (get_admin_stats, get_withdrawals)
     }
 
     function hideAdminPanel() {
@@ -479,8 +542,8 @@
             return;
         }
         
-        // ⚠️ আপনার ব্লগার URL এখানে বসান
-        const referralLink = `YOUR_BLOGGER_URL?ref=${currentUserId}`;
+        // আপনার বট এর ইউজারনেম নিশ্চিত করুন
+        const referralLink = `https://t.me/EarnQuick_Official_বত/start?ref=${currentUserId}`;
         
         navigator.clipboard.writeText(referralLink).then(() => {
             showMessage('info', 'রেফারেল লিঙ্ক কপি করা হয়েছে! লিঙ্ক: ' + referralLink);
@@ -493,20 +556,28 @@
     // --- Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         // Load Bootstrap JS dependencies for Modal functionality
+        // Note: These need to load first for Bootstrap's modal/dropdown to work
+        
+        // JQuery (Needed for Bootstrap 4)
         const script1 = document.createElement('script');
         script1.src = "https://code.jquery.com/jquery-3.5.1.slim.min.js";
         document.head.appendChild(script1);
 
+        // Popper.js (Needed for Bootstrap 4)
         const script2 = document.createElement('script');
         script2.src = "https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js";
         document.head.appendChild(script2);
 
+        // Bootstrap JS
         const script3 = document.createElement('script');
         script3.src = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js";
         document.head.appendChild(script3);
 
-        // Wait for DOM to load, then check user
-        registerOrCheckUser();
+        // Wait for all scripts to load, then check user
+        // We set a small timeout to ensure the external scripts (JQuery, Popper, BS) load
+        setTimeout(() => {
+            registerOrCheckUser();
+        }, 300); 
     });
 
 </script>
