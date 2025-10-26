@@ -15,7 +15,8 @@
         .headline-bar { background-color: #38c172; color: white; padding: 8px 0; margin-bottom: 20px; overflow: hidden; white-space: nowrap; }
         .marquee { display: inline-block; padding-left: 100%; animation: scroll 20s linear infinite; }
         @keyframes scroll { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-        #adButton { background-color: var(--tg-theme-button-color, #007bff); color: var(--tg-theme-button-text-color, white); border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 90%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        #adButton, #referralButton { background-color: var(--tg-theme-button-color, #007bff); color: var(--tg-theme-button-text-color, white); border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 90%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        #referralButton { background-color: var(--tg-theme-link-color, #00bfff); } /* রেফার বাটনের জন্য আলাদা রঙ */
         #withdrawForm { background-color: var(--tg-theme-secondary-bg-color, #fff); padding: 20px; border-radius: 10px; margin-top: 20px; text-align: left; }
         #withdrawForm label { display: block; margin-top: 10px; font-weight: 500; }
         #withdrawForm input, #withdrawForm button, #withdrawForm select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--tg-theme-hint-color, #ccc); border-radius: 5px; box-sizing: border-box; }
@@ -42,6 +43,11 @@
         <button id="adButton">
             👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন
         </button>
+
+        <button id="referralButton">
+            🔗 রেফার লিংক দেখুন
+        </button>
+        <p id="referralLinkDisplay" style="display:none; word-wrap: break-word; color: var(--tg-theme-link-color); font-weight: bold; padding: 10px; background: var(--tg-theme-secondary-bg-color); border-radius: 5px;"></p>
 
         <h2>পয়েন্ট উইথড্র করুন</h2>
         <form id="withdrawForm">
@@ -72,16 +78,20 @@
     <script>
         const tg = window.Telegram.WebApp;
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
+        const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম দিন
 
         tg.ready();
         
         const adButton = document.getElementById('adButton');
+        const referralButton = document.getElementById('referralButton'); // নতুন বাটন
+        const referralLinkDisplay = document.getElementById('referralLinkDisplay');
         const userPointsSpan = document.getElementById('userPoints');
         const bdtAmountSpan = document.getElementById('bdtAmount');
         const referralCountSpan = document.getElementById('referralCount');
         const withdrawForm = document.getElementById('withdrawForm');
         const messageDiv = document.getElementById('message');
         let currentUserId = null;
+        let userReferralCode = null; // রেফারেল কোড সংরক্ষণের জন্য
 
         async function loadUserData() {
             if (!tg.initDataUnsafe.user) {
@@ -96,6 +106,7 @@
                 
                 if (data.success) {
                     userPointsSpan.textContent = data.points.toLocaleString('en-US');
+                    userReferralCode = data.referral_code; // রেফারেল কোড সেভ করা হলো
                     
                     const bdt = (data.points / 10000) * 40;
                     bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`;
@@ -112,11 +123,47 @@
             }
         }
 
+        // --- অ্যাড বাটন লজিক ---
         adButton.onclick = function() {
+            // মনিটেগ/এডেস্ট্রা অ্যাড লোড হওয়ার পর পয়েন্ট যোগ করার লজিক এখানে যুক্ত করতে হবে।
+            // এই সতর্কবার্তাটি কেবল অস্থায়ী।
             tg.showAlert("বিজ্ঞাপন লোড হচ্ছে... এটি শেষ হলে আপনার অ্যাকাউন্টে পয়েন্ট যুক্ত হবে।");
         };
 
-        // উইথড্র ফর্ম সাবমিট
+        // --- রেফারেল বাটন লজিক ---
+        referralButton.onclick = function() {
+            if (!userReferralCode) {
+                return tg.showAlert("রেফারেল কোড লোড হচ্ছে, এক মিনিট অপেক্ষা করুন।");
+            }
+            
+            const referralLink = `https://t.me/${BOT_USERNAME}?start=${userReferralCode}`;
+            
+            if (referralLinkDisplay.style.display === 'none') {
+                referralLinkDisplay.textContent = referralLink;
+                referralLinkDisplay.style.display = 'block';
+                referralButton.textContent = '👆 লিঙ্কটি কপি করুন';
+                
+                // লিঙ্কটি ক্লিক করলে কপি করার সুবিধা
+                tg.showPopup({
+                    title: "রেফার করুন",
+                    message: "আপনার রেফারেল লিঙ্ক তৈরি: " + referralLink + "\n\nপ্রতি রেফারে ২৫০ পয়েন্ট বোনাস!",
+                    buttons: [{ id: 'copy', text: 'কপি করুন' }]
+                }, (buttonId) => {
+                    if (buttonId === 'copy') {
+                        navigator.clipboard.writeText(referralLink).then(() => {
+                            tg.showPopup({ title: 'সফল', message: 'রেফারেল লিঙ্ক কপি করা হয়েছে!' });
+                        });
+                    }
+                });
+                
+            } else {
+                navigator.clipboard.writeText(referralLink).then(() => {
+                    tg.showPopup({ title: 'সফল', message: 'রেফারেল লিঙ্ক কপি করা হয়েছে!' });
+                });
+            }
+        };
+
+        // উইথড্র ফর্ম সাবমিট (পূর্বের লজিক)
         withdrawForm.onsubmit = async function(e) {
             e.preventDefault();
             
