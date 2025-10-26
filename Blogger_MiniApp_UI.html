@@ -24,7 +24,10 @@
     </style>
 </head>
 <body>
-    <div class="ad-slot top-ad">Monetag Top Banner Ad Slot Here</div>
+    <div class="ad-slot top-ad">
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+    </div>
+    
     <div class="headline-bar">
         <div class="marquee">
             📣 উইথড্র চালু সকাল ৬টা থেকে রাত ৮টা পর্যন্ত | যোগাযোগ: ০১৯১৩৬২১৫১০ | ইমেইল: najmulh219653@gmail.com 📣
@@ -59,7 +62,11 @@
             <div id="message"></div>
         </form>
     </div>
-    <div class="ad-slot bottom-ad">Monetag Bottom Banner Ad Slot Here</div>
+
+    <div class="ad-slot bottom-ad">
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         // আপনার Render API URL নিশ্চিত করুন
@@ -83,15 +90,10 @@
 
             currentUserId = tg.initDataUnsafe.user.id;
             try {
+                // CORS সমাধান যোগ করার পর এখন এই কল সফল হওয়ার কথা
                 const response = await fetch(`${RENDER_API_URL}/user-data?id=${currentUserId}`);
                 
-                if (response.status === 404) {
-                    userPointsSpan.textContent = "0";
-                    bdtAmountSpan.textContent = "০.০০ BDT";
-                    referralCountSpan.textContent = "০";
-                    return; 
-                }
-
+                // 404 নয়, এখন API ইউজার না পেলে 0 পয়েন্ট রিটার্ন করছে।
                 const data = await response.json();
                 
                 if (data.success) {
@@ -103,8 +105,10 @@
 
                 } else {
                     userPointsSpan.textContent = "ত্রুটি";
+                    referralCountSpan.textContent = "ত্রুটি";
                 }
             } catch (error) {
+                // এটি নেটওয়ার্ক ত্রুটি হলে দেখাবে
                 userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
                 bdtAmountSpan.textContent = "০.০০ BDT";
                 referralCountSpan.textContent = "ত্রুটি";
@@ -141,7 +145,7 @@
                         telegramId: currentUserId,
                         points: points,
                         paymentAddress: paymentAddress,
-                        paymentMethod: paymentMethod // মেথড যোগ করা হলো
+                        paymentMethod: paymentMethod
                     })
                 });
 
