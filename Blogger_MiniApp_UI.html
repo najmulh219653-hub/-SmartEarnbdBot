@@ -16,13 +16,15 @@
         .marquee { display: inline-block; padding-left: 100%; animation: scroll 20s linear infinite; }
         @keyframes scroll { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         #adButton, #referralButton { background-color: var(--tg-theme-button-color, #007bff); color: var(--tg-theme-button-text-color, white); border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 90%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        #referralButton { background-color: var(--tg-theme-link-color, #00bfff); } /* রেফার বাটনের জন্য আলাদা রঙ */
+        #referralButton { background-color: var(--tg-theme-link-color, #00bfff); } 
         #withdrawForm { background-color: var(--tg-theme-secondary-bg-color, #fff); padding: 20px; border-radius: 10px; margin-top: 20px; text-align: left; }
         #withdrawForm label { display: block; margin-top: 10px; font-weight: 500; }
         #withdrawForm input, #withdrawForm button, #withdrawForm select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--tg-theme-hint-color, #ccc); border-radius: 5px; box-sizing: border-box; }
         #withdrawForm button { background-color: var(--tg-theme-link-color, #00bfff); color: white; cursor: pointer; margin-top: 15px; }
         #message { margin-top: 10px; font-weight: bold; text-align: center; }
     </style>
+    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
+    
 </head>
 <body>
     <div class="ad-slot top-ad">
@@ -32,7 +34,7 @@
     
     <div class="headline-bar">
         <div class="marquee">
-            📣 **প্রতি রেফারে ২৫০ পয়েন্ট বোনাস!** | উইথড্র চালু সকাল ৬টা থেকে রাত ৮টা পর্যন্ত | যোগাযোগ: ০১৯১৩৬২১৫১০ | ইমেইল: najmulh219653@gmail.com 📣
+            📣 **বিশেষ সতর্কতা:** উইথড্র চালু প্রতিদিন সকাল ৬টা থেকে রাত ৮টা পর্যন্ত। | **প্রতি রেফারে ২৫০ পয়েন্ট বোনাস!** | যোগাযোগ: ০১৯১৩৬২১৫১০ 📣
         </div>
     </div>
     <div class="container">
@@ -78,12 +80,12 @@
     <script>
         const tg = window.Telegram.WebApp;
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
-        const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম দিন
+        const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
         tg.ready();
         
         const adButton = document.getElementById('adButton');
-        const referralButton = document.getElementById('referralButton'); // নতুন বাটন
+        const referralButton = document.getElementById('referralButton'); 
         const referralLinkDisplay = document.getElementById('referralLinkDisplay');
         const userPointsSpan = document.getElementById('userPoints');
         const bdtAmountSpan = document.getElementById('bdtAmount');
@@ -91,7 +93,7 @@
         const withdrawForm = document.getElementById('withdrawForm');
         const messageDiv = document.getElementById('message');
         let currentUserId = null;
-        let userReferralCode = null; // রেফারেল কোড সংরক্ষণের জন্য
+        let userReferralCode = null; 
 
         async function loadUserData() {
             if (!tg.initDataUnsafe.user) {
@@ -106,7 +108,7 @@
                 
                 if (data.success) {
                     userPointsSpan.textContent = data.points.toLocaleString('en-US');
-                    userReferralCode = data.referral_code; // রেফারেল কোড সেভ করা হলো
+                    userReferralCode = data.referral_code; 
                     
                     const bdt = (data.points / 10000) * 40;
                     bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`;
@@ -122,12 +124,52 @@
                 referralCountSpan.textContent = "ত্রুটি";
             }
         }
+        
+        // --- পয়েন্ট যোগ করার ফাংশন ---
+        async function grantReward(points) {
+            try {
+                const response = await fetch(`${RENDER_API_URL}/add-points`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: currentUserId, points: points })
+                });
 
-        // --- অ্যাড বাটন লজিক ---
+                const data = await response.json();
+                if (data.success) {
+                    tg.showPopup({ title: 'অভিনন্দন!', message: data.message });
+                    loadUserData(); // পয়েন্ট আপডেটের পর ইউজার ডেটা লোড করুন
+                } else {
+                    tg.showAlert(`পয়েন্ট যোগ করতে ব্যর্থ: ${data.message}`);
+                }
+            } catch (error) {
+                tg.showAlert("পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি হয়েছে।");
+            }
+        }
+
+        // --- অ্যাড বাটন লজিক (আপনার অ্যাড লজিক সহ) ---
         adButton.onclick = function() {
-            // মনিটেগ/এডেস্ট্রা অ্যাড লোড হওয়ার পর পয়েন্ট যোগ করার লজিক এখানে যুক্ত করতে হবে।
-            // এই সতর্কবার্তাটি কেবল অস্থায়ী।
-            tg.showAlert("বিজ্ঞাপন লোড হচ্ছে... এটি শেষ হলে আপনার অ্যাকাউন্টে পয়েন্ট যুক্ত হবে।");
+            if (!currentUserId) {
+                return tg.showAlert("আপনার ইউজার আইডি লোড হয়নি। দয়া করে রিফ্রেশ করুন।");
+            }
+            
+            adButton.disabled = true;
+            adButton.textContent = 'বিজ্ঞাপন লোড হচ্ছে... অপেক্ষা করুন';
+            
+            // **আপনার অ্যাড নেটওয়ার্কের লজিক এখানে যুক্ত করা হলো:**
+            show_10070523({ ymid: currentUserId }).then(() => {
+                console.log('User watched the ad');
+                grantReward(5); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
+                adButton.textContent = '✅ ৫ পয়েন্ট যোগ হয়েছে!';
+                setTimeout(() => {
+                    adButton.disabled = false;
+                    adButton.textContent = '👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন';
+                }, 30000); // ৩০ সেকেন্ডের কুলডাউন
+            }).catch(() => {
+                console.log('Ad failed or was skipped');
+                tg.showAlert("বিজ্ঞাপনটি দেখা হয়নি বা লোড হতে পারেনি। আবার চেষ্টা করুন।");
+                adButton.disabled = false;
+                adButton.textContent = '👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন';
+            });
         };
 
         // --- রেফারেল বাটন লজিক ---
@@ -143,7 +185,6 @@
                 referralLinkDisplay.style.display = 'block';
                 referralButton.textContent = '👆 লিঙ্কটি কপি করুন';
                 
-                // লিঙ্কটি ক্লিক করলে কপি করার সুবিধা
                 tg.showPopup({
                     title: "রেফার করুন",
                     message: "আপনার রেফারেল লিঙ্ক তৈরি: " + referralLink + "\n\nপ্রতি রেফারে ২৫০ পয়েন্ট বোনাস!",
@@ -163,7 +204,7 @@
             }
         };
 
-        // উইথড্র ফর্ম সাবমিট (পূর্বের লজিক)
+        // উইথড্র ফর্ম সাবমিট
         withdrawForm.onsubmit = async function(e) {
             e.preventDefault();
             
