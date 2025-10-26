@@ -22,7 +22,8 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** app.use((req, res, next) => {
+// **CORS সমাধান:** (সিনট্যাক্স ত্রুটি ঠিক করা হয়েছে)
+app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -31,7 +32,7 @@ app.use(express.json());
         return res.sendStatus(200);
     }
     next();
-});
+}); // <--- এই বন্ধনীটি যেন থাকে!
 
 // ***API রাউটার লোড করা (api.js থেকে)***
 app.use('/api', apiRouter); 
