@@ -79,6 +79,7 @@
 
     <script>
         const tg = window.Telegram.WebApp;
+        // রেন্ডার API URL
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
         const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
@@ -103,6 +104,7 @@
 
             currentUserId = tg.initDataUnsafe.user.id;
             try {
+                // API থেকে ইউজার ডেটা লোড করা
                 const response = await fetch(`${RENDER_API_URL}/user-data?id=${currentUserId}`);
                 const data = await response.json();
                 
@@ -122,6 +124,12 @@
                 userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
                 bdtAmountSpan.textContent = "০.০০ BDT";
                 referralCountSpan.textContent = "ত্রুটি";
+                // নেটওয়ার্ক ত্রুটি দেখালে মেসেজ ডিসপ্লে করা
+                if (document.getElementById('userPoints').textContent === "নেটওয়ার্ক ত্রুটি") {
+                     document.getElementById('userPoints').textContent = "নেটওয়ার্ক ত্রুটি";
+                     document.getElementById('bdtAmount').textContent = "০.০০ BDT";
+                     document.getElementById('referralCount').textContent = "ত্রুটি";
+                }
             }
         }
         
@@ -146,7 +154,7 @@
             }
         }
 
-        // --- অ্যাড বাটন লজিক (আপনার অ্যাড লজিক সহ) ---
+        // --- অ্যাড বাটন লজিক ---
         adButton.onclick = function() {
             if (!currentUserId) {
                 return tg.showAlert("আপনার ইউজার আইডি লোড হয়নি। দয়া করে রিফ্রেশ করুন।");
@@ -155,15 +163,17 @@
             adButton.disabled = true;
             adButton.textContent = 'বিজ্ঞাপন লোড হচ্ছে... অপেক্ষা করুন';
             
-            // **আপনার অ্যাড নেটওয়ার্কের লজিক এখানে যুক্ত করা হলো:**
+            // **আপনার অ্যাড নেটওয়ার্কের লজিক:**
+            // show_10070523 হচ্ছে আপনার SDK-এর ফাংশন
             show_10070523({ ymid: currentUserId }).then(() => {
                 console.log('User watched the ad');
                 grantReward(5); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
                 adButton.textContent = '✅ ৫ পয়েন্ট যোগ হয়েছে!';
+                // অ্যাড দেখার পর ৩০ সেকেন্ডের কুলডাউন 
                 setTimeout(() => {
                     adButton.disabled = false;
                     adButton.textContent = '👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন';
-                }, 30000); // ৩০ সেকেন্ডের কুলডাউন
+                }, 30000); 
             }).catch(() => {
                 console.log('Ad failed or was skipped');
                 tg.showAlert("বিজ্ঞাপনটি দেখা হয়নি বা লোড হতে পারেনি। আবার চেষ্টা করুন।");
@@ -178,7 +188,8 @@
                 return tg.showAlert("রেফারেল কোড লোড হচ্ছে, এক মিনিট অপেক্ষা করুন।");
             }
             
-            const referralLink = `https://t.me/${BOT_USERNAME}?start=${userReferralCode}`;
+            // রেফারেল লিঙ্ক তৈরি
+            const referralLink = `https://t.me/${BOT_USERNAME}?start=r_${userReferralCode}`;
             
             if (referralLinkDisplay.style.display === 'none') {
                 referralLinkDisplay.textContent = referralLink;
@@ -198,6 +209,7 @@
                 });
                 
             } else {
+                // সরাসরি ক্লিপবোর্ডে কপি
                 navigator.clipboard.writeText(referralLink).then(() => {
                     tg.showPopup({ title: 'সফল', message: 'রেফারেল লিঙ্ক কপি করা হয়েছে!' });
                 });
@@ -212,6 +224,7 @@
             const paymentAddress = document.getElementById('paymentAddress').value.trim();
             const paymentMethod = document.getElementById('paymentMethod').value;
 
+            // ভ্যালিডেশন
             if (!paymentMethod) {
                  return tg.showAlert("অনুগ্রহ করে একটি পেমেন্ট মেথড নির্বাচন করুন (বিকাশ, নগদ, রকেট)।");
             }
@@ -254,8 +267,10 @@
             }
         };
 
+        // পেজ লোড হলে ডেটা লোড করা
         loadUserData();
 
+        // টেলিগ্রাম থিম অনুযায়ী ব্যাকগ্রাউন্ড সেট করা
         document.body.style.backgroundColor = tg.themeParams.bg_color;
     </script>
 </body>
