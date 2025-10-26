@@ -1,4 +1,4 @@
-// server.js (পরিবর্তিত: রেফার বাটন সরানো হয়েছে)
+// server.js
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const apiRouter = require('./api');
@@ -9,7 +9,10 @@ require('dotenv').config();
 // --- কনফিগারেশন ---
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি 8145444675 নিশ্চিত করুন
+
+// ***গুরুত্বপূর্ণ: Render Environment Variable থেকে ADMIN_ID লোড করা হচ্ছে***
+const ADMIN_ID = process.env.ADMIN_ID; 
+
 const MINI_APP_URL = process.env.MINI_APP_URL; 
 const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
@@ -19,7 +22,7 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:**
+// **CORS সমাধান:** (যাতে ব্লগার থেকে API কল করতে পারে)
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -31,12 +34,14 @@ app.use((req, res, next) => {
     next();
 });
 
+// ***API রাউটার লোড করা (api.js থেকে)***
 app.use('/api', apiRouter); 
 
 // --- টেলিগ্রাম বট লজিক ---
 bot.start(async (ctx) => {
     const telegramId = ctx.from.id;
-    const is_admin = telegramId.toString() === ADMIN_ID; // অ্যাডমিন আইডি চেক
+    // অ্যাডমিন আইডি চেক করা: 8145444675
+    const is_admin = telegramId.toString() === ADMIN_ID; 
     const payload = ctx.startPayload; 
     let referrerCode = null;
     if (payload && payload.startsWith('r_')) {
@@ -50,6 +55,7 @@ bot.start(async (ctx) => {
         if (user && user.isNew && user.bonus) {
             message += `\n🎁 অভিনন্দন! আপনি রেফারেলের মাধ্যমে এসেছেন।`;
             if(user.referrerId) {
+                 // রেফারকারীকে পয়েন্ট পাওয়ার বার্তা পাঠানো
                  bot.telegram.sendMessage(user.referrerId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
             }
         }
@@ -57,30 +63,36 @@ bot.start(async (ctx) => {
         console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
     }
 
+    // অ্যাডমিন বাটন তৈরি (যদি ইউজার অ্যাডমিন হয়)
     const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + 'admin.html' } }] : [];
     
-    // রেফার বাটন সরানো হয়েছে। শুধু মিনি অ্যাপ বাটন আছে।
+    // মিনি অ্যাপ এবং অ্যাডমিন বাটন প্রদর্শন
     ctx.reply(message, {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
-                ...adminButton 
+                ...adminButton // অ্যাডমিন বাটন এখানে যোগ হবে
             ]
         }
     });
+    
+    // **অ্যাডমিনকে নিশ্চিতকরণ বার্তা**
+    if (is_admin) {
+        ctx.reply(`[ADMIN MODE]: আপনার ID (${telegramId}) সফলভাবে ADMIN_ID (${ADMIN_ID}) হিসাবে লোড হয়েছে।`);
+    } 
 });
 
-// রেফার বাটন মিনি অ্যাপে চলে যাওয়ায় callback_query হ্যান্ডলারটি আর প্রয়োজন নেই, তাই সেটি সরানো হলো।
-
-
 // --- সার্ভার লিসেনিং ও ওয়েবহুক সেটআপ ---
+// রেন্ডার থেকে হোস্টনেম বা ডিফল্ট হোস্টনেম ব্যবহার করা 
 const RENDER_HOSTNAME = process.env.RENDER_EXTERNAL_HOSTNAME || "smartearnbdbot.onrender.com"; 
 const WEBHOOK_URL = `https://${RENDER_HOSTNAME}/bot${BOT_TOKEN}`;
 
+// ওয়েবহুক সেট করা
 bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
     console.log(`🤖 বট ওয়েবহুক সেট করা হয়েছে: ${WEBHOOK_URL}`);
 });
 
+// টেলিগ্রাম ওয়েবহুক কলব্যাক হ্যান্ডেল করা
 app.use(bot.webhookCallback(`/bot${BOT_TOKEN}`));
 
 app.listen(PORT, () => {
