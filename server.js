@@ -11,10 +11,10 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // ***গুরুত্বপূর্ণ: Render Environment Variable থেকে ADMIN_ID লোড করা হচ্ছে***
-const ADMIN_ID = process.env.ADMIN_ID; 
+const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675
 
 const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; 
+const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম
 
 // --- অ্যাপ ইনিশিয়ালাইজেশন ---
 const app = express();
@@ -22,8 +22,7 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** (যাতে ব্লগার থেকে API কল করতে পারে)
-app.use((req, res, next) => {
+// **CORS সমাধান:** app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -78,6 +77,7 @@ bot.start(async (ctx) => {
     
     // **অ্যাডমিনকে নিশ্চিতকরণ বার্তা**
     if (is_admin) {
+        // এই মেসেজটি শুধুমাত্র অ্যাডমিন দেখতে পাবেন, যা নিশ্চিত করবে যে আইডি সঠিকভাবে লোড হয়েছে।
         ctx.reply(`[ADMIN MODE]: আপনার ID (${telegramId}) সফলভাবে ADMIN_ID (${ADMIN_ID}) হিসাবে লোড হয়েছে।`);
     } 
 });
