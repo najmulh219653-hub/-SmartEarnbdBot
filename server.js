@@ -1,4 +1,4 @@
-// server.js
+// server.js (পরিবর্তিত: রেফার বাটন সরানো হয়েছে)
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const apiRouter = require('./api');
@@ -9,9 +9,9 @@ require('dotenv').config();
 // --- কনফিগারেশন ---
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = process.env.ADMIN_ID; // নিশ্চিত করুন যে আপনার সঠিক Telegram ID এখানে সেট করা আছে
+const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি 8145444675 নিশ্চিত করুন
 const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম দিন
+const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
 // --- অ্যাপ ইনিশিয়ালাইজেশন ---
 const app = express();
@@ -19,13 +19,12 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** নেটওয়ার্ক ত্রুটি ঠিক করার জন্য
+// **CORS সমাধান:**
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
-    // Preflight (OPTIONS) রিকোয়েস্ট হ্যান্ডেল করা
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
@@ -58,39 +57,20 @@ bot.start(async (ctx) => {
         console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
     }
 
-    // অ্যাডমিন আইডি সঠিক হলে বাটন দেখা যাবে
     const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + 'admin.html' } }] : [];
     
-    // রেফার বাটন ও Mini App বাটন
+    // রেফার বাটন সরানো হয়েছে। শুধু মিনি অ্যাপ বাটন আছে।
     ctx.reply(message, {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
-                [{ text: '🔗 রেফার করুন', callback_data: 'show_referral' }],
-                ...adminButton // অ্যাডমিন বাটন যুক্ত করা হলো
+                ...adminButton 
             ]
         }
     });
 });
 
-bot.on('callback_query', async (ctx) => {
-    if (ctx.callbackQuery.data === 'show_referral') {
-        if (!pool) return ctx.answerCbQuery("সার্ভার এখনও প্রস্তুত নয়।");
-
-        const result = await pool.query('SELECT referral_code FROM users WHERE telegram_id = $1', [ctx.from.id]);
-        const refCode = result.rows.length ? result.rows[0].referral_code : `r_${ctx.from.id}`;
-        
-        const referralLink = `https://t.me/${BOT_USERNAME}?start=${refCode}`;
-        
-        ctx.editMessageText(`আপনার রেফারেল লিঙ্ক: \n${referralLink}\n\nপ্রতি রেফারে আপনি ২৫০ পয়েন্ট পাবেন।`, {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🔗 কপি করুন ও শেয়ার করুন', url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}` }]
-                ]
-            }
-        });
-    }
-});
+// রেফার বাটন মিনি অ্যাপে চলে যাওয়ায় callback_query হ্যান্ডলারটি আর প্রয়োজন নেই, তাই সেটি সরানো হলো।
 
 
 // --- সার্ভার লিসেনিং ও ওয়েবহুক সেটআপ ---
