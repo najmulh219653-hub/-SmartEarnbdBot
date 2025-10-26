@@ -1,7 +1,6 @@
 // server.js
 const express = require('express');
 const { Telegraf } = require('telegraf');
-// মডিউলগুলি সঠিকভাবে আমদানি করা হয়েছে
 const apiRouter = require('./api');
 const { registerUser } = require('./logic');
 const { pool } = require('./db'); 
@@ -12,18 +11,33 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_ID = process.env.ADMIN_ID;
 const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; 
+const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম দিন
 
 // --- অ্যাপ ইনিশিয়ালাইজেশন ---
 const app = express();
 const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME }); 
 
 app.use(express.json()); 
-// apiRouter একটি বৈধ Express Router হিসেবে লোড হচ্ছে
+
+// **CORS সমাধান:** Mini App থেকে API কলগুলির অনুমতি দেওয়া হলো।
+app.use((req, res, next) => {
+    // * ব্যবহার করা হয়েছে, যাতে Mini App যেকোনো অরিজিন থেকে লোড হলেও কাজ করে।
+    res.header('Access-Control-Allow-Origin', '*'); 
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Preflight (OPTIONS) রিকোয়েস্ট হ্যান্ডেল করা
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
 app.use('/api', apiRouter); 
 
 // --- টেলিগ্রাম বট লজিক ---
 bot.start(async (ctx) => {
+    // ... (রেজিস্ট্রেশন ও রেফারেল লজিক অপরিবর্তিত) ...
     const telegramId = ctx.from.id;
     const is_admin = telegramId.toString() === ADMIN_ID;
     const payload = ctx.startPayload; 
@@ -45,10 +59,10 @@ bot.start(async (ctx) => {
     } catch (error) {
         console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
     }
-    
+
     const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + 'admin.html' } }] : [];
     
-    // **রেফার বাটন নিশ্চিতকরণ**
+    // রেফার বাটন ও Mini App বাটন
     ctx.reply(message, {
         reply_markup: {
             inline_keyboard: [
