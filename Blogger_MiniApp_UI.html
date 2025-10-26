@@ -9,7 +9,7 @@
         /* CSS কোড (পেশাদারী UI এর জন্য) */
         body { font-family: sans-serif; text-align: center; margin: 0; padding: 0; background: var(--tg-theme-bg-color, #f4f4f4); color: var(--tg-theme-text-color, #000000); padding-bottom: 70px; }
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
-        .ad-slot { background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); height: 50px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; width: 100%; z-index: 10; }
+        .ad-slot { background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); height: 90px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; width: 100%; z-index: 10; }
         .top-ad { margin-bottom: 15px; position: sticky; top: 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         .bottom-ad { position: fixed; bottom: 0; left: 0; box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); }
         .headline-bar { background-color: #38c172; color: white; padding: 8px 0; margin-bottom: 20px; overflow: hidden; white-space: nowrap; }
@@ -25,7 +25,8 @@
 </head>
 <body>
     <div class="ad-slot top-ad">
-        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> 
+        <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
     
     <div class="headline-bar">
@@ -64,12 +65,12 @@
     </div>
 
     <div class="ad-slot bottom-ad">
-        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+        <script type="text/javascript"> 	atOptions = { 		'key' : '00605022df81b880d400151bfc7c2185', 		'format' : 'iframe', 		'height' : 90, 		'width' : 728, 		'params' : {} 	}; </script> 
+        <script type="text/javascript" src="//enabledetective.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        // আপনার Render API URL নিশ্চিত করুন
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
 
         tg.ready();
@@ -90,10 +91,7 @@
 
             currentUserId = tg.initDataUnsafe.user.id;
             try {
-                // CORS সমাধান যোগ করার পর এখন এই কল সফল হওয়ার কথা
                 const response = await fetch(`${RENDER_API_URL}/user-data?id=${currentUserId}`);
-                
-                // 404 নয়, এখন API ইউজার না পেলে 0 পয়েন্ট রিটার্ন করছে।
                 const data = await response.json();
                 
                 if (data.success) {
@@ -108,7 +106,6 @@
                     referralCountSpan.textContent = "ত্রুটি";
                 }
             } catch (error) {
-                // এটি নেটওয়ার্ক ত্রুটি হলে দেখাবে
                 userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
                 bdtAmountSpan.textContent = "০.০০ BDT";
                 referralCountSpan.textContent = "ত্রুটি";
