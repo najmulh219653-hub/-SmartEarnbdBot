@@ -1,6 +1,7 @@
-// logic.js - (পূর্বের কার্যকরী কোড)
+// logic.js
 const { pool } = require('./db'); 
 
+// --- কনস্ট্যান্টস ---
 const MIN_WITHDRAW_POINTS = 10000;
 const MAX_WITHDRAW_POINTS = 100000;
 const DAILY_LIMIT = 3;
@@ -12,6 +13,7 @@ function pointsToBdt(points) {
     return (points / 10000) * 40; 
 }
 
+// ইউজার রেজিস্ট্রেশন
 async function registerUser(telegramId, username, referrerCode) {
     const newReferralCode = `r_${telegramId}`; 
     let referrerId = null;
@@ -41,6 +43,7 @@ async function registerUser(telegramId, username, referrerCode) {
     }
 }
 
+// উইথড্র লজিক (paymentMethod প্যারামিটার যুক্ত করা হয়েছে)
 async function handleWithdrawRequest(telegramId, requestedPoints, paymentAddress, paymentMethod) {
     const now = new Date();
     const currentHour = now.getHours();
