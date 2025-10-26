@@ -1,4 +1,4 @@
-// server.js
+// server.js - (CORS সমাধান এবং অ্যাডমিন বাটন লজিক সহ চূড়ান্ত কোড)
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const apiRouter = require('./api');
@@ -9,7 +9,7 @@ require('dotenv').config();
 // --- কনফিগারেশন ---
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = process.env.ADMIN_ID;
+const ADMIN_ID = process.env.ADMIN_ID; // নিশ্চিত করুন যে আপনার সঠিক Telegram ID এখানে সেট করা আছে
 const MINI_APP_URL = process.env.MINI_APP_URL; 
 const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম দিন
 
@@ -19,9 +19,8 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** Mini App থেকে API কলগুলির অনুমতি দেওয়া হলো।
+// **CORS সমাধান:** নেটওয়ার্ক ত্রুটি ঠিক করার জন্য
 app.use((req, res, next) => {
-    // * ব্যবহার করা হয়েছে, যাতে Mini App যেকোনো অরিজিন থেকে লোড হলেও কাজ করে।
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -37,9 +36,8 @@ app.use('/api', apiRouter);
 
 // --- টেলিগ্রাম বট লজিক ---
 bot.start(async (ctx) => {
-    // ... (রেজিস্ট্রেশন ও রেফারেল লজিক অপরিবর্তিত) ...
     const telegramId = ctx.from.id;
-    const is_admin = telegramId.toString() === ADMIN_ID;
+    const is_admin = telegramId.toString() === ADMIN_ID; // অ্যাডমিন আইডি চেক
     const payload = ctx.startPayload; 
     let referrerCode = null;
     if (payload && payload.startsWith('r_')) {
@@ -68,7 +66,7 @@ bot.start(async (ctx) => {
             inline_keyboard: [
                 [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
                 [{ text: '🔗 রেফার করুন', callback_data: 'show_referral' }],
-                ...adminButton
+                ...adminButton // অ্যাডমিন বাটন যুক্ত করা হলো
             ]
         }
     });
