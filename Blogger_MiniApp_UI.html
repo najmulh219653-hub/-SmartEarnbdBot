@@ -39,7 +39,7 @@
     </div>
     <div class="container">
         <h1>মোট পয়েন্ট: <span id="userPoints">লোড হচ্ছে...</span></h1>
-        <h3>টাকার পরিমাণ: <span id="bdtAmount">০.০০ BDT</span></h3>
+        <p>টাকার পরিমাণ (আনুমানিক): <span id="bdtAmount">০.০০ BDT</span></p>
         <p>আপনার রেফারেল সংখ্যা: <span id="referralCount">লোড হচ্ছে...</span></p> 
 
         <button id="adButton">
@@ -109,11 +109,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    userPointsSpan.textContent = data.points.toLocaleString('en-US');
+                    // ***গুরুত্বপূর্ণ পরিবর্তন: পয়েন্ট ডিসপ্লে***
+                    userPointsSpan.textContent = data.points.toLocaleString('en-US'); 
                     userReferralCode = data.referral_code; 
                     
-                    const bdt = (data.points / 10000) * 40;
-                    bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`;
+                    const bdt = (data.points / 10000) * 40; // 10000 পয়েন্ট = 40 টাকা
+                    bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`; // BDT নিচে দেখানো
                     referralCountSpan.textContent = data.referral_count.toLocaleString('en-US');
 
                 } else {
@@ -121,15 +122,9 @@
                     referralCountSpan.textContent = "ত্রুটি";
                 }
             } catch (error) {
-                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
+                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি"; //
                 bdtAmountSpan.textContent = "০.০০ BDT";
                 referralCountSpan.textContent = "ত্রুটি";
-                // নেটওয়ার্ক ত্রুটি দেখালে মেসেজ ডিসপ্লে করা
-                if (document.getElementById('userPoints').textContent === "নেটওয়ার্ক ত্রুটি") {
-                     document.getElementById('userPoints').textContent = "নেটওয়ার্ক ত্রুটি";
-                     document.getElementById('bdtAmount').textContent = "০.০০ BDT";
-                     document.getElementById('referralCount').textContent = "ত্রুটি";
-                }
             }
         }
         
@@ -145,7 +140,7 @@
                 const data = await response.json();
                 if (data.success) {
                     tg.showPopup({ title: 'অভিনন্দন!', message: data.message });
-                    loadUserData(); // পয়েন্ট আপডেটের পর ইউজার ডেটা লোড করুন
+                    loadUserData(); 
                 } else {
                     tg.showAlert(`পয়েন্ট যোগ করতে ব্যর্থ: ${data.message}`);
                 }
@@ -164,7 +159,6 @@
             adButton.textContent = 'বিজ্ঞাপন লোড হচ্ছে... অপেক্ষা করুন';
             
             // **আপনার অ্যাড নেটওয়ার্কের লজিক:**
-            // show_10070523 হচ্ছে আপনার SDK-এর ফাংশন
             show_10070523({ ymid: currentUserId }).then(() => {
                 console.log('User watched the ad');
                 grantReward(5); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
