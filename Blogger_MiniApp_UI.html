@@ -62,15 +62,15 @@
     <div class="ad-slot bottom-ad">Monetag Bottom Banner Ad Slot Here</div>
     <script>
         const tg = window.Telegram.WebApp;
-        // আপনার Render API URL
+        // আপনার Render API URL নিশ্চিত করুন
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
 
         tg.ready();
         
         const adButton = document.getElementById('adButton');
         const userPointsSpan = document.getElementById('userPoints');
-        const bdtAmountSpan = document.getElementById('bdtAmount'); // BDT
-        const referralCountSpan = document.getElementById('referralCount'); // Referral Count
+        const bdtAmountSpan = document.getElementById('bdtAmount');
+        const referralCountSpan = document.getElementById('referralCount');
         const withdrawForm = document.getElementById('withdrawForm');
         const messageDiv = document.getElementById('message');
         let currentUserId = null;
@@ -97,6 +97,77 @@
                 if (data.success) {
                     userPointsSpan.textContent = data.points.toLocaleString('en-US');
                     
-                    // পেশাদারী ফিচার: BDT এবং রেফারেল কাউন্ট আপডেট
                     const bdt = (data.points / 10000) * 40;
                     bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`;
+                    referralCountSpan.textContent = data.referral_count.toLocaleString('en-US');
+
+                } else {
+                    userPointsSpan.textContent = "ত্রুটি";
+                }
+            } catch (error) {
+                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি";
+                bdtAmountSpan.textContent = "০.০০ BDT";
+                referralCountSpan.textContent = "ত্রুটি";
+            }
+        }
+
+        adButton.onclick = function() {
+            tg.showAlert("বিজ্ঞাপন লোড হচ্ছে... এটি শেষ হলে আপনার অ্যাকাউন্টে পয়েন্ট যুক্ত হবে।");
+        };
+
+        // উইথড্র ফর্ম সাবমিট
+        withdrawForm.onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const points = parseInt(document.getElementById('points').value);
+            const paymentAddress = document.getElementById('paymentAddress').value.trim();
+            const paymentMethod = document.getElementById('paymentMethod').value;
+
+            if (!paymentMethod) {
+                 return tg.showAlert("অনুগ্রহ করে একটি পেমেন্ট মেথড নির্বাচন করুন (বিকাশ, নগদ, রকেট)।");
+            }
+            if (points < 10000 || points > 100000) {
+                return tg.showAlert("উইথড্র পয়েন্ট অবশ্যই 10,000 থেকে 100,000 এর মধ্যে হতে হবে।");
+            }
+
+            messageDiv.textContent = "রিকোয়েস্ট পাঠানো হচ্ছে...";
+            tg.MainButton.showProgress();
+
+            try {
+                const response = await fetch(`${RENDER_API_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: currentUserId,
+                        points: points,
+                        paymentAddress: paymentAddress,
+                        paymentMethod: paymentMethod // মেথড যোগ করা হলো
+                    })
+                });
+
+                const data = await response.json();
+                tg.MainButton.hideProgress();
+
+                if (response.ok) { 
+                    messageDiv.style.color = 'green';
+                    tg.showAlert(`✅ সফল: ${data.message}`);
+                    loadUserData(); 
+                } else {
+                    messageDiv.style.color = 'red';
+                    tg.showAlert(`❌ ব্যর্থ: ${data.message}`);
+                }
+                messageDiv.textContent = data.message;
+                
+            } catch (error) {
+                tg.MainButton.hideProgress();
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "নেটওয়ার্ক সংযোগে ত্রুটি।";
+            }
+        };
+
+        loadUserData();
+
+        document.body.style.backgroundColor = tg.themeParams.bg_color;
+    </script>
+</body>
+</html>
