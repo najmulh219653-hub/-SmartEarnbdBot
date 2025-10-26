@@ -1,9 +1,10 @@
 // server.js
 const express = require('express');
 const { Telegraf } = require('telegraf');
+// মডিউলগুলি সঠিকভাবে আমদানি করা হয়েছে
 const apiRouter = require('./api');
 const { registerUser } = require('./logic');
-const { pool } = require('./db'); // db.js থেকে pool আমদানি করা হলো 
+const { pool } = require('./db'); 
 require('dotenv').config();
 
 // --- কনফিগারেশন ---
@@ -18,6 +19,7 @@ const app = express();
 const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME }); 
 
 app.use(express.json()); 
+// apiRouter একটি বৈধ Express Router হিসেবে লোড হচ্ছে
 app.use('/api', apiRouter); 
 
 // --- টেলিগ্রাম বট লজিক ---
@@ -46,6 +48,7 @@ bot.start(async (ctx) => {
     
     const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + 'admin.html' } }] : [];
     
+    // **রেফার বাটন নিশ্চিতকরণ**
     ctx.reply(message, {
         reply_markup: {
             inline_keyboard: [
@@ -59,7 +62,6 @@ bot.start(async (ctx) => {
 
 bot.on('callback_query', async (ctx) => {
     if (ctx.callbackQuery.data === 'show_referral') {
-        // pool অবজেক্টটি ব্যবহার করার আগে নিশ্চিত করুন যে এটি লোড হয়েছে
         if (!pool) return ctx.answerCbQuery("সার্ভার এখনও প্রস্তুত নয়।");
 
         const result = await pool.query('SELECT referral_code FROM users WHERE telegram_id = $1', [ctx.from.id]);
