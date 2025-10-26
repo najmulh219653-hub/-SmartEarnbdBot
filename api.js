@@ -1,9 +1,6 @@
 // api.js
-
-// Express এবং router ভেরিয়েবল তৈরি করা
 const express = require('express');
-const router = express.Router(); // <--- এই লাইনটিই শেষ সমস্যাটি ঠিক করবে!
-
+const router = express.Router(); // <--- নিশ্চিত করুন এই লাইনটি আছে!
 const { pool } = require('./db');
 const { getPointsByTelegramId, getTotalPoints } = require('./logic');
 
@@ -119,5 +116,4 @@ router.post('/add-points', async (req, res) => {
 });
 
 
-// ***নিয়ম: এই লাইনটি অবশ্যই ফাইলের শেষ লাইন হতে হবে!***
 module.exports = router;
