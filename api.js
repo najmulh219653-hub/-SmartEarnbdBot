@@ -48,7 +48,7 @@ router.post('/withdraw', async (req, res) => {
 
 // --- ২. ইউজার ডাটা API রুট (/user-data) ---
 router.get('/user-data', async (req, res) => {
-    const telegramId = req.query.id;
+    const telegramId = req.query.id; 
     if (!telegramId) {
         return res.status(400).json({ success: false, message: "Telegram ID অনুপস্থিত।" });
     }
