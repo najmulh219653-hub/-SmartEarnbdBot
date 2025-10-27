@@ -6,7 +6,7 @@
     <title>EarnQuick Official Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* CSS কোড (পেশাদারী UI এর জন্য) */
+        /* CSS কোড */
         body { font-family: sans-serif; text-align: center; margin: 0; padding: 0; background: var(--tg-theme-bg-color, #f4f4f4); color: var(--tg-theme-text-color, #000000); padding-bottom: 70px; }
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
         .ad-slot { background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); height: 90px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; width: 100%; z-index: 10; }
@@ -38,12 +38,12 @@
         </div>
     </div>
     <div class="container">
-        <h1>মোট পয়েন্ট: <span id="userPoints">লোড হচ্ছে...</span></h1>
-        <p>টাকার পরিমাণ (আনুমানিক): <span id="bdtAmount">০.০০ BDT</span></p>
+        <h1>🏆 অর্জিত কয়েন (পয়েন্ট): <span id="userPoints">লোড হচ্ছে...</span></h1>
+        
         <p>আপনার রেফারেল সংখ্যা: <span id="referralCount">লোড হচ্ছে...</span></p> 
 
         <button id="adButton">
-            👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন
+            👁️ অ্যাড দেখুন ও ৫ কয়েন আয় করুন
         </button>
 
         <button id="referralButton">
@@ -82,6 +82,7 @@
         // রেন্ডার API URL
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
         const BOT_USERNAME = 'EarnQuick_Official_bot'; 
+        const POINTS_PER_CLICK = 5; // প্রতি ক্লিকে ৫ পয়েন্ট
 
         tg.ready();
         
@@ -89,7 +90,6 @@
         const referralButton = document.getElementById('referralButton'); 
         const referralLinkDisplay = document.getElementById('referralLinkDisplay');
         const userPointsSpan = document.getElementById('userPoints');
-        const bdtAmountSpan = document.getElementById('bdtAmount');
         const referralCountSpan = document.getElementById('referralCount');
         const withdrawForm = document.getElementById('withdrawForm');
         const messageDiv = document.getElementById('message');
@@ -109,12 +109,10 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // ***গুরুত্বপূর্ণ পরিবর্তন: পয়েন্ট ডিসপ্লে***
-                    userPointsSpan.textContent = data.points.toLocaleString('en-US'); 
-                    userReferralCode = data.referral_code; 
+                    const totalPoints = data.points;
+                    userPointsSpan.textContent = totalPoints.toLocaleString('en-US'); // মোট পয়েন্ট
+                    userReferralCode = data.referral_code; // ***রেফারেল কোড লোড হচ্ছে***
                     
-                    const bdt = (data.points / 10000) * 40; // 10000 পয়েন্ট = 40 টাকা
-                    bdtAmountSpan.textContent = `${bdt.toFixed(2)} BDT`; // BDT নিচে দেখানো
                     referralCountSpan.textContent = data.referral_count.toLocaleString('en-US');
 
                 } else {
@@ -122,8 +120,7 @@
                     referralCountSpan.textContent = "ত্রুটি";
                 }
             } catch (error) {
-                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি"; //
-                bdtAmountSpan.textContent = "০.০০ BDT";
+                userPointsSpan.textContent = "নেটওয়ার্ক ত্রুটি"; 
                 referralCountSpan.textContent = "ত্রুটি";
             }
         }
@@ -140,7 +137,7 @@
                 const data = await response.json();
                 if (data.success) {
                     tg.showPopup({ title: 'অভিনন্দন!', message: data.message });
-                    loadUserData(); 
+                    loadUserData(); // পয়েন্ট আপডেটের পর ইউজার ডেটা লোড করুন
                 } else {
                     tg.showAlert(`পয়েন্ট যোগ করতে ব্যর্থ: ${data.message}`);
                 }
@@ -161,18 +158,18 @@
             // **আপনার অ্যাড নেটওয়ার্কের লজিক:**
             show_10070523({ ymid: currentUserId }).then(() => {
                 console.log('User watched the ad');
-                grantReward(5); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
-                adButton.textContent = '✅ ৫ পয়েন্ট যোগ হয়েছে!';
+                grantReward(POINTS_PER_CLICK); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
+                adButton.textContent = `✅ ${POINTS_PER_CLICK} কয়েন যোগ হয়েছে!`;
                 // অ্যাড দেখার পর ৩০ সেকেন্ডের কুলডাউন 
                 setTimeout(() => {
                     adButton.disabled = false;
-                    adButton.textContent = '👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন';
+                    adButton.textContent = `👁️ অ্যাড দেখুন ও ${POINTS_PER_CLICK} কয়েন আয় করুন`;
                 }, 30000); 
             }).catch(() => {
                 console.log('Ad failed or was skipped');
                 tg.showAlert("বিজ্ঞাপনটি দেখা হয়নি বা লোড হতে পারেনি। আবার চেষ্টা করুন।");
                 adButton.disabled = false;
-                adButton.textContent = '👁️ অ্যাড দেখুন ও ৫ পয়েন্ট আয় করুন';
+                adButton.textContent = `👁️ অ্যাড দেখুন ও ${POINTS_PER_CLICK} কয়েন আয় করুন`;
             });
         };
 
