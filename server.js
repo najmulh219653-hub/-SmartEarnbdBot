@@ -1,8 +1,9 @@
-// server.js
+// server.js (চূড়ান্ত সংস্করণ)
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const apiRouter = require('./api');
-const { registerUser } = require('./logic');
+// registerUser ফাংশনটি logic.js থেকে আসছে
+const { registerUser } = require('./logic'); 
 const { pool } = require('./db'); 
 require('dotenv').config();
 
@@ -21,7 +22,8 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** app.use((req, res, next) => {
+// **CORS সমাধান:**
+app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -50,11 +52,15 @@ bot.start(async (ctx) => {
     
     try {
         const user = await registerUser(telegramId, ctx.from.username, referrerCode);
+        
         if (user && user.isNew && user.bonus) {
             message += `\n🎁 অভিনন্দন! আপনি রেফারেলের মাধ্যমে এসেছেন।`;
-            if(user.referrerId) {
+            
+            // ডেটাবেস ফিক্স অনুসারে: এখন আমরা রেফারকারীর telegram_id ব্যবহার করছি
+            // ধরে নিচ্ছি logic.js referrerId এর পরিবর্তে referrerTelegramId পাঠাচ্ছে
+            if(user.referrerTelegramId) { // <<-- এখানে সঠিক Property ব্যবহার করা হয়েছে
                  // রেফারকারীকে পয়েন্ট পাওয়ার বার্তা পাঠানো
-                 bot.telegram.sendMessage(user.referrerId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
+                 bot.telegram.sendMessage(user.referrerTelegramId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
             }
         }
     } catch (error) {
