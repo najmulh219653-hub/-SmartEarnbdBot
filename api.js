@@ -25,9 +25,9 @@ router.post('/withdraw', async (req, res) => {
             [points, telegramId]
         );
 
-        // উইথড্র রিকোয়েস্ট ডাটাবেসে যোগ করা
+        // উইথড্র রিকোয়েস্ট ডাটাবেসে যোগ করা। user_telegram_id ব্যবহার করা হয়েছে
         await pool.query(
-            'INSERT INTO withdraw_requests (user_id, points_requested, payment_method, payment_address) VALUES ((SELECT user_id FROM users WHERE telegram_id = $1), $2, $3, $4)',
+            'INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_method, payment_address) VALUES ($1, $2, $3, $4)',
             [telegramId, points, paymentMethod, paymentAddress]
         );
 
@@ -58,7 +58,8 @@ router.get('/user-data', async (req, res) => {
             `SELECT 
                 u.total_points, 
                 u.referral_code,
-                (SELECT COUNT(*) FROM users AS r WHERE r.referrer_id = u.user_id) AS referral_count
+                -- রেফারেল সংখ্যা গণনা করার জন্য u.telegram_id ব্যবহার করা হচ্ছে
+                (SELECT COUNT(*) FROM users AS r WHERE r.referrer_id = u.telegram_id) AS referral_count
              FROM users AS u
              WHERE u.telegram_id = $1`,
             [telegramId]
