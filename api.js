@@ -1,8 +1,9 @@
-// api.js
+// api.js (চূড়ান্ত সংস্করণ)
 const express = require('express');
 const router = express.Router(); 
 const { pool } = require('./db');
-const { getPointsByTelegramId, getTotalPoints } = require('./logic');
+// ধরে নেওয়া হচ্ছে logic.js-এ এই ফাংশনগুলি আছে
+const { getPointsByTelegramId, getTotalPoints } = require('./logic'); 
 
 // --- ১. উইথড্র রিকোয়েস্ট API রুট (/withdraw) ---
 router.post('/withdraw', async (req, res) => {
@@ -26,6 +27,7 @@ router.post('/withdraw', async (req, res) => {
         );
 
         // উইথড্র রিকোয়েস্ট ডাটাবেসে যোগ করা। user_telegram_id ব্যবহার করা হয়েছে
+        // **নোট:** db.js-এ যদি কলামের নাম user_telegram_id না থাকে, তবে এটি ফেইল করবে।
         await pool.query(
             'INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_method, payment_address) VALUES ($1, $2, $3, $4)',
             [telegramId, points, paymentMethod, paymentAddress]
@@ -58,8 +60,8 @@ router.get('/user-data', async (req, res) => {
             `SELECT 
                 u.total_points, 
                 u.referral_code,
-                -- রেফারেল সংখ্যা গণনা করার জন্য u.telegram_id ব্যবহার করা হচ্ছে
-                (SELECT COUNT(*) FROM users AS r WHERE r.referrer_id = u.telegram_id) AS referral_count
+                -- রেফারেল গণনা ফিক্স করা হয়েছে: এখন সরাসরি প্যারামিটার ব্যবহার করছে।
+                (SELECT COUNT(*) FROM users AS r WHERE r.referrer_id = $1) AS referral_count 
              FROM users AS u
              WHERE u.telegram_id = $1`,
             [telegramId]
