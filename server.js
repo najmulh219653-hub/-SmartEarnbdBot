@@ -10,11 +10,11 @@ require('dotenv').config();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-// ***গুরুত্বপূর্ণ: Render Environment Variable থেকে ADMIN_ID লোড করা হচ্ছে***
+// ***গুরুত্বপূর্ণ: আপনার অ্যাডমিন আইডি***
 const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675
 
 const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; // আপনার বটের ইউজারনেম
+const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
 // --- অ্যাপ ইনিশিয়ালাইজেশন ---
 const app = express();
@@ -22,7 +22,7 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** (সিনট্যাক্স ত্রুটি ঠিক করা হয়েছে)
+// **CORS সমাধান:** (সিনট্যাক্স ত্রুটি সমাধান করা হয়েছে)
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -32,7 +32,7 @@ app.use((req, res, next) => {
         return res.sendStatus(200);
     }
     next();
-}); // <--- এই বন্ধনীটি যেন থাকে!
+});
 
 // ***API রাউটার লোড করা (api.js থেকে)***
 app.use('/api', apiRouter); 
@@ -40,7 +40,7 @@ app.use('/api', apiRouter);
 // --- টেলিগ্রাম বট লজিক ---
 bot.start(async (ctx) => {
     const telegramId = ctx.from.id;
-    // অ্যাডমিন আইডি চেক করা: 8145444675
+    // অ্যাডমিন আইডি চেক করা
     const is_admin = telegramId.toString() === ADMIN_ID; 
     const payload = ctx.startPayload; 
     let referrerCode = null;
@@ -78,13 +78,11 @@ bot.start(async (ctx) => {
     
     // **অ্যাডমিনকে নিশ্চিতকরণ বার্তা**
     if (is_admin) {
-        // এই মেসেজটি শুধুমাত্র অ্যাডমিন দেখতে পাবেন, যা নিশ্চিত করবে যে আইডি সঠিকভাবে লোড হয়েছে।
         ctx.reply(`[ADMIN MODE]: আপনার ID (${telegramId}) সফলভাবে ADMIN_ID (${ADMIN_ID}) হিসাবে লোড হয়েছে।`);
     } 
 });
 
 // --- সার্ভার লিসেনিং ও ওয়েবহুক সেটআপ ---
-// রেন্ডার থেকে হোস্টনেম বা ডিফল্ট হোস্টনেম ব্যবহার করা 
 const RENDER_HOSTNAME = process.env.RENDER_EXTERNAL_HOSTNAME || "smartearnbdbot.onrender.com"; 
 const WEBHOOK_URL = `https://${RENDER_HOSTNAME}/bot${BOT_TOKEN}`;
 
