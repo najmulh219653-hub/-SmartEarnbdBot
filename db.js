@@ -2,36 +2,45 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// PostgreSQL ডেটাবেজ সংযোগের জন্য Pool তৈরি করা
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL, 
+    connectionString: process.env.DATABASE_URL,
     ssl: {
-        rejectUnauthorized: false // Render/Neon-এর জন্য SSL প্রয়োজন
+        rejectUnauthorized: false
     }
 });
 
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
-});
-
-// ডেটাবেজ সংযোগ পরীক্ষা করা
-async function connectDB() {
+// ডাটাবেস টেবিল তৈরি (যদি না থাকে)
+async function setupDatabase() {
     try {
-        const client = await pool.connect();
-        console.log('✅ PostgreSQL ডেটাবেজের সাথে সফলভাবে সংযোগ স্থাপন করা হয়েছে।');
-        client.release();
-    } catch (err) {
-        console.error('❌ PostgreSQL ডেটাবেজে সংযোগ ব্যর্থ:', err.message);
-        // যদি db.js connectDB() ফাংশন server.js এ কল না করা হয়, 
-        // তবে এটি শুধু সংযোগের জন্য ব্যবহার করা হয়।
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                user_id SERIAL PRIMARY KEY,
+                telegram_id BIGINT UNIQUE NOT NULL,
+                username VARCHAR(255),
+                total_points INTEGER DEFAULT 0,
+                referral_code VARCHAR(8) UNIQUE NOT NULL,
+                referrer_id INTEGER REFERENCES users(user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS withdraw_requests (
+                request_id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(user_id) NOT NULL,
+                points_requested INTEGER NOT NULL,
+                payment_method VARCHAR(50) NOT NULL,
+                payment_address VARCHAR(255) NOT NULL,
+                status VARCHAR(50) DEFAULT 'Pending',
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log("✅ ডাটাবেস টেবিল সফলভাবে তৈরি বা বিদ্যমান আছে।");
+    } catch (error) {
+        console.error("❌ ডাটাবেস সেটআপ ত্রুটি:", error);
     }
 }
 
-// যদি আপনি server.js এ connectDB() কল না করেন, তাহলেও ঠিক আছে।
-// কারণ pool এক্সপোর্ট করা হচ্ছে।
+setupDatabase();
 
 module.exports = {
     pool,
-    connectDB
+    setupDatabase
 };
