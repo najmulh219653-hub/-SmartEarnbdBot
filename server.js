@@ -12,7 +12,6 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // ***গুরুত্বপূর্ণ: আপনার অ্যাডমিন আইডি***
 const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675
-
 const MINI_APP_URL = process.env.MINI_APP_URL; 
 const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
@@ -22,8 +21,7 @@ const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME });
 
 app.use(express.json()); 
 
-// **CORS সমাধান:** (সিনট্যাক্স ত্রুটি সমাধান করা হয়েছে)
-app.use((req, res, next) => {
+// **CORS সমাধান:** app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
