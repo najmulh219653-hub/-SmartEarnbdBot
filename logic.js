@@ -1,69 +1,86 @@
 // logic.js
 const { pool } = require('./db');
-const { generateReferralCode } = require('./utils'); // ধরে নিলাম utils ফাইলে এটি আছে
+const { customAlphabet } = require('nanoid');
 
+// ন্যানোইড দিয়ে রেফারেল কোড তৈরি
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 const REFERRAL_BONUS = 250; 
 
-// --- ১. ইউজার রেজিস্ট্রেশন ---
+// নতুন ইউজার রেজিস্টার ফাংশন
 async function registerUser(telegramId, username, referrerCode) {
     let client;
     try {
         client = await pool.connect();
-        
-        // ১. ইউজার আছে কিনা চেক
-        const userCheck = await client.query('SELECT user_id, telegram_id, total_points FROM users WHERE telegram_id = $1', [telegramId]);
 
-        if (userCheck.rows.length > 0) {
-            // পুরাতন ইউজার
-            return { isNew: false, bonus: 0, referrerId: null };
+        // ১. ইউজার কি বিদ্যমান?
+        const checkUser = await client.query(
+            'SELECT user_id, total_points, referral_code FROM users WHERE telegram_id = $1',
+            [telegramId]
+        );
+        
+        // যদি ইউজার খুঁজে পাওয়া যায়, তাকেই ফেরত দিন
+        if (checkUser.rows.length > 0) {
+            return { 
+                isNew: false, 
+                userId: checkUser.rows[0].user_id,
+                points: checkUser.rows[0].total_points
+            }; 
         }
 
-        // ২. নতুন ইউজার, রেফার কোড তৈরি
-        const newReferralCode = generateReferralCode(telegramId);
-        let referrerId = null; 
-        let bonus = 0;
-
-        // ৩. রেফারেল চেক ও বোনাস
+        // ২. রেফারার আইডি খুঁজে বের করুন
+        let referrerId = null;
         if (referrerCode) {
-            // r_8145444675 থেকে শুধু 8145444675 বের করা 
-            const referrerTelegramId = referrerCode.substring(2); 
-            
-            // রেফারকারীকে খুঁজে বের করা
-            const referrerResult = await client.query('SELECT user_id, telegram_id FROM users WHERE telegram_id = $1', [referrerTelegramId]);
-            
+            const referrerResult = await client.query(
+                'SELECT user_id FROM users WHERE referral_code = $1',
+                [referrerCode]
+            );
             if (referrerResult.rows.length > 0) {
                 referrerId = referrerResult.rows[0].user_id;
-                
-                // রেফারকারীকে বোনাস পয়েন্ট দেওয়া
-                await client.query(
-                    'UPDATE users SET total_points = total_points + $1 WHERE user_id = $2',
-                    [REFERRAL_BONUS, referrerId]
-                );
-                
-                bonus = REFERRAL_BONUS;
             }
         }
-
-        // ৪. নতুন ইউজার ডাটাবেজে যোগ করা
-        await client.query(
-            'INSERT INTO users (telegram_id, username, total_points, referral_code, referrer_id) VALUES ($1, $2, $3, $4, $5)',
-            [telegramId, username || `user_${telegramId}`, bonus, newReferralCode, referrerId]
+        
+        // ৩. নতুন ইউজারকে ডাটাবেসে যোগ করুন
+        const newReferralCode = nanoid();
+        const initialPoints = referrerId ? REFERRAL_BONUS : 0; // রেফারার থাকলে ২৫০ পয়েন্ট বোনাস
+        
+        const newUserResult = await client.query(
+            'INSERT INTO users (telegram_id, username, total_points, referral_code, referrer_id) VALUES ($1, $2, $3, $4, $5) RETURNING user_id',
+            [telegramId, username || 'user', initialPoints, newReferralCode, referrerId]
         );
 
-        return { isNew: true, bonus: bonus, referrerId: referrerId ? referrerTelegramId : null };
+        const newUserId = newUserResult.rows[0].user_id;
+
+        // ৪. রেফারারকে বোনাস দিন
+        if (referrerId) {
+             await client.query(
+                'UPDATE users SET total_points = total_points + $1 WHERE user_id = $2',
+                [REFERRAL_BONUS, referrerId]
+            );
+        }
+
+        return { 
+            isNew: true, 
+            userId: newUserId, 
+            points: initialPoints, 
+            bonus: referrerId ? REFERRAL_BONUS : 0,
+            referrerId: referrerId // বট মেসেজ পাঠানোর জন্য
+        };
 
     } catch (error) {
-        console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
+        console.error("ইউজার রেজিস্ট্রেশন লজিক ত্রুটি:", error);
         throw error;
     } finally {
         if (client) client.release();
     }
 }
 
-// --- ২. টোটাল পয়েন্ট লোড করা ---
-async function getTotalPoints(telegramId) {
+// টেলিগ্রাম আইডি দিয়ে পয়েন্ট পাওয়া
+async function getPointsByTelegramId(telegramId) {
     try {
-        const result = await pool.query('SELECT total_points FROM users WHERE telegram_id = $1', [telegramId]);
+        const result = await pool.query(
+            'SELECT total_points FROM users WHERE telegram_id = $1',
+            [telegramId]
+        );
         if (result.rows.length > 0) {
             return parseInt(result.rows[0].total_points);
         }
@@ -74,13 +91,14 @@ async function getTotalPoints(telegramId) {
     }
 }
 
-// --- ৩. getPointsByTelegramId (উইথড্র লজিকের জন্য) ---
-async function getPointsByTelegramId(telegramId) {
-    return getTotalPoints(telegramId);
+// এই ফাংশনটি আগেরটিই, কিন্তু নাম পরিবর্তন
+async function getTotalPoints(telegramId) {
+    return await getPointsByTelegramId(telegramId);
 }
+
 
 module.exports = {
     registerUser,
-    getTotalPoints,
     getPointsByTelegramId,
+    getTotalPoints
 };
