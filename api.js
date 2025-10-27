@@ -1,6 +1,6 @@
 // api.js
 const express = require('express');
-const router = express.Router(); // <--- নিশ্চিত করুন এই লাইনটি আছে!
+const router = express.Router(); 
 const { pool } = require('./db');
 const { getPointsByTelegramId, getTotalPoints } = require('./logic');
 
