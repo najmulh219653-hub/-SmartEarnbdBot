@@ -82,7 +82,7 @@
         // রেন্ডার API URL
         const RENDER_API_URL = "https://smartearnbdbot.onrender.com/api"; 
         const BOT_USERNAME = 'EarnQuick_Official_bot'; 
-        const POINTS_PER_CLICK = 5; // প্রতি ক্লিকে ৫ পয়েন্ট
+        const POINTS_PER_CLICK = 5; 
 
         tg.ready();
         
@@ -110,8 +110,8 @@
                 
                 if (data.success) {
                     const totalPoints = data.points;
-                    userPointsSpan.textContent = totalPoints.toLocaleString('en-US'); // মোট পয়েন্ট
-                    userReferralCode = data.referral_code; // ***রেফারেল কোড লোড হচ্ছে***
+                    userPointsSpan.textContent = totalPoints.toLocaleString('en-US'); 
+                    userReferralCode = data.referral_code; 
                     
                     referralCountSpan.textContent = data.referral_count.toLocaleString('en-US');
 
@@ -137,7 +137,7 @@
                 const data = await response.json();
                 if (data.success) {
                     tg.showPopup({ title: 'অভিনন্দন!', message: data.message });
-                    loadUserData(); // পয়েন্ট আপডেটের পর ইউজার ডেটা লোড করুন
+                    loadUserData(); 
                 } else {
                     tg.showAlert(`পয়েন্ট যোগ করতে ব্যর্থ: ${data.message}`);
                 }
@@ -158,9 +158,9 @@
             // **আপনার অ্যাড নেটওয়ার্কের লজিক:**
             show_10070523({ ymid: currentUserId }).then(() => {
                 console.log('User watched the ad');
-                grantReward(POINTS_PER_CLICK); // অ্যাড সফল হলে ৫ পয়েন্ট যোগ
+                grantReward(POINTS_PER_CLICK); 
                 adButton.textContent = `✅ ${POINTS_PER_CLICK} কয়েন যোগ হয়েছে!`;
-                // অ্যাড দেখার পর ৩০ সেকেন্ডের কুলডাউন 
+                // ৩০ সেকেন্ডের কুলডাউন 
                 setTimeout(() => {
                     adButton.disabled = false;
                     adButton.textContent = `👁️ অ্যাড দেখুন ও ${POINTS_PER_CLICK} কয়েন আয় করুন`;
@@ -176,7 +176,8 @@
         // --- রেফারেল বাটন লজিক ---
         referralButton.onclick = function() {
             if (!userReferralCode) {
-                return tg.showAlert("রেফারেল কোড লোড হচ্ছে, এক মিনিট অপেক্ষা করুন।");
+                // এটি তখনই দেখাবে যদি API থেকে রেফারেল কোড লোড না হয়
+                return tg.showAlert("রেফারেল কোড লোড হচ্ছে, এক মিনিট অপেক্ষা করুন। অথবা সার্ভার চালু নেই।");
             }
             
             // রেফারেল লিঙ্ক তৈরি
