@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // ***গুরুত্বপূর্ণ: আপনার অ্যাডমিন আইডি***
-const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675
+const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675 
 const MINI_APP_URL = process.env.MINI_APP_URL; 
 const BOT_USERNAME = 'EarnQuick_Official_bot'; 
 
