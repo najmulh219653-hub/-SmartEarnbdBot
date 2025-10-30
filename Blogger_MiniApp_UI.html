@@ -169,7 +169,7 @@
             try {
                 const response = await fetch(url, options);
                 if (!response.ok) {
-                    // যদি সার্ভার 4xx বা 5xx ত্রুটি দেয়, তবে এটি ক্যাচ ব্লকে যাবে না, তাই এখানে থ্রো করতে হবে
+                    // If server returns 4xx or 5xx, throw to enter catch block
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
@@ -197,7 +197,17 @@
             // লোডিং অবস্থা দেখান
             document.getElementById('current-points').textContent = '...';
             
-            const data = await fetchWithRetry(`${API_URL}/user-data?id=${appState.telegramId}`, { method: 'GET' });
+            // রেফারেল কোড প্যারামিটার যোগ করা
+            const urlParams = new URLSearchParams(window.Telegram.WebApp.initData);
+            const startParam = urlParams.get('start');
+            
+            let fetchUrl = `${API_URL}/user-data?id=${appState.telegramId}`;
+            if (startParam) {
+                // 'start' প্যারামিটার রেফারেল কোড হিসেবে ব্যবহার করা হচ্ছে
+                fetchUrl += `&referrer=${startParam}`; 
+            }
+
+            const data = await fetchWithRetry(fetchUrl, { method: 'GET' });
             
             if (data.success) {
                 appState.points = data.points;
@@ -217,16 +227,14 @@
             }
         } catch (error) {
             console.error("User data fetch error:", error);
-            showToast("সার্ভার থেকে ডেটা লোড করা যায়নি।", 'error');
+            showToast("সার্ভার থেকে ডেটা লোড করা যায়নি। (Database/Connection Error)", 'error');
         } finally {
             // নিশ্চিত করুন যে সব Lucide আইকন রেন্ডার হয়েছে
             lucide.createIcons();
             // ডেটা লোড হওয়ার পর বর্তমান পেজ রি-রেন্ডার করা
-            // এখানে renderPage কল করার আগে নিশ্চিত করুন যে initApp প্রথমবার একবার কল করেছে
             if (!appState.isLoading) {
                  renderPage(appState.currentPage); 
             }
-           
         }
     }
 
@@ -380,7 +388,15 @@
      * Renders the Referral page content.
      */
     function renderReferralPage() {
-        const shareText = `💰 EarnQuick Mini App এ অ্যাড দেখে ইনকাম করুন! আমার রেফারেল কোড ব্যবহার করে জয়েন করলে আপনিও ২৫০ পয়েন্ট বোনাস পাবেন। জয়েন করুন: ${window.Telegram.WebApp.initDataUnsafe.user.username ? `https://t.me/${window.Telegram.WebApp.initDataUnsafe.user.username}?start=${appState.referralCode}` : "আপনার Mini App এর লিঙ্ক দিন"} (কোড: ${appState.referralCode})`;
+        // Mini App URL এর লিঙ্ক তৈরি করা
+        let startLink = "";
+        const botUsername = "EarnQuick_Official"; // আপনার বটের ইউজারনেমটি এখানে সেট করুন
+        
+        if (appState.referralCode && botUsername) {
+            startLink = `https://t.me/${botUsername}?start=${appState.referralCode}`;
+        }
+
+        const shareText = `💰 EarnQuick Mini App এ অ্যাড দেখে ইনকাম করুন! আমার রেফারেল কোড ব্যবহার করে জয়েন করলে আপনিও ২৫০ পয়েন্ট বোনাস পাবেন। জয়েন করুন: ${startLink || "আপনার Mini App এর লিঙ্ক দিন"} (কোড: ${appState.referralCode})`;
         const shareLink = `tg://msg?text=${encodeURIComponent(shareText)}`;
 
         return `
