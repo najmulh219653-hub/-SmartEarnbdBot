@@ -1,103 +1,577 @@
-// server.js (চূড়ান্ত সংস্করণ)
-const express = require('express');
-const { Telegraf } = require('telegraf');
-const apiRouter = require('./api');
-// registerUser ফাংশনটি logic.js থেকে আসছে
-const { registerUser } = require('./logic'); 
-const { pool } = require('./db'); 
-require('dotenv').config();
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarnQuick Mini App</title>
+    <!-- Tailwind CSS লোড করা হয়েছে -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons লোড করা হয়েছে -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Telegram Web App স্ক্রিপ্ট লোড করা হয়েছে -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-// --- কনফিগারেশন ---
-const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.BOT_TOKEN;
+    <style>
+        /* কাস্টম ফন্ট এবং ডার্ক থিম ব্যাকগ্রাউন্ড */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D1117; /* ডিপ ডার্ক ব্যাকগ্রাউন্ড */
+            color: #E5E7EB; /* হালকা টেক্সট */
+            margin: 0;
+            padding: 0;
+            overscroll-behavior-y: none; /* iOS/Android-এ বাউন্স ইফেক্ট বন্ধ */
+        }
+        .container-main {
+            padding-bottom: 72px; /* বটম নেভিগেশনের জন্য স্থান রাখা */
+        }
+        .nav-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .active-nav {
+            color: #10B981; /* Emerald-500 */
+            border-top: 2px solid #10B981;
+        }
+        /* ফ্লোটিং আর্নিং বাটন এর ইউনিক স্টাইল */
+        .earn-button-ring {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); /* অ্যাকসেন্ট কালারের শ্যাডো */
+            animation: pulse-ring 2s infinite;
+        }
 
-// ***গুরুত্বপূর্ণ: আপনার অ্যাডমিন আইডি***
-const ADMIN_ID = process.env.ADMIN_ID; // আপনার আইডি: 8145444675 
-const MINI_APP_URL = process.env.MINI_APP_URL; 
-const BOT_USERNAME = 'EarnQuick_Official_bot'; 
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
 
-// --- অ্যাপ ইনিশিয়ালাইজেশন ---
-const app = express();
-const bot = new Telegraf(BOT_TOKEN, { username: BOT_USERNAME }); 
-
-app.use(express.json()); 
-
-// **CORS সমাধান:**
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); 
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-
-// ***API রাউটার লোড করা (api.js থেকে)***
-app.use('/api', apiRouter); 
-
-// --- টেলিগ্রাম বট লজিক ---
-bot.start(async (ctx) => {
-    const telegramId = ctx.from.id;
-    // অ্যাডমিন আইডি চেক করা
-    const is_admin = telegramId.toString() === ADMIN_ID; 
-    const payload = ctx.startPayload; 
-    let referrerCode = null;
-    if (payload && payload.startsWith('r_')) {
-        referrerCode = payload; 
-    }
-    
-    let message = `স্বাগতম ${ctx.from.first_name}! অ্যাড দেখে আয় করা শুরু করুন।`;
-    
-    try {
-        const user = await registerUser(telegramId, ctx.from.username, referrerCode);
+    <!-- প্রধান অ্যাপ্লিকেশন কন্টেইনার -->
+    <div id="app" class="min-h-screen bg-[#0D1117] relative flex flex-col items-center">
+        <!-- লোডিং স্ক্রিন -->
+        <div id="loading-screen" class="absolute inset-0 bg-[#0D1117] flex flex-col items-center justify-center transition-opacity duration-300">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+            <p class="mt-4 text-emerald-400">ডেটা লোড হচ্ছে...</p>
+        </div>
         
-        if (user && user.isNew && user.bonus) {
-            message += `\n🎁 অভিনন্দন! আপনি রেফারেলের মাধ্যমে এসেছেন।`;
+        <!-- মূল UI (শুরুতে লুকানো থাকবে) -->
+        <div id="main-ui" class="w-full max-w-lg container-main transition-opacity duration-300 opacity-0 hidden">
             
-            // ডেটাবেস ফিক্স অনুসারে: এখন আমরা রেফারকারীর telegram_id ব্যবহার করছি
-            // ধরে নিচ্ছি logic.js referrerId এর পরিবর্তে referrerTelegramId পাঠাচ্ছে
-            if(user.referrerTelegramId) { 
-                 // রেফারকারীকে পয়েন্ট পাওয়ার বার্তা পাঠানো
-                 bot.telegram.sendMessage(user.referrerTelegramId, `🎉 অভিনন্দন! আপনার রেফার করা নতুন ইউজার যুক্ত হয়েছে। আপনি ২৫০ পয়েন্ট পেয়েছেন।`);
+            <!-- ফিক্সড হেডার: পয়েন্ট এবং ইউজারনেম -->
+            <header class="sticky top-0 w-full p-4 bg-[#0D1117] border-b border-gray-800 z-10">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-sm text-gray-400">ইউজার: <span id="user-name"></span></span>
+                        <h1 class="text-2xl font-bold text-white flex items-center">
+                            <i data-lucide="wallet" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                            <span id="current-points">0</span> <span class="text-sm ml-1 text-gray-400">পয়েন্ট</span>
+                        </h1>
+                    </div>
+                    <button onclick="fetchUserData()" class="text-emerald-400 hover:text-emerald-300 transition-colors">
+                        <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- পেজ কন্টেন্ট রেন্ডারিং এরিয়া -->
+            <main id="page-content" class="p-4 w-full"></main>
+
+            <!-- ফ্লোটিং বটম নেভিগেশন -->
+            <footer class="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto bg-[#1A202C] border-t border-gray-700 shadow-xl z-20 rounded-t-xl">
+                <div class="flex justify-around items-center h-16">
+                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Home')" id="nav-Home">
+                        <i data-lucide="home" class="w-6 h-6"></i>
+                        <span class="text-xs">হোম</span>
+                    </button>
+                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Referral')" id="nav-Referral">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                        <span class="text-xs">রেফার</span>
+                    </button>
+                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Withdraw')" id="nav-Withdraw">
+                        <i data-lucide="send" class="w-6 h-6"></i>
+                        <span class="text-xs">উইথড্র</span>
+                    </button>
+                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="openAdmin()" id="nav-Admin">
+                        <i data-lucide="lock" class="w-6 h-6"></i>
+                        <span class="text-xs">অ্যাডমিন</span>
+                    </button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- টোস্ট নোটিফিকেশন কন্টেইনার -->
+    <div id="toast-container" class="fixed bottom-20 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
+
+
+<script>
+    // *******************************************************************
+    // ** Telegram Mini App & Backend API Configuration         **
+    // *******************************************************************
+
+    // API সার্ভারের URL সেট করা হয়েছে
+    const API_URL = "https://smartearnbdbot.onrender.com/api"; 
+    
+    // ইউজার ডেটা এবং স্টেট ম্যানেজমেন্ট
+    let appState = {
+        telegramId: null,
+        username: "Guest",
+        points: 0,
+        referralCode: "Loading...",
+        referralCount: 0,
+        currentPage: 'Home',
+        isLoading: true,
+        // admin.html ফাইলটি এখানে যেতে হবে
+        adminUrl: "https://smartearnbdbot.onrender.com/admin.html" 
+    };
+
+    // *******************************************************************
+    // ** Helper Functions                        **
+    // *******************************************************************
+
+    /**
+     * @function showToast
+     * Shows a floating notification toast.
+     * @param {string} message - The message to display.
+     * @param {string} type - 'success', 'error', or 'info'.
+     */
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        let bgColor = 'bg-gray-700';
+        if (type === 'success') bgColor = 'bg-emerald-600';
+        if (type === 'error') bgColor = 'bg-red-600';
+
+        const toast = document.createElement('div');
+        toast.className = `p-3 mb-3 rounded-lg shadow-lg text-white ${bgColor} transition-opacity duration-300`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        // Transition out
+        setTimeout(() => {
+            toast.style.opacity = 0;
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+
+        // Haptic feedback (Mobile only)
+        if (window.Telegram.WebApp.HapticFeedback) {
+            if (type === 'success') window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            if (type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+        }
+    }
+
+    /**
+     * @function fetchWithRetry
+     * Fetches data with exponential backoff for resilience.
+     */
+    async function fetchWithRetry(url, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    // যদি সার্ভার 4xx বা 5xx ত্রুটি দেয়, তবে এটি ক্যাচ ব্লকে যাবে না, তাই এখানে থ্রো করতে হবে
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            } catch (error) {
+                if (i === retries - 1) throw error; 
+                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
-    } catch (error) {
-        console.error("ইউজার রেজিস্ট্রেশন ত্রুটি:", error);
     }
 
-    // অ্যাডমিন বাটন তৈরি (যদি ইউজার অ্যাডমিন হয়)
-    const adminButton = is_admin ? [{ text: '👑 অ্যাডমিন প্যানেল', web_app: { url: MINI_APP_URL + 'admin.html' } }] : [];
-    
-    // মিনি অ্যাপ এবং অ্যাডমিন বাটন প্রদর্শন
-    ctx.reply(message, {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '💸 অ্যাড দেখুন ও ইনকাম করুন', web_app: { url: MINI_APP_URL } }],
-                ...adminButton // অ্যাডমিন বাটন এখানে যোগ হবে
-            ]
+
+    // *******************************************************************
+    // ** API Calls                              **
+    // *******************************************************************
+
+    /**
+     * @function fetchUserData
+     * Retrieves user points and referral data from the backend.
+     */
+    async function fetchUserData() {
+        if (!appState.telegramId) return;
+
+        try {
+            // লোডিং অবস্থা দেখান
+            document.getElementById('current-points').textContent = '...';
+            
+            const data = await fetchWithRetry(`${API_URL}/user-data?id=${appState.telegramId}`, { method: 'GET' });
+            
+            if (data.success) {
+                appState.points = data.points;
+                appState.referralCode = data.referral_code;
+                appState.referralCount = data.referral_count;
+                
+                // UI আপডেট করুন
+                document.getElementById('current-points').textContent = data.points.toLocaleString('bn-BD');
+                if (document.getElementById('referral-code-display')) {
+                    document.getElementById('referral-code-display').textContent = data.referral_code;
+                }
+                if (document.getElementById('referral-count-display')) {
+                    document.getElementById('referral-count-display').textContent = data.referral_count.toLocaleString('bn-BD');
+                }
+            } else {
+                showToast(data.message || "ইউজার ডেটা লোড ব্যর্থ।", 'error');
+            }
+        } catch (error) {
+            console.error("User data fetch error:", error);
+            showToast("সার্ভার থেকে ডেটা লোড করা যায়নি।", 'error');
+        } finally {
+            // নিশ্চিত করুন যে সব Lucide আইকন রেন্ডার হয়েছে
+            lucide.createIcons();
+            // ডেটা লোড হওয়ার পর বর্তমান পেজ রি-রেন্ডার করা
+            // এখানে renderPage কল করার আগে নিশ্চিত করুন যে initApp প্রথমবার একবার কল করেছে
+            if (!appState.isLoading) {
+                 renderPage(appState.currentPage); 
+            }
+           
         }
-    });
-    
-    // **অ্যাডমিনকে নিশ্চিতকরণ বার্তা**
-    if (is_admin) {
-        ctx.reply(`[ADMIN MODE]: আপনার ID (${telegramId}) সফলভাবে ADMIN_ID (${ADMIN_ID}) হিসাবে লোড হয়েছে।`);
-    } 
-});
+    }
 
-// --- সার্ভার লিসেনিং ও ওয়েবহুক সেটআপ ---
-const RENDER_HOSTNAME = process.env.RENDER_EXTERNAL_HOSTNAME || "smartearnbdbot.onrender.com"; 
-const WEBHOOK_URL = `https://${RENDER_HOSTNAME}/bot${BOT_TOKEN}`;
+    /**
+     * @function addPoints
+     * Simulates watching an ad and adding points.
+     */
+    async function addPoints() {
+        if (!appState.telegramId) return showToast("ব্যবহারকারী আইডি উপলব্ধ নয়।", 'error');
 
-// ওয়েবহুক সেট করা
-bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
-    console.log(`🤖 বট ওয়েবহুক সেট করা হয়েছে: ${WEBHOOK_URL}`);
-});
+        document.getElementById('earn-button').disabled = true;
+        document.getElementById('earn-button').innerHTML = `
+            <i data-lucide="loader" class="w-6 h-6 animate-spin mr-2"></i> অ্যাড চলছে...
+        `;
+        
+        // 3 সেকেন্ডের জন্য বিজ্ঞাপন দেখার সিমুলেশন
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        try {
+            const response = await fetchWithRetry(`${API_URL}/add-points`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    telegramId: appState.telegramId, 
+                    points: 5 // প্রতি বিজ্ঞাপনে 5 পয়েন্ট 
+                }),
+            });
 
-// টেলিগ্রাম ওয়েবহুক কলব্যাক হ্যান্ডেল করা
-app.use(bot.webhookCallback(`/bot${BOT_TOKEN}`));
+            if (response.success) {
+                appState.points = response.new_points;
+                document.getElementById('current-points').textContent = response.new_points.toLocaleString('bn-BD');
+                showToast(response.message, 'success');
+            } else {
+                showToast(response.message || "পয়েন্ট যোগ করতে ব্যর্থ।", 'error');
+            }
 
-app.listen(PORT, () => {
-    console.log(`🚀 সার্ভার চালু হয়েছে পোর্ট ${PORT} এ`);
-});
+        } catch (error) {
+            console.error("Add points error:", error);
+            showToast("পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি।", 'error');
+        } finally {
+            // বাটন স্বাভাবিক অবস্থায় ফিরিয়ে আনা
+            document.getElementById('earn-button').innerHTML = `
+                <i data-lucide="monitor" class="w-8 h-8 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
+            `;
+            document.getElementById('earn-button').disabled = false;
+            lucide.createIcons();
+        }
+    }
+
+    /**
+     * @function sendWithdrawRequest
+     * Submits a withdrawal request.
+     */
+    async function sendWithdrawRequest(event) {
+        event.preventDefault();
+        
+        const points = parseInt(document.getElementById('withdraw-points').value);
+        const method = document.getElementById('payment-method').value;
+        const address = document.getElementById('payment-address').value;
+        const submitButton = document.getElementById('withdraw-submit');
+
+        if (!points || !method || !address || points < 1000) {
+            return showToast("কমপক্ষে ১০০০ পয়েন্ট এবং সকল ঘর পূরণ করুন।", 'error');
+        }
+
+        if (points > appState.points) {
+            return showToast(`আপনার অ্যাকাউন্টে যথেষ্ট পয়েন্ট নেই। আছে: ${appState.points.toLocaleString('bn-BD')}`, 'error');
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'রিকোয়েস্ট পাঠানো হচ্ছে...';
+
+        try {
+            const response = await fetchWithRetry(`${API_URL}/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    telegramId: appState.telegramId, 
+                    points, 
+                    paymentMethod: method, 
+                    paymentAddress: address 
+                }),
+            });
+
+            if (response.success) {
+                appState.points = response.new_points;
+                document.getElementById('current-points').textContent = response.new_points.toLocaleString('bn-BD');
+                document.getElementById('withdraw-form').reset();
+                showToast(response.message, 'success');
+            } else {
+                showToast(response.message || "উইথড্র রিকোয়েস্ট ব্যর্থ।", 'error');
+            }
+        } catch (error) {
+            console.error("Withdraw error:", error);
+            showToast("উইথড্র রিকোয়েস্টের সময় সার্ভার ত্রুটি।", 'error');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'উইথড্র রিকোয়েস্ট পাঠান';
+        }
+    }
+
+    // *******************************************************************
+    // ** Rendering                           **
+    // *******************************************************************
+
+    /**
+     * @function renderHomePage
+     * Renders the Home page content.
+     */
+    function renderHomePage() {
+        return `
+            <div class="space-y-6">
+                <!-- হাইলাইট কার্ড -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg font-semibold text-white">বর্তমান ব্যালেন্স</span>
+                        <i data-lucide="trending-up" class="w-6 h-6 text-emerald-400"></i>
+                    </div>
+                    <p class="text-4xl font-extrabold text-emerald-400 mt-2">
+                        ${appState.points.toLocaleString('bn-BD')} <span class="text-base text-gray-400">পয়েন্ট</span>
+                    </p>
+                </div>
+                
+                <!-- মূল আর্নিং বাটন -->
+                <div class="flex flex-col items-center p-6 bg-gray-900 rounded-xl shadow-2xl">
+                    <button id="earn-button" onclick="addPoints()" class="earn-button-ring w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-full transition-all duration-300 flex items-center justify-center text-lg shadow-emerald-700/50">
+                        <i data-lucide="monitor" class="w-8 h-8 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
+                    </button>
+                    <p class="text-sm text-gray-400 mt-4">প্রতি অ্যাড ভিউ-এ +৫ পয়েন্ট</p>
+                </div>
+
+                <!-- অন্যান্য তথ্য -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start">
+                        <i data-lucide="gift" class="w-6 h-6 text-yellow-400 mb-2"></i>
+                        <span class="text-sm text-gray-400">রেফারেল বোনাস</span>
+                        <span class="text-lg font-bold text-white">২৫০ পয়েন্ট</span>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start">
+                        <i data-lucide="badge-check" class="w-6 h-6 text-blue-400 mb-2"></i>
+                        <span class="text-sm text-gray-400">ন্যূনতম উইথড্র</span>
+                        <span class="text-lg font-bold text-white">১,০০০ পয়েন্ট</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * @function renderReferralPage
+     * Renders the Referral page content.
+     */
+    function renderReferralPage() {
+        const shareText = `💰 EarnQuick Mini App এ অ্যাড দেখে ইনকাম করুন! আমার রেফারেল কোড ব্যবহার করে জয়েন করলে আপনিও ২৫০ পয়েন্ট বোনাস পাবেন। জয়েন করুন: ${window.Telegram.WebApp.initDataUnsafe.user.username ? `https://t.me/${window.Telegram.WebApp.initDataUnsafe.user.username}?start=${appState.referralCode}` : "আপনার Mini App এর লিঙ্ক দিন"} (কোড: ${appState.referralCode})`;
+        const shareLink = `tg://msg?text=${encodeURIComponent(shareText)}`;
+
+        return `
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">রেফার করুন ও ইনকাম করুন</h2>
+                
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <p class="text-sm text-gray-400 mb-2">আপনার ইউনিক রেফারেল কোড:</p>
+                    <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-emerald-600/50">
+                        <span id="referral-code-display" class="font-mono text-xl text-emerald-400 select-all break-all">${appState.referralCode}</span>
+                        <button onclick="copyToClipboard('${appState.referralCode}')" class="ml-3 text-emerald-400 hover:text-emerald-300 transition-colors">
+                            <i data-lucide="copy" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">কপি করে আপনার বন্ধুদের সাথে শেয়ার করুন।</p>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <p class="text-lg font-semibold text-white mb-3 flex items-center">
+                        <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-400"></i> মোট রেফারেল
+                    </p>
+                    <p id="referral-count-display" class="text-4xl font-extrabold text-blue-400">${appState.referralCount.toLocaleString('bn-BD')}</p>
+                    <p class="text-sm text-gray-400 mt-3">প্রতি সফল রেফারে আপনি পাবেন ২৫০ পয়েন্ট।</p>
+                </div>
+
+                <a href="${shareLink}" class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-700/50 flex items-center justify-center">
+                    <i data-lucide="share2" class="w-5 h-5 mr-2"></i> শেয়ার করুন
+                </a>
+            </div>
+        `;
+    }
+
+    /**
+     * @function renderWithdrawPage
+     * Renders the Withdraw page content.
+     */
+    function renderWithdrawPage() {
+        return `
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">উইথড্র করুন</h2>
+                
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <p class="text-lg font-semibold text-white mb-3">আপনার ব্যালেন্স: <span class="text-emerald-400">${appState.points.toLocaleString('bn-BD')}</span> পয়েন্ট</p>
+                    <p class="text-sm text-yellow-400 mb-4">ন্যূনতম উইথড্র: ১,০০০ পয়েন্ট</p>
+
+                    <form id="withdraw-form" onsubmit="sendWithdrawRequest(event)" class="space-y-4">
+                        <div>
+                            <label for="withdraw-points" class="block text-sm font-medium text-gray-300 mb-1">উইথড্র পয়েন্ট</label>
+                            <input type="number" id="withdraw-points" required min="1000" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-emerald-500 focus:ring focus:ring-emerald-500/50" placeholder="কমপক্ষে ১০০০ পয়েন্ট">
+                        </div>
+                        
+                        <div>
+                            <label for="payment-method" class="block text-sm font-medium text-gray-300 mb-1">পেমেন্ট মেথড</label>
+                            <select id="payment-method" required class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-emerald-500 focus:ring focus:ring-emerald-500/50">
+                                <option value="">নির্বাচন করুন</option>
+                                <option value="Bkash">বিকাশ</option>
+                                <option value="Nagad">নগদ</option>
+                                <option value="Rocket">রকেট</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="payment-address" class="block text-sm font-medium text-gray-300 mb-1">পেমেন্ট ঠিকানা (Bkash/Nagad নাম্বার)</label>
+                            <input type="text" id="payment-address" required class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-emerald-500 focus:ring focus:ring-emerald-500/50" placeholder="01XXXXXXXXX">
+                        </div>
+
+                        <button type="submit" id="withdraw-submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-emerald-700/50">
+                            উইথড্র রিকোয়েস্ট পাঠান
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * @function renderPage
+     * Main rendering function to switch between pages.
+     */
+    function renderPage(pageName) {
+        if (appState.isLoading) return;
+
+        appState.currentPage = pageName;
+        const contentArea = document.getElementById('page-content');
+        let htmlContent = '';
+        
+        // সব নেভিগেশন বাটন থেকে active ক্লাস সরান
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active-nav'));
+        // বর্তমান বাটনে active ক্লাস যোগ করুন
+        const activeNav = document.getElementById(`nav-${pageName}`);
+        if (activeNav) activeNav.classList.add('active-nav');
+
+
+        switch (pageName) {
+            case 'Home':
+                htmlContent = renderHomePage();
+                break;
+            case 'Referral':
+                htmlContent = renderReferralPage();
+                break;
+            case 'Withdraw':
+                htmlContent = renderWithdrawPage();
+                break;
+            default:
+                htmlContent = `<p class="text-center text-red-500">পেজটি খুঁজে পাওয়া যায়নি।</p>`;
+        }
+        
+        contentArea.innerHTML = htmlContent;
+        // রেন্ডারিং এর পর Lucide আইকনগুলিকে পার্স করতে হবে
+        lucide.createIcons();
+    }
+
+    /**
+     * @function copyToClipboard
+     * Copies text to the clipboard and shows a toast.
+     */
+    function copyToClipboard(text) {
+        // clipboard API ব্যবহার করা হয়েছে, যা Mini App-এ কাজ করা উচিত
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("কপি করা হয়েছে!", 'success');
+        }).catch(err => {
+            // যদি clipboard API কাজ না করে (iframe সীমাবদ্ধতা), একটি বিকল্প ব্যবহার করা যেতে পারে
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast("কপি করা হয়েছে!", 'success');
+        });
+    }
+
+    /**
+     * @function openAdmin
+     * Opens the separate admin.html file (if applicable).
+     */
+    function openAdmin() {
+        if (appState.adminUrl.includes("YOUR_BACKEND_API_URL")) {
+             showToast("অ্যাডমিন প্যানেলের URL কনফিগার করা হয়নি।", 'info');
+             return;
+        }
+        window.open(appState.adminUrl, '_blank');
+    }
+
+    // *******************************************************************
+    // ** Initialization                          **
+    // *******************************************************************
+
+    /**
+     * @function initApp
+     * Initializes the Telegram Mini App and loads user data.
+     */
+    async function initApp() {
+        try {
+            // Telegram Web App তৈরি হওয়ার জন্য অপেক্ষা করা 
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand(); // পূর্ণ স্ক্রিনে এক্সপ্যান্ড করা
+
+            const user = window.Telegram.WebApp.initDataUnsafe.user;
+            
+            if (!user || !user.id) {
+                document.getElementById('loading-screen').innerHTML = '<p class="text-red-500 p-4 text-center">Telegram ID খুঁজে পাওয়া যায়নি। শুধুমাত্র বটের মধ্যে এটি ব্যবহার করুন।</p>';
+                return;
+            }
+
+            appState.telegramId = user.id.toString(); // API এর জন্য ID কে স্ট্রিং এ রাখা
+            appState.username = user.username || user.first_name;
+            
+            document.getElementById('user-name').textContent = appState.username;
+
+            // ডেটা লোড করা
+            await fetchUserData();
+
+            // লোডিং শেষ, UI দেখান
+            appState.isLoading = false;
+            document.getElementById('loading-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+                document.getElementById('main-ui').style.opacity = '1';
+                renderPage('Home');
+            }, 300); 
+
+        } catch (e) {
+            console.error("Initialization error:", e);
+            document.getElementById('loading-screen').innerHTML = '<p class="text-red-500 p-4 text-center">অ্যাপ চালু করতে ব্যর্থ। ডেটাবেস/API URL চেক করুন।</p>';
+        }
+    }
+
+    window.addEventListener('load', initApp);
+</script>
+</body>
+</html>
+
