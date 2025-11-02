@@ -2,16 +2,17 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const path = require('path'); // Path মডিউল ইম্পোর্ট করা হলো
+const path = require('path');
 const db = require('./db'); 
 
 const app = express();
+// রেন্ডার বা অন্যান্য হোস্টিং এর জন্য পোর্ট 10000 ব্যবহার করা হলো
 const PORT = process.env.PORT || 10000; 
 
 app.use(bodyParser.json());
 
-// 💡 সংশোধন #১: স্ট্যাটিক ফাইল ডিরেক্টরি স্পষ্টভাবে সেট করা হলো
-// এখন এটি সার্ভারের root ফোল্ডারে থাকা 'public' ফোল্ডারটিকে স্ট্যাটিক হিসেবে ব্যবহার করবে।
+// 💡 ফিক্স: 'public' ফোল্ডারকে স্ট্যাটিক ডিরেক্টরি হিসেবে সেট করা হলো।
+// এটি /public/index.html-কে রুট হিসাবে লোড করবে।
 app.use(express.static(path.join(__dirname, 'public'))); 
 
 // সার্ভার শুরু করার আগে ডাটাবেস সেটআপ নিশ্চিত করা
@@ -29,9 +30,7 @@ db.setupDatabase().then(() => {
 // API Endpoints
 // =======================================================
 
-/**
- * ইউজার ডেটা লোড করার API
- */
+// ইউজার ডেটা লোড করার API
 app.get('/api/user_data', async (req, res) => {
     const telegramId = req.query.id; 
     const username = req.query.username || 'GuestUser'; 
@@ -68,8 +67,27 @@ app.get('/api/user_data', async (req, res) => {
 });
 
 
+// অ্যাপ কনফিগারেশন ডেটা লোড করার API
+app.get('/api/config', async (req, res) => {
+    try {
+        const result = await db.query('SELECT config_key, config_value FROM ads_config');
+        
+        const config = result.rows.reduce((acc, row) => {
+            acc[row.config_key] = row.config_value;
+            return acc;
+        }, {});
+        
+        res.json({ success: true, config });
+
+    } catch (error) {
+        console.error('Error fetching config data:', error.stack);
+        res.status(500).json({ success: false, message: 'Failed to load app configuration.' });
+    }
+});
+
+
 /**
- * পয়েন্ট যোগ করার API (Data Type ও User Check সহ সংশোধিত)
+ * 💥 পয়েন্ট যোগ করার API (সংশোধিত: Data Type ও User Check যোগ করা হয়েছে)
  */
 app.post('/api/add_points', async (req, res) => {
     const { telegramId, points } = req.body; 
@@ -127,49 +145,8 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ... (বাকি API এন্ডপয়েন্টগুলি একই থাকবে)
 
-// রুট URL-এ index.html ফাইল পরিবেশন করা
-app.get('/', (req, res) => {
-    // 💡 সংশোধন #২: 'public' ফোল্ডারের মধ্যে index.html ফাইলটি দেখানো হলো
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// 404 এরর হ্যান্ডলিং: API কল ছাড়া অন্য কিছু হলে index.html ফাইল পরিবেশন করা
-app.use((req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) {
-        next(); 
-    } else {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    }
-});
-
-// ... (বাকি admin API কোড)
-
-/**
- * অ্যাপ কনফিগারেশন ডেটা লোড করার API (আগের মতোই)
- */
-app.get('/api/config', async (req, res) => {
-    try {
-        const result = await db.query('SELECT config_key, config_value FROM ads_config');
-        
-        const config = result.rows.reduce((acc, row) => {
-            acc[row.config_key] = row.config_value;
-            return acc;
-        }, {});
-        
-        res.json({ success: true, config });
-
-    } catch (error) {
-        console.error('Error fetching config data:', error.stack);
-        res.status(500).json({ success: false, message: 'Failed to load app configuration.' });
-    }
-});
-
-
-/**
- * উইথড্র রিকোয়েস্ট করার API (আগের মতোই)
- */
+// উইথড্র রিকোয়েস্ট করার API
 app.post('/api/request_withdraw', async (req, res) => {
     const { telegramId, points, account } = req.body;
     const pointsRequested = parseInt(points);
@@ -229,9 +206,7 @@ app.post('/api/request_withdraw', async (req, res) => {
 });
 
 
-/**
- * এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার (আগের মতোই)
- */
+// এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার
 async function checkAdmin(req, res, next) {
     const telegramId = req.query.id || req.body.adminId;
 
@@ -253,9 +228,7 @@ async function checkAdmin(req, res, next) {
 }
 
 
-/**
- * পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API (আগের মতোই)
- */
+// পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API
 app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
     try {
         const query = `
@@ -281,9 +254,7 @@ app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
 });
 
 
-/**
- * উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API (আগের মতোই)
- */
+// উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API
 app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
     const { requestId, action } = req.body; 
 
@@ -333,5 +304,20 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error while processing admin action.' });
     } finally {
         client.release();
+    }
+});
+
+
+// 💡 ফিক্স: রুট URL-এ index.html ফাইল পরিবেশন করা 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 💡 ফিক্স: 404 এরর হ্যান্ডলিং: API কল ছাড়া অন্য কিছু হলে index.html ফাইল পরিবেশন করা
+app.use((req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+        next(); 
+    } else {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
     }
 });
