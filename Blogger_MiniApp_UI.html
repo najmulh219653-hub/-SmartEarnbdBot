@@ -11,6 +11,10 @@
     <!-- Telegram Web App স্ক্রিপ্ট লোড করা হয়েছে -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <!-- 🔥 ভিডিও অ্যাড SDK লোড করা হয়েছে 🔥 -->
+    <!-- এটি "অ্যাড দেখুন" বাটনের জন্য প্রয়োজনীয় -->
+    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
+
     <style>
         /* কাস্টম ফন্ট এবং ডার্ক থিম ব্যাকগ্রাউন্ড */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -22,10 +26,9 @@
             padding: 0;
             overscroll-behavior-y: none;
         }
-        /* বটম নেভিগেশন এবং ব্যানার অ্যাড এর জন্য জায়গা রাখা হয়েছে */
+        /* বটম নেভিগেশন (64px) + ব্যানার অ্যাড (90px) এর জন্য জায়গা রাখা হয়েছে */
         .container-main {
-            /* নেভিগেশন (64px) + ব্যানার অ্যাড (64px) + টোস্টের জন্য সামান্য অতিরিক্ত স্থান */
-            padding-bottom: 128px; 
+            padding-bottom: 154px; /* 90px (Ad) + 64px (Nav) */
             min-height: 100vh;
         }
         .nav-button:hover {
@@ -34,18 +37,39 @@
         .active-nav {
             color: #10B981; /* Emerald-500 */
         }
-        /* ব্যানার অ্যাড কন্টেইনার */
+        /* ব্যানার অ্যাড কন্টেইনার (90px উচ্চতা) */
         .banner-ad-container {
-            height: 64px; /* ব্যানার অ্যাডের জন্য নির্দিষ্ট উচ্চতা */
+            height: 90px; 
             transition: all 0.3s ease-in-out;
+            display: flex; /* অ্যাড কন্টেন্টকে সেন্টারে আনার জন্য */
+            justify-content: center;
+            align-items: center;
         }
         /* ফিক্সড বটম UI এর জন্য max-w-lg কে নিশ্চিত করা */
         .fixed-bottom-ui {
             width: 100%;
-            max-width: 640px; /* Tailwind এর sm:max-w-xl এর কাছাকাছি */
+            max-width: 640px; 
             left: 50%;
             transform: translateX(-50%);
             margin: 0 auto;
+        }
+
+        /* Marquee ইফেক্টের জন্য কাস্টম CSS */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%; /* কন্টেন্ট স্ক্রিনের বাইরে থেকে শুরু হয় */
+            animation: marquee 10s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
         }
     </style>
 </head>
@@ -83,12 +107,22 @@
 
 
             <!-- ফিক্সড ব্যানার অ্যাড কন্টেইনার (সব পেজে শো করবে) -->
-            <!-- এটি বটম নেভিগেশনের ঠিক উপরে থাকবে -->
-            <div class="banner-ad-container fixed-bottom-ui fixed bottom-16 z-20 flex justify-center bg-gray-900 border-t border-gray-700 shadow-xl">
-                <div class="flex items-center justify-center w-full h-full text-center text-sm font-semibold text-yellow-400 bg-gray-800">
-                    <!-- এখানে আপনার ব্যানার অ্যাড কোড বা ইমেজ বসান -->
-                    <i data-lucide="megaphone" class="w-5 h-5 mr-2"></i> স্পনসরড ব্যানার অ্যাড
-                    <!-- যদি আপনি AdZilla বা অন্য কোনো অ্যাড নেটওয়ার্ক ব্যবহার করেন, তবে সেই HTML/JS কোডটি এখানে বসাতে হবে -->
+            <div class="banner-ad-container fixed-bottom-ui fixed bottom-16 z-20 bg-gray-900 border-t border-gray-700 shadow-xl">
+                <!-- 🔥 এখানে ইউজার থেকে পাওয়া ব্যানার অ্যাড কোডটি বসানো হলো 🔥 -->
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '00605022df81b880d400151bfc7c2185',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+                <!-- অ্যাড লোড না হলে একটি ফলব্যাক মেসেজ -->
+                <div id="banner-fallback" class="absolute inset-0 flex items-center justify-center w-full h-full text-center text-sm font-semibold text-yellow-400 bg-gray-800 pointer-events-none">
+                    <i data-lucide="megaphone" class="w-5 h-5 mr-2"></i> 
+                    <span>স্পনসরড ব্যানার অ্যাড লোড হচ্ছে...</span>
                 </div>
             </div>
 
@@ -108,7 +142,7 @@
                         <i data-lucide="send" class="w-6 h-6"></i>
                         <span class="text-xs">উইথড্র</span>
                     </button>
-                    <!-- অ্যাডমিন বাটন (শুরুতে লুকানো থাকবে) -->
+                    <!-- অ্যাডমিন বাটন (শুধুমাত্র অ্যাডমিন ID এর জন্য দৃশ্যমান হবে) -->
                     <button class="nav-button flex-col items-center p-2 transition-colors text-gray-400 hidden" onclick="renderPage('Admin')" id="nav-Admin">
                         <i data-lucide="cog" class="w-6 h-6"></i>
                         <span class="text-xs">অ্যাডমিন</span>
@@ -119,7 +153,7 @@
     </div>
 
     <!-- টোস্ট নোটিফিকেশন কন্টেইনার -->
-    <div id="toast-container" class="fixed bottom-36 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-48 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
 
 
 <script>
@@ -129,8 +163,8 @@
 
     // API সার্ভারের URL
     const API_URL = "https://smartearnbdbot.onrender.com/api"; 
-    // !!! এখানে আপনার Telegram ID বসান। এই ID-এর জন্য অ্যাডমিন বাটন দেখা যাবে। !!!
-    const ADMIN_TELEGRAM_ID = "8320840106"; // যেমন: "123456789"
+    // !!! এখানে আপনার Telegram ID বসানো হলো, যার জন্য অ্যাডমিন বাটন দেখা যাবে !!!
+    const ADMIN_TELEGRAM_ID = "8145444675"; 
     
     // ইউজার ডেটা এবং স্টেট ম্যানেজমেন্ট
     let appState = {
@@ -141,7 +175,7 @@
         referralCount: 0,
         currentPage: 'Home',
         isLoading: true,
-        isAdmin: false, // নতুন স্টেট যোগ করা হলো
+        isAdmin: false,
     };
 
     // *******************************************************************
@@ -187,7 +221,9 @@
             try {
                 const response = await fetch(url, options);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // সার্ভার 4xx/5xx দিলে JSON রেসপন্স পড়ার চেষ্টা করা হলো
+                    const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                    throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
                 }
                 return response.json();
             } catch (error) {
@@ -200,7 +236,7 @@
 
 
     // *******************************************************************
-    // ** API Calls                              **
+    // ** API Calls & Ad Logic                  **
     // *******************************************************************
 
     /**
@@ -247,7 +283,7 @@
 
     /**
      * @function addPoints
-     * Simulates watching an ad and adding points.
+     * Triggers the video ad and calls API on success.
      */
     async function addPoints() {
         if (!appState.telegramId) return showToast("ব্যবহারকারী আইডি উপলব্ধ নয়।", 'error');
@@ -255,16 +291,38 @@
         const earnButton = document.getElementById('earn-button');
         if (!earnButton) return; 
 
+        // 1. বাটন লোডিং স্টেট (অ্যাড লোড হচ্ছে)
         earnButton.disabled = true;
-        earnButton.innerHTML = `
-            <i data-lucide="loader" class="w-6 h-6 animate-spin mr-2"></i> অ্যাড চলছে...
-        `;
+        earnButton.innerHTML = `<i data-lucide="loader" class="w-6 h-6 animate-spin mr-2"></i> অ্যাড লোড হচ্ছে...`;
         lucide.createIcons();
 
-        // 3 সেকেন্ডের জন্য বিজ্ঞাপন দেখার সিমুলেশন
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
         try {
+            // 2. ভিডিও অ্যাড দেখানো: Promise ব্যবহার করে অ্যাডের রেজাল্ট ম্যানেজ করা হলো
+            await new Promise((resolve, reject) => {
+                // Ad function name inferred from data-sdk='show_10070523'
+                if (typeof window.show_10070523 === 'function') {
+                    
+                    window.show_10070523({ ymid: appState.telegramId })
+                        .then(() => {
+                            // Ad watched successfully (Resolve to proceed to API call)
+                            resolve(); 
+                        })
+                        .catch(() => {
+                            // Ad failed or was skipped (Reject to show error)
+                            reject(new Error("বিজ্ঞাপনটি লোড হতে পারেনি বা আপনি এটিকে বাতিল করেছেন।"));
+                        });
+
+                } else {
+                    // Fallback for simulation/testing if SDK fails to load
+                    showToast("বিজ্ঞাপন SDK লোড হয়নি, ৩ সেকেন্ড অপেক্ষা করা হচ্ছে (টেস্টিং মোড)।", 'info');
+                    setTimeout(resolve, 3000); 
+                }
+            });
+            
+            // 3. অ্যাড সফল হলে API কল করা
+            earnButton.innerHTML = `<i data-lucide="zap" class="w-6 h-6 mr-2"></i> পয়েন্ট যোগ হচ্ছে...`;
+            lucide.createIcons();
+            
             const response = await fetchWithRetry(`${API_URL}/add-points`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -283,12 +341,12 @@
             }
 
         } catch (error) {
-            console.error("Add points error:", error);
-            showToast("পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি।", 'error');
+            console.error("Add points process error:", error);
+            // অ্যাড ফেল/স্কিপ বা API ত্রুটি বার্তা দেখান
+            showToast(`${error.message || "পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি।"}`, 'error');
         } finally {
-            earnButton.innerHTML = `
-                <i data-lucide="monitor" class="w-6 h-6 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
-            `;
+            // বাটনকে স্বাভাবিক অবস্থায় ফিরিয়ে আনা
+            earnButton.innerHTML = `<i data-lucide="monitor" class="w-6 h-6 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন`;
             earnButton.disabled = false;
             lucide.createIcons();
         }
@@ -437,11 +495,18 @@
                     </div>
                 </div>
 
-                <!-- ইনকাম গাইডেন্স -->
+                <!-- ইনকাম গাইডেন্স (মারকিউ ইফেক্ট সহ) -->
                 <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
-                    <h3 class="text-xl font-semibold text-emerald-400 mb-2">ইনকাম গাইড</h3>
-                    <ul class="text-gray-400 space-y-2 text-sm list-disc list-inside">
-                        <li>প্রতিবার "অ্যাড দেখুন" বাটনে ক্লিক করলে ৫ পয়েন্ট পাবেন।</li>
+                    <div class="flex items-center mb-2">
+                        <i data-lucide="bell" class="w-5 h-5 text-red-400 mr-2 flex-shrink-0"></i>
+                        <div class="marquee-container flex-grow">
+                            <h3 class="font-semibold text-xl text-red-400 marquee-content">
+                                🔥🔥🔥 ইনকাম গাইডলাইন 🔥🔥🔥
+                            </h3>
+                        </div>
+                    </div>
+                    <ul class="text-gray-400 space-y-2 text-sm list-disc list-inside mt-3">
+                        <li>প্রতিবার "অ্যাড দেখুন" বাটনে ক্লিক করলে অ্যাড দেখে ৫ পয়েন্ট পাবেন।</li>
                         <li>আপনার রেফারেল লিংকে কেউ জয়েন করলে আপনি ২৫০ পয়েন্ট বোনাস পাবেন।</li>
                         <li>দৈনিক ইনকাম লিমিট সেট করা থাকতে পারে।</li>
                     </ul>
@@ -605,7 +670,7 @@
                 break;
             case 'Admin':
                 htmlContent = renderAdminPage();
-                break; // নতুন অ্যাডমিন পেজ
+                break; 
             default:
                 htmlContent = `<p class="text-center text-red-500">পেজটি খুঁজে পাওয়া যায়নি।</p>`;
         }
@@ -687,6 +752,9 @@
             } else {
                  adminButton.classList.add('hidden');
             }
+            
+            // ব্যানার অ্যাড ফলব্যাক লুকিয়ে ফেলা
+            document.getElementById('banner-fallback').classList.add('hidden');
 
 
             // 4. ডেটা লোড করা
@@ -721,4 +789,4 @@
     window.addEventListener('load', initApp);
 </script>
 </body>
-</html>
+    </html>
