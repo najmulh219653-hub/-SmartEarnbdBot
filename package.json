@@ -1,7 +1,7 @@
 {
-  "name": "smartearnbdbot-backend",
+  "name": "earnquick_official_bot",
   "version": "1.0.0",
-  "description": "Backend for EarnQuick Telegram Mini App",
+  "description": "Telegram Mini App backend for point tracking.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,11 +9,13 @@
   "dependencies": {
     "express": "^4.18.2",
     "pg": "^8.11.3",
-    "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
-    
+    "dotenv": "^16.3.1"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "keywords": [
+    "telegram",
+    "mini-app",
+    "postgres"
+  ],
+  "author": "",
+  "license": "ISC"
 }
