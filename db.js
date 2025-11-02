@@ -1,9 +1,7 @@
 // db.js
 
-// PostgreSQL ডাটাবেসের সাথে সংযোগ স্থাপনের জন্য
 const { Pool } = require('pg');
 
-// ডাটাবেস সংযোগের জন্য Pool তৈরি করা হলো
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -20,13 +18,12 @@ pool.on('error', (err) => {
     process.exit(1);
 });
 
-// ডাটাবেসের টেবিলগুলো তৈরি করার এবং ডিফল্ট ডেটা যোগ করার ফাংশন
 async function setupDatabase() {
     let client;
     try {
         client = await pool.connect();
-        
-        // 1. users টেবিল তৈরি করা
+        // CREATE TABLE কোড (আগের মতোই)
+        // ... (টেবিল তৈরির কোড)
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY UNIQUE,
@@ -42,9 +39,8 @@ async function setupDatabase() {
             );
         `;
         await client.query(createUsersTable);
-        console.log('Users table ensured.');
         
-        // 2. ad_logs টেবিল তৈরি করা
+        // ... (বাকি টেবিলের কোড)
         const createAdLogsTable = `
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -58,9 +54,7 @@ async function setupDatabase() {
             );
         `;
         await client.query(createAdLogsTable);
-        console.log('Ad_logs table ensured.');
-
-        // 3. withdraw_requests টেবিল তৈরি করা
+        
         const createWithdrawRequestsTable = `
             CREATE TABLE IF NOT EXISTS withdraw_requests (
                 id SERIAL PRIMARY KEY,
@@ -77,9 +71,7 @@ async function setupDatabase() {
             );
         `;
         await client.query(createWithdrawRequestsTable);
-        console.log('Withdraw_requests table ensured.');
-
-        // 4. ads_config টেবিল তৈরি করা
+        
         const createAdsConfigTable = `
             CREATE TABLE IF NOT EXISTS ads_config (
                 id SERIAL PRIMARY KEY,
@@ -89,9 +81,7 @@ async function setupDatabase() {
             );
         `;
         await client.query(createAdsConfigTable);
-        console.log('Ads_config table ensured.');
-        
-        // 5. ডিফল্ট কনফিগারেশন যোগ/আপডেট করা
+
         const defaultConfigs = [
             { key: 'running_notice', value: 'আমাদের মিনি অ্যাপে স্বাগতম! পয়েন্ট অর্জন করতে প্রতিদিন অ্যাড দেখুন।', description: 'Scrolling marquee notice text.' },
             { key: 'banner_ad_url', value: 'https://placehold.co/480x80/22c55e/ffffff?text=Banner+Ad+Space', description: 'URL for the main banner image.' },
@@ -107,7 +97,7 @@ async function setupDatabase() {
                 [config.key, config.value, config.description]
             );
         }
-        console.log('Default config data checked/inserted.');
+        console.log('Database tables and config ensured.');
 
 
     } catch (err) {
@@ -118,7 +108,6 @@ async function setupDatabase() {
     }
 }
 
-// ডাটাবেস পুল এবং সেটআপ ফাংশন এক্সপোর্ট করা হলো
 module.exports = {
     query: (text, params) => pool.query(text, params),
     pool,
