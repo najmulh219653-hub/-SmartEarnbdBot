@@ -20,28 +20,24 @@
             color: #E5E7EB; /* হালকা টেক্সট */
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: none; /* iOS/Android-এ বাউন্স ইফেক্ট বন্ধ */
+            overscroll-behavior-y: none;
         }
+        /* বটম নেভিগেশন এবং ব্যানার অ্যাড এর জন্য জায়গা রাখা হয়েছে */
         .container-main {
-            padding-bottom: 72px; /* বটম নেভিগেশনের জন্য স্থান রাখা */
+            /* নেভিগেশন (64px) + ব্যানার অ্যাড (64px) + টোস্টের জন্য সামান্য অতিরিক্ত স্থান */
+            padding-bottom: 128px; 
+            min-height: 100vh;
         }
         .nav-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            color: #10B981;
         }
         .active-nav {
             color: #10B981; /* Emerald-500 */
-            border-top: 2px solid #10B981;
         }
-        /* ফ্লোটিং আর্নিং বাটন এর ইউনিক স্টাইল */
-        .earn-button-ring {
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); /* অ্যাকসেন্ট কালারের শ্যাডো */
-            animation: pulse-ring 2s infinite;
-        }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
+        /* ব্যানার অ্যাড কন্টেইনার */
+        .banner-ad-container {
+            height: 64px; /* ব্যানার অ্যাডের জন্য নির্দিষ্ট উচ্চতা */
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
@@ -56,7 +52,7 @@
         </div>
         
         <!-- মূল UI (শুরুতে লুকানো থাকবে) -->
-        <div id="main-ui" class="w-full max-w-lg container-main transition-opacity duration-300 opacity-0 hidden">
+        <div id="main-ui" class="w-full max-w-lg transition-opacity duration-300 opacity-0 hidden">
             
             <!-- ফিক্সড হেডার: পয়েন্ট এবং ইউজারনেম -->
             <header class="sticky top-0 w-full p-4 bg-[#0D1117] border-b border-gray-800 z-10">
@@ -68,33 +64,40 @@
                             <span id="current-points">0</span> <span class="text-sm ml-1 text-gray-400">পয়েন্ট</span>
                         </h1>
                     </div>
-                    <button onclick="fetchUserData()" class="text-emerald-400 hover:text-emerald-300 transition-colors">
+                    <button onclick="fetchUserData()" class="p-2 rounded-full text-emerald-400 hover:text-emerald-300 transition-colors bg-gray-800/50">
                         <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
                     </button>
                 </div>
             </header>
 
             <!-- পেজ কন্টেন্ট রেন্ডারিং এরিয়া -->
-            <main id="page-content" class="p-4 w-full"></main>
+            <main id="page-content" class="p-4 w-full container-main"></main>
 
-            <!-- ফ্লোটিং বটম নেভিগেশন -->
-            <footer class="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto bg-[#1A202C] border-t border-gray-700 shadow-xl z-20 rounded-t-xl">
+
+            <!-- ফিক্সড ব্যানার অ্যাড কন্টেইনার (সব পেজে শো করবে) -->
+            <!-- এটি বটম নেভিগেশনের ঠিক উপরে থাকবে -->
+            <div class="banner-ad-container fixed bottom-16 left-0 right-0 z-20 flex justify-center w-full max-w-lg mx-auto bg-gray-900 border-t border-gray-700 shadow-xl">
+                <div class="flex items-center justify-center w-full h-full text-center text-sm font-semibold text-yellow-400 bg-gray-800">
+                    <!-- এখানে আপনার ব্যানার অ্যাড কোড বা ইমেজ বসান -->
+                    <i data-lucide="megaphone" class="w-5 h-5 mr-2"></i> স্পনসরড ব্যানার অ্যাড
+                </div>
+            </div>
+
+
+            <!-- ফ্লোটিং বটম নেভিগেশন (অ্যাডমিন বাটন বাদ দেওয়া হয়েছে) -->
+            <footer class="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto bg-[#1A202C] border-t border-gray-700 shadow-xl z-30 rounded-t-xl">
                 <div class="flex justify-around items-center h-16">
-                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Home')" id="nav-Home">
+                    <button class="nav-button flex flex-col items-center p-2 transition-colors text-gray-400" onclick="renderPage('Home')" id="nav-Home">
                         <i data-lucide="home" class="w-6 h-6"></i>
                         <span class="text-xs">হোম</span>
                     </button>
-                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Referral')" id="nav-Referral">
+                    <button class="nav-button flex flex-col items-center p-2 transition-colors text-gray-400" onclick="renderPage('Referral')" id="nav-Referral">
                         <i data-lucide="users" class="w-6 h-6"></i>
                         <span class="text-xs">রেফার</span>
                     </button>
-                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="renderPage('Withdraw')" id="nav-Withdraw">
+                    <button class="nav-button flex flex-col items-center p-2 transition-colors text-gray-400" onclick="renderPage('Withdraw')" id="nav-Withdraw">
                         <i data-lucide="send" class="w-6 h-6"></i>
                         <span class="text-xs">উইথড্র</span>
-                    </button>
-                    <button class="nav-button flex flex-col items-center p-2 text-gray-400 transition-colors" onclick="openAdmin()" id="nav-Admin">
-                        <i data-lucide="lock" class="w-6 h-6"></i>
-                        <span class="text-xs">অ্যাডমিন</span>
                     </button>
                 </div>
             </footer>
@@ -102,7 +105,8 @@
     </div>
 
     <!-- টোস্ট নোটিফিকেশন কন্টেইনার -->
-    <div id="toast-container" class="fixed bottom-20 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
+    <!-- ব্যানার অ্যাড এবং নেভিগেশন থেকে উপরে দেখানো হবে -->
+    <div id="toast-container" class="fixed bottom-36 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
 
 
 <script>
@@ -111,7 +115,6 @@
     // *******************************************************************
 
     // API সার্ভারের URL সেট করা হয়েছে
-    // **অনুগ্রহ করে নিশ্চিত করুন যে এই URL টি আপনার Render সার্ভারের সঠিক URL**
     const API_URL = "https://smartearnbdbot.onrender.com/api"; 
     
     // ইউজার ডেটা এবং স্টেট ম্যানেজমেন্ট
@@ -123,8 +126,6 @@
         referralCount: 0,
         currentPage: 'Home',
         isLoading: true,
-        // admin.html ফাইলটি এখানে যেতে হবে
-        adminUrl: "https://smartearnbdbot.onrender.com/admin.html" 
     };
 
     // *******************************************************************
@@ -221,10 +222,8 @@
                 
                 // UI আপডেট করুন
                 document.getElementById('current-points').textContent = data.points.toLocaleString('bn-BD');
-                // রেন্ডার করা পেজে রেফারেল ডেটা আপডেট
-                if (appState.currentPage === 'Referral') {
-                    renderPage('Referral'); 
-                }
+                // রেন্ডার করা পেজে ডেটা আপডেট
+                renderPage(appState.currentPage); 
             } else {
                 showToast(data.message || "ইউজার ডেটা লোড ব্যর্থ।", 'error');
             }
@@ -234,10 +233,6 @@
         } finally {
             // নিশ্চিত করুন যে সব Lucide আইকন রেন্ডার হয়েছে
             lucide.createIcons();
-            // ডেটা লোড হওয়ার পর বর্তমান পেজ রি-রেন্ডার করা
-            if (!appState.isLoading) {
-                 renderPage(appState.currentPage); 
-            }
         }
     }
 
@@ -248,11 +243,17 @@
     async function addPoints() {
         if (!appState.telegramId) return showToast("ব্যবহারকারী আইডি উপলব্ধ নয়।", 'error');
 
-        document.getElementById('earn-button').disabled = true;
-        document.getElementById('earn-button').innerHTML = `
+        const earnButton = document.getElementById('earn-button');
+        
+        // বাটনটি শুধুমাত্র হোম পেজে থাকায়, এটি চেক করা নিরাপদ
+        if (!earnButton) return; 
+
+        earnButton.disabled = true;
+        earnButton.innerHTML = `
             <i data-lucide="loader" class="w-6 h-6 animate-spin mr-2"></i> অ্যাড চলছে...
         `;
-        
+        lucide.createIcons();
+
         // 3 সেকেন্ডের জন্য বিজ্ঞাপন দেখার সিমুলেশন
         await new Promise(resolve => setTimeout(resolve, 3000));
         
@@ -279,10 +280,10 @@
             showToast("পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি।", 'error');
         } finally {
             // বাটন স্বাভাবিক অবস্থায় ফিরিয়ে আনা
-            document.getElementById('earn-button').innerHTML = `
-                <i data-lucide="monitor" class="w-8 h-8 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
+            earnButton.innerHTML = `
+                <i data-lucide="monitor" class="w-6 h-6 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
             `;
-            document.getElementById('earn-button').disabled = false;
+            earnButton.disabled = false;
             lucide.createIcons();
         }
     }
@@ -327,6 +328,8 @@
                 document.getElementById('current-points').textContent = response.new_points.toLocaleString('bn-BD');
                 document.getElementById('withdraw-form').reset();
                 showToast(response.message, 'success');
+                // উইথড্র সফল হলে হোম পেজ রেন্ডার করে ব্যালেন্স আপডেট দেখানো
+                renderPage('Withdraw'); 
             } else {
                 showToast(response.message || "উইথড্র রিকোয়েস্ট ব্যর্থ।", 'error');
             }
@@ -351,7 +354,7 @@
         return `
             <div class="space-y-6">
                 <!-- হাইলাইট কার্ড -->
-                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-[1.02] border border-emerald-600/30">
                     <div class="flex items-center justify-between">
                         <span class="text-lg font-semibold text-white">বর্তমান ব্যালেন্স</span>
                         <i data-lucide="trending-up" class="w-6 h-6 text-emerald-400"></i>
@@ -361,26 +364,34 @@
                     </p>
                 </div>
                 
-                <!-- মূল আর্নিং বাটন -->
-                <div class="flex flex-col items-center p-6 bg-gray-900 rounded-xl shadow-2xl">
-                    <button id="earn-button" onclick="addPoints()" class="earn-button-ring w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-full transition-all duration-300 flex items-center justify-center text-lg shadow-emerald-700/50">
-                        <i data-lucide="monitor" class="w-8 h-8 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
-                    </button>
-                    <p class="text-sm text-gray-400 mt-4">প্রতি অ্যাড ভিউ-এ +৫ পয়েন্ট</p>
-                </div>
+                <!-- অ্যাড দেখুন বাটন (Home Page Only) -->
+                <button id="earn-button" onclick="addPoints()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center text-lg shadow-emerald-700/50">
+                    <i data-lucide="monitor" class="w-6 h-6 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
+                </button>
+
 
                 <!-- অন্যান্য তথ্য -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start">
+                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start shadow-lg">
                         <i data-lucide="gift" class="w-6 h-6 text-yellow-400 mb-2"></i>
                         <span class="text-sm text-gray-400">রেফারেল বোনাস</span>
                         <span class="text-lg font-bold text-white">২৫০ পয়েন্ট</span>
                     </div>
-                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start">
+                    <div class="bg-gray-800 p-4 rounded-xl flex flex-col items-start shadow-lg">
                         <i data-lucide="badge-check" class="w-6 h-6 text-blue-400 mb-2"></i>
                         <span class="text-sm text-gray-400">ন্যূনতম উইথড্র</span>
                         <span class="text-lg font-bold text-white">১,০০০ পয়েন্ট</span>
                     </div>
+                </div>
+
+                <!-- ইনকাম গাইডেন্স -->
+                <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
+                    <h3 class="text-xl font-semibold text-emerald-400 mb-2">ইনকাম গাইড</h3>
+                    <ul class="text-gray-400 space-y-2 text-sm list-disc list-inside">
+                        <li>প্রতিবার "অ্যাড দেখুন" বাটনে ক্লিক করলে ৫ পয়েন্ট পাবেন।</li>
+                        <li>আপনার রেফারেল লিংকে কেউ জয়েন করলে আপনি ২৫০ পয়েন্ট বোনাস পাবেন।</li>
+                        <li>দৈনিক ইনকাম লিমিট সেট করা থাকতে পারে।</li>
+                    </ul>
                 </div>
             </div>
         `;
@@ -396,6 +407,7 @@
         const botUsername = "EarnQuick_Official"; // আপনার বটের ইউজারনেমটি এখানে সেট করুন
         
         if (appState.referralCode && botUsername) {
+            // এখানে bot_username আপনার Telegram Bot username হবে
             startLink = `https://t.me/${botUsername}?start=${appState.referralCode}`;
         }
 
@@ -406,11 +418,11 @@
             <div class="space-y-6">
                 <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">রেফার করুন ও ইনকাম করুন</h2>
                 
-                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-blue-600/30">
                     <p class="text-sm text-gray-400 mb-2">আপনার ইউনিক রেফারেল কোড:</p>
                     <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-emerald-600/50">
                         <span id="referral-code-display" class="font-mono text-xl text-emerald-400 select-all break-all">${appState.referralCode}</span>
-                        <button onclick="copyToClipboard('${appState.referralCode}')" class="ml-3 text-emerald-400 hover:text-emerald-300 transition-colors">
+                        <button onclick="copyToClipboard('${appState.referralCode}')" class="ml-3 text-emerald-400 hover:text-emerald-300 transition-colors flex-shrink-0">
                             <i data-lucide="copy" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -422,11 +434,11 @@
                         <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-400"></i> মোট রেফারেল
                     </p>
                     <p id="referral-count-display" class="text-4xl font-extrabold text-blue-400">${appState.referralCount.toLocaleString('bn-BD')}</p>
-                    <p class="text-sm text-gray-400 mt-3">প্রতি সফল রেফারে আপনি পাবেন ২৫০ পয়েন্ট।</p>
+                    <p class="text-sm text-gray-400 mt-3">আপনার ইনকাম লিংক: <a href="${startLink}" class="text-emerald-400 break-all hover:underline">${startLink}</a></p>
                 </div>
 
                 <a href="${shareLink}" class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-700/50 flex items-center justify-center">
-                    <i data-lucide="share2" class="w-5 h-5 mr-2"></i> শেয়ার করুন
+                    <i data-lucide="share2" class="w-5 h-5 mr-2"></i> টেলিগ্রামের মাধ্যমে শেয়ার করুন
                 </a>
             </div>
         `;
@@ -441,9 +453,9 @@
             <div class="space-y-6">
                 <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">উইথড্র করুন</h2>
                 
-                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-600/30">
                     <p class="text-lg font-semibold text-white mb-3">আপনার ব্যালেন্স: <span class="text-emerald-400">${appState.points.toLocaleString('bn-BD')}</span> পয়েন্ট</p>
-                    <p class="text-sm text-yellow-400 mb-4">ন্যূনতম উইথড্র: ১,০০০ পয়েন্ট</p>
+                    <p class="text-sm text-yellow-400 mb-4">ন্যূনতম উইথড্র: ১,০০০ পয়েন্ট (১০ টাকা সমমূল্য)</p>
 
                     <form id="withdraw-form" onsubmit="sendWithdrawRequest(event)" class="space-y-4">
                         <div>
@@ -458,11 +470,12 @@
                                 <option value="Bkash">বিকাশ</option>
                                 <option value="Nagad">নগদ</option>
                                 <option value="Rocket">রকেট</option>
+                                <option value="Recharge">মোবাইল রিচার্জ</option>
                             </select>
                         </div>
                         
                         <div>
-                            <label for="payment-address" class="block text-sm font-medium text-gray-300 mb-1">পেমেন্ট ঠিকানা (Bkash/Nagad নাম্বার)</label>
+                            <label for="payment-address" class="block text-sm font-medium text-gray-300 mb-1">পেমেন্ট ঠিকানা (মোবাইল/অ্যাকাউন্ট নাম্বার)</label>
                             <input type="text" id="payment-address" required class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-emerald-500 focus:ring focus:ring-emerald-500/50" placeholder="01XXXXXXXXX">
                         </div>
 
@@ -517,11 +530,9 @@
      * Copies text to the clipboard and shows a toast.
      */
     function copyToClipboard(text) {
-        // clipboard API ব্যবহার করা হয়েছে, যা Mini App-এ কাজ করা উচিত
         navigator.clipboard.writeText(text).then(() => {
             showToast("কপি করা হয়েছে!", 'success');
         }).catch(err => {
-            // যদি clipboard API কাজ না করে (iframe সীমাবদ্ধতা), একটি বিকল্প ব্যবহার করা যেতে পারে
             const textarea = document.createElement('textarea');
             textarea.value = text;
             document.body.appendChild(textarea);
@@ -531,24 +542,6 @@
             showToast("কপি করা হয়েছে!", 'success');
         });
     }
-
-    /**
-     * @function openAdmin
-     * Opens the separate admin.html file (if applicable).
-     */
-    function openAdmin() {
-        if (!appState.telegramId) {
-             showToast("অ্যাডমিন প্যানেল দেখতে আপনার টেলিগ্রাম আইডি প্রয়োজন।", 'error');
-             return;
-        }
-        // যদি আপনার অ্যাডমিন প্যানেলটি সুরক্ষিত না হয় তবে এটি সবার জন্য উন্মুক্ত থাকবে।
-        // অ্যাডমিন চেকটি সার্ভারে করা হয়, তাই অ্যাডমিন URL টি খোলা নিরাপদ।
-        window.open(appState.adminUrl, '_blank');
-    }
-
-    // *******************************************************************
-    // ** Initialization                          **
-    // *******************************************************************
 
     /**
      * @function initApp
@@ -563,6 +556,11 @@
 
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand(); // পূর্ণ স্ক্রিনে এক্সপ্যান্ড করা
+            
+            // UI কালার থিম টেলিগ্রামের সাথে সিঙ্ক করা
+            document.documentElement.style.backgroundColor = window.Telegram.WebApp.themeParams.bg_color || '#0D1117';
+            document.body.style.backgroundColor = window.Telegram.WebApp.themeParams.bg_color || '#0D1117';
+
 
             const user = window.Telegram.WebApp.initDataUnsafe.user;
             
@@ -588,7 +586,7 @@
 
             // 3. ডেটা সেট করা
             appState.telegramId = user.id.toString(); // API এর জন্য ID কে স্ট্রিং এ রাখা
-            appState.username = user.username || user.first_name;
+            appState.username = user.username || user.first_name || 'ইউজার';
             
             document.getElementById('user-name').textContent = appState.username;
 
@@ -613,7 +611,7 @@
                 <div class="p-6 text-center max-w-sm mx-auto bg-gray-800 rounded-xl shadow-2xl">
                     <i data-lucide="wifi-off" class="w-12 h-12 text-yellow-500 mx-auto mb-4"></i>
                     <h2 class="text-xl font-bold text-white mb-2">ত্রুটি: অ্যাপ চালু করা যায়নি</h2>
-                    <p class="text-gray-300 text-sm">যদি আপনি টেলিগ্রামের মধ্যে থাকেন, তবে আপনার ইন্টারনেট সংযোগ বা Render সার্ভারের স্থিতি পরীক্ষা করুন।</p>
+                    <p class="text-gray-300 text-sm">আপনার ইন্টারনেট সংযোগ বা Render সার্ভারের স্থিতি পরীক্ষা করুন।</p>
                     <p class="text-red-400 text-xs mt-2">বিস্তারিত: ${e.message}</p>
                 </div>
             `;
@@ -624,4 +622,4 @@
     window.addEventListener('load', initApp);
 </script>
 </body>
-</html>
+    </html>
