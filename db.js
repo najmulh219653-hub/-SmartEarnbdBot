@@ -1,3 +1,5 @@
+// db.js
+
 // PostgreSQL ডাটাবেসের সাথে সংযোগ স্থাপনের জন্য
 const { Pool } = require('pg');
 
@@ -24,14 +26,14 @@ async function setupDatabase() {
     try {
         client = await pool.connect();
         
-        // 1. users টেবিল তৈরি করা (is_admin কলাম সহ)
+        // 1. users টেবিল তৈরি করা
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY UNIQUE,
                 username VARCHAR(50) DEFAULT 'GuestUser',
                 total_points INTEGER DEFAULT 0,
                 referrer_id BIGINT NULL, 
-                is_admin BOOLEAN DEFAULT FALSE, -- এডমিন ফিউচারের জন্য কলাম
+                is_admin BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 CONSTRAINT fk_referrer
                     FOREIGN KEY (referrer_id)
@@ -65,7 +67,7 @@ async function setupDatabase() {
                 user_telegram_id BIGINT NOT NULL, 
                 points_requested INTEGER NOT NULL,
                 payment_details JSONB,
-                status VARCHAR(20) DEFAULT 'Pending', -- Pending, Approved, Rejected, Paid
+                status VARCHAR(20) DEFAULT 'Pending',
                 requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 processed_at TIMESTAMP WITH TIME ZONE NULL,
                 CONSTRAINT fk_withdraw_user
@@ -77,7 +79,7 @@ async function setupDatabase() {
         await client.query(createWithdrawRequestsTable);
         console.log('Withdraw_requests table ensured.');
 
-        // 4. ads_config টেবিল তৈরি করা (ব্যানার এবং নোটিশের জন্য)
+        // 4. ads_config টেবিল তৈরি করা
         const createAdsConfigTable = `
             CREATE TABLE IF NOT EXISTS ads_config (
                 id SERIAL PRIMARY KEY,
