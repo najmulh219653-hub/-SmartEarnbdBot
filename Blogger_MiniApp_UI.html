@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EarnQuick_Official MiniApp</title>
-    <!-- Tailwind CSS CDN লোড করা হলো -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Tailwind কনফিগারেশন: কালার থিম
@@ -64,7 +63,6 @@
 </head>
 <body class="min-h-screen pb-20">
 
-    <!-- Loading Indicator / Message Modal -->
     <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onclick="hideMessage()">
         <div class="card p-6 w-full max-w-sm text-center" onclick="event.stopPropagation()">
             <h3 id="modal-title" class="text-xl font-bold mb-3"></h3>
@@ -73,7 +71,6 @@
         </div>
     </div>
 
-    <!-- Withdrawal Modal -->
     <div id="withdraw-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onclick="toggleWithdrawModal(false)">
         <div class="card p-6 w-full max-w-sm" onclick="event.stopPropagation()">
             <h3 class="text-xl font-bold mb-4 text-primary-green">পয়েন্ট উইথড্র করুন</h3>
@@ -95,29 +92,23 @@
         <h1 class="text-2xl font-bold text-gray-100 py-3">EarnQuick_Official</h1>
     </header>
 
-    <!-- রানিং হেডলাইন/নোটিশ -->
     <div id="running-notice-container" class="marquee-container text-white text-sm font-medium mb-4">
         <p id="running-notice" class="marquee-content px-4"></p>
     </div>
 
-    <!-- মেইন অ্যাপ ভিউ -->
     <div id="main-app-view" class="p-4 space-y-6 max-w-lg mx-auto">
         
-        <!-- ব্যানার অ্যাড -->
         <a id="banner-link-a" href="#" target="_blank" class="block rounded-xl overflow-hidden shadow-xl">
             <img id="banner-ad-img" src="https://placehold.co/480x80/22c55e/ffffff?text=Loading+Ad" alt="Banner Advertisement" class="w-full h-auto object-cover">
         </a>
         
-        <!-- ইউজার ডেটা কার্ড -->
         <div class="card p-4">
             <div class="flex items-center justify-between mb-4">
                 <p class="text-sm text-gray-400">ইউজার: <span id="username-display" class="font-semibold text-white">লোডিং...</span></p>
                 <div class="flex items-center space-x-3">
-                    <!-- Admin Button -->
                     <button id="admin-btn" onclick="switchView('admin')" class="hidden text-red-400 hover:text-red-500 transition font-bold text-sm bg-red-900/50 px-2 py-1 rounded-full">
                         Admin
                     </button>
-                    <!-- Reload Button -->
                     <button onclick="loadUserData(true)" class="text-primary-green hover:text-green-400 transition">
                         <svg id="reload-icon" class="w-6 h-6 transform transition duration-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.836 2.582a4.99 4.99 0 00-3.328-3.328m0 0a4.99 4.99 0 00-3.328-3.328M12 21a9 9 0 00-8.23-5.26M12 3a9 9 0 00-8.23 5.26" />
@@ -132,7 +123,6 @@
             </div>
         </div>
 
-        <!-- মূল অ্যাকশন বাটন: অ্যাড দেখুন -->
         <button id="add-points-btn" onclick="addPoints()" class="w-full py-3 text-lg font-bold bg-primary-green rounded-xl btn-primary shadow-lg shadow-green-900/50 flex items-center justify-center space-x-2 disabled:opacity-50" disabled>
             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1v-3" />
@@ -141,7 +131,6 @@
             <span>অ্যাড দেখুন ও ইনকাম করুন (১০ পয়েন্ট)</span>
         </button>
 
-        <!-- রেফারেল এবং উইথড্র তথ্য কার্ড -->
         <div class="grid grid-cols-2 gap-4">
             <div class="card text-center">
                 <p class="text-gray-300 font-semibold text-sm">রেফারেল বোনাস</p>
@@ -153,7 +142,6 @@
             </div>
         </div>
         
-        <!-- উইথড্র বাটন -->
         <div class="card text-center p-3">
             <p class="text-gray-300 font-semibold text-sm mb-2">ন্যূনতম উইথড্র: <span class="text-yellow-400 font-bold">৫,০০০ পয়েন্ট</span></p>
             <button onclick="toggleWithdrawModal(true)" id="withdraw-btn" class="w-full py-3 font-bold bg-blue-500 rounded-lg hover:bg-blue-600 transition btn-primary disabled:opacity-50" disabled>
@@ -163,7 +151,6 @@
 
     </div>
     
-    <!-- এডমিন প্যানেল ভিউ -->
     <div id="admin-view" class="hidden p-4 space-y-6 max-w-2xl mx-auto">
         <div class="flex items-center justify-between card p-3">
             <h2 class="text-2xl font-bold text-red-400">🔥 Admin Panel</h2>
@@ -174,8 +161,7 @@
             <h3 class="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Pending Withdrawals (<span id="pending-count">0</span>)</h3>
             <div id="withdrawal-list" class="space-y-3">
                 <p id="no-withdrawals" class="text-gray-500 text-center py-4">কোনো পেন্ডিং রিকোয়েস্ট নেই।</p>
-                <!-- Withdrawal items will be inserted here -->
-            </div>
+                </div>
             <button onclick="loadWithdrawals()" class="mt-4 w-full py-2 text-sm bg-gray-600/50 rounded-lg hover:bg-gray-600 transition">Reload Withdrawals</button>
         </div>
         
@@ -218,7 +204,6 @@
 
         // কাস্টম মোডাল মেসেজ দেখানো
         function showMessage(title, body, isError = false) {
-            // [Modal functions remain the same]
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-body').textContent = body;
             document.getElementById('modal-title').classList.toggle('text-error', isError);
@@ -319,10 +304,8 @@
             }
         }
 
-        // পয়েন্ট যোগ করার ফাংশন
+        // 💡 পয়েন্ট যোগ করার ফাংশন (এখানেই সংশোধন করা হয়েছে)
         async function addPoints() {
-            // [Add points function remains the same, ensuring it logs and updates points]
-            
             const addPointsBtn = document.getElementById('add-points-btn');
             
             addPointsBtn.disabled = true;
@@ -346,7 +329,8 @@
                     document.getElementById('withdraw-btn').disabled = (CURRENT_POINTS < MIN_WITHDRAWAL);
                     showMessage("সফল!", `অভিনন্দন! আপনি ${POINTS_PER_AD} পয়েন্ট অর্জন করেছেন।`, false);
                 } else {
-                    showMessage("পয়েন্ট যোগ ত্রুটি", data.message || "পয়েন্ট যোগ করতে সার্ভার ত্রুটি।", true);
+                    // সার্ভার থেকে আসা data.message ব্যবহার করে ত্রুটি জানানো হচ্ছে
+                    showMessage("পয়েন্ট যোগ ত্রুটি", data.message || "পয়েন্ট যোগ করতে সার্ভার ত্রুটি। অনুগ্রহ করে পরে চেষ্টা করুন।", true);
                 }
 
             } catch (error) {
@@ -362,9 +346,8 @@
             }
         }
         
-        // উইথড্র রিকোয়েস্ট পাঠানোর ফাংশন (unchanged)
+        // উইথড্র রিকোয়েস্ট পাঠানোর ফাংশন 
         async function requestWithdrawal() {
-             // [requestWithdrawal function remains the same]
             const points = parseInt(document.getElementById('withdraw-points').value);
             const account = document.getElementById('withdraw-account').value.trim();
 
@@ -377,7 +360,8 @@
                  showMessage("পয়েন্ট কম", "আপনার অ্যাকাউন্টে পর্যাপ্ত পয়েন্ট নেই।", true);
                  return;
             }
-
+            
+            const confirmWithdrawBtn = document.getElementById('confirm-withdraw-btn');
             confirmWithdrawBtn.disabled = true;
             confirmWithdrawBtn.innerHTML = '<span class="animate-pulse">প্রসেস হচ্ছে...</span>';
 
@@ -413,10 +397,24 @@
                 confirmWithdrawBtn.textContent = 'রিকোয়েস্ট পাঠান';
             }
         }
+        
+        // উইথড্র মোডাল টগল করা
+        function toggleWithdrawModal(show) {
+            const modal = document.getElementById('withdraw-modal');
+            if (show) {
+                if (CURRENT_POINTS < MIN_WITHDRAWAL) {
+                    showMessage("উইথড্র অসম্ভব", `উইথড্র করতে আপনার ন্যূনতম ${MIN_WITHDRAWAL} পয়েন্ট প্রয়োজন।`, true);
+                    return;
+                }
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
 
 
         // ===============================================
-        // ADMIN PANEL LOGIC
+        // ADMIN PANEL LOGIC (No changes)
         // ===============================================
 
         // পেন্ডিং উইথড্রয়াল রিকোয়েস্ট লোড করা
