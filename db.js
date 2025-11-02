@@ -22,8 +22,8 @@ async function setupDatabase() {
     let client;
     try {
         client = await pool.connect();
-        // CREATE TABLE কোড (আগের মতোই)
-        // ... (টেবিল তৈরির কোড)
+        
+        // 1. users টেবিল তৈরি করা
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY UNIQUE,
@@ -40,7 +40,7 @@ async function setupDatabase() {
         `;
         await client.query(createUsersTable);
         
-        // ... (বাকি টেবিলের কোড)
+        // 2. ad_logs টেবিল তৈরি করা
         const createAdLogsTable = `
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -55,6 +55,7 @@ async function setupDatabase() {
         `;
         await client.query(createAdLogsTable);
         
+        // 3. withdraw_requests টেবিল তৈরি করা
         const createWithdrawRequestsTable = `
             CREATE TABLE IF NOT EXISTS withdraw_requests (
                 id SERIAL PRIMARY KEY,
@@ -72,6 +73,7 @@ async function setupDatabase() {
         `;
         await client.query(createWithdrawRequestsTable);
         
+        // 4. ads_config টেবিল তৈরি করা
         const createAdsConfigTable = `
             CREATE TABLE IF NOT EXISTS ads_config (
                 id SERIAL PRIMARY KEY,
@@ -82,6 +84,7 @@ async function setupDatabase() {
         `;
         await client.query(createAdsConfigTable);
 
+        // 5. ডিফল্ট কনফিগারেশন যোগ/আপডেট করা
         const defaultConfigs = [
             { key: 'running_notice', value: 'আমাদের মিনি অ্যাপে স্বাগতম! পয়েন্ট অর্জন করতে প্রতিদিন অ্যাড দেখুন।', description: 'Scrolling marquee notice text.' },
             { key: 'banner_ad_url', value: 'https://placehold.co/480x80/22c55e/ffffff?text=Banner+Ad+Space', description: 'URL for the main banner image.' },
