@@ -1,43 +1,37 @@
-// Node.js অ্যাপ্লিকেশন এবং PostgreSQL ডাটাবেসের মধ্যে সংযোগ স্থাপন এবং স্কিমা তৈরির জন্য
+// PostgreSQL ডাটাবেসের সাথে সংযোগ স্থাপনের জন্য
 const { Pool } = require('pg');
-
-// .env ফাইল থেকে পরিবেশ ভেরিয়েবল লোড করার জন্য, যদি দরকার হয়।
-// Render বা অন্য হোস্টিং প্ল্যাটফর্মে DATABASE_URL স্বয়ংক্রিয়ভাবে সেট করা থাকে।
-// require('dotenv').config(); 
 
 // ডাটাবেস সংযোগের জন্য Pool তৈরি করা হলো
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    // SSL কনফিগারেশন রেন্ডারের জন্য দরকার হতে পারে
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-// ডাটাবেস সংযোগ পরীক্ষা
 pool.on('connect', () => {
     console.log('Database connected successfully!');
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+    console.error('FATAL: Unexpected error on idle client. Check DATABASE_URL.', err.stack);
+    process.exit(1);
 });
 
-// ডাটাবেসের টেবিলগুলো তৈরি করার ফাংশন (স্কিমা ফিক্স সহ)
+// ডাটাবেসের টেবিলগুলো তৈরি করার এবং ডিফল্ট ডেটা যোগ করার ফাংশন
 async function setupDatabase() {
+    let client;
     try {
-        const client = await pool.connect();
+        client = await pool.connect();
         
-        // 1. users টেবিল তৈরি করা
-        // referrer_id কলামটি যোগ করা হয়েছে, যা ডেটা লোডিং/রেফারাল লজিকে সমস্যা তৈরি করছিল।
+        // 1. users টেবিল তৈরি করা (is_admin কলাম সহ)
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY UNIQUE,
-                username VARCHAR(50) DEFAULT '',
+                username VARCHAR(50) DEFAULT 'GuestUser',
                 total_points INTEGER DEFAULT 0,
                 referrer_id BIGINT NULL, 
-                is_admin BOOLEAN DEFAULT FALSE,
+                is_admin BOOLEAN DEFAULT FALSE, -- এডমিন ফিউচারের জন্য কলাম
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 CONSTRAINT fk_referrer
                     FOREIGN KEY (referrer_id)
@@ -46,10 +40,9 @@ async function setupDatabase() {
             );
         `;
         await client.query(createUsersTable);
-        console.log('Users table ensured (referrer_id column added/confirmed).');
+        console.log('Users table ensured.');
         
         // 2. ad_logs টেবিল তৈরি করা
-        // user_telegram_id কলামটি যোগ করা হয়েছে, যা পয়েন্ট যোগ করার সময় সমস্যা তৈরি করছিল।
         const createAdLogsTable = `
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -63,11 +56,63 @@ async function setupDatabase() {
             );
         `;
         await client.query(createAdLogsTable);
-        console.log('Ad_logs table ensured (user_telegram_id column added/confirmed).');
+        console.log('Ad_logs table ensured.');
 
-        client.release();
+        // 3. withdraw_requests টেবিল তৈরি করা
+        const createWithdrawRequestsTable = `
+            CREATE TABLE IF NOT EXISTS withdraw_requests (
+                id SERIAL PRIMARY KEY,
+                user_telegram_id BIGINT NOT NULL, 
+                points_requested INTEGER NOT NULL,
+                payment_details JSONB,
+                status VARCHAR(20) DEFAULT 'Pending', -- Pending, Approved, Rejected, Paid
+                requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                processed_at TIMESTAMP WITH TIME ZONE NULL,
+                CONSTRAINT fk_withdraw_user
+                    FOREIGN KEY (user_telegram_id)
+                    REFERENCES users(telegram_id)
+                    ON DELETE CASCADE
+            );
+        `;
+        await client.query(createWithdrawRequestsTable);
+        console.log('Withdraw_requests table ensured.');
+
+        // 4. ads_config টেবিল তৈরি করা (ব্যানার এবং নোটিশের জন্য)
+        const createAdsConfigTable = `
+            CREATE TABLE IF NOT EXISTS ads_config (
+                id SERIAL PRIMARY KEY,
+                config_key VARCHAR(50) UNIQUE NOT NULL,
+                config_value TEXT,
+                description VARCHAR(255)
+            );
+        `;
+        await client.query(createAdsConfigTable);
+        console.log('Ads_config table ensured.');
+        
+        // 5. ডিফল্ট কনফিগারেশন যোগ/আপডেট করা
+        const defaultConfigs = [
+            { key: 'running_notice', value: 'আমাদের মিনি অ্যাপে স্বাগতম! পয়েন্ট অর্জন করতে প্রতিদিন অ্যাড দেখুন।', description: 'Scrolling marquee notice text.' },
+            { key: 'banner_ad_url', value: 'https://placehold.co/480x80/22c55e/ffffff?text=Banner+Ad+Space', description: 'URL for the main banner image.' },
+            { key: 'banner_link', value: '#', description: 'Link URL for the banner ad.' },
+        ];
+
+        for (const config of defaultConfigs) {
+            await client.query(
+                `INSERT INTO ads_config (config_key, config_value, description) 
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (config_key) 
+                 DO UPDATE SET config_value = EXCLUDED.config_value, description = EXCLUDED.description`,
+                [config.key, config.value, config.description]
+            );
+        }
+        console.log('Default config data checked/inserted.');
+
+
     } catch (err) {
-        console.error('Error setting up database tables:', err);
+        console.error('CRITICAL: Error setting up database tables. Check permissions/connection.', err.stack);
+        process.exit(1);
+    } finally {
+        if (client) client.release();
     }
 }
 
