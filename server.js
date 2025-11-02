@@ -2,14 +2,17 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const path = require('path');
+const path = require('path'); // Path মডিউল ইম্পোর্ট করা হলো
 const db = require('./db'); 
 
 const app = express();
-const PORT = process.env.PORT || 3000; 
+const PORT = process.env.PORT || 10000; 
 
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); 
+
+// 💡 সংশোধন #১: স্ট্যাটিক ফাইল ডিরেক্টরি স্পষ্টভাবে সেট করা হলো
+// এখন এটি সার্ভারের root ফোল্ডারে থাকা 'public' ফোল্ডারটিকে স্ট্যাটিক হিসেবে ব্যবহার করবে।
+app.use(express.static(path.join(__dirname, 'public'))); 
 
 // সার্ভার শুরু করার আগে ডাটাবেস সেটআপ নিশ্চিত করা
 db.setupDatabase().then(() => {
@@ -38,7 +41,6 @@ app.get('/api/user_data', async (req, res) => {
     }
 
     try {
-        // ইউজার ডেটা আনা, না থাকলে INSERT, এবং is_admin সহ রিটার্ন করা
         const userResult = await db.query(
             `INSERT INTO users (telegram_id, username) 
              VALUES ($1, $2)
@@ -50,7 +52,6 @@ app.get('/api/user_data', async (req, res) => {
         
         const user = userResult.rows[0];
 
-        // রেফারাল সংখ্যা গণনা করা
         const referralCountResult = await db.query(
             'SELECT COUNT(*) FROM users WHERE referrer_id = $1',
             [telegramId]
@@ -66,8 +67,87 @@ app.get('/api/user_data', async (req, res) => {
     }
 });
 
+
 /**
- * অ্যাপ কনফিগারেশন ডেটা লোড করার API (ব্যানার, নোটিশ)
+ * পয়েন্ট যোগ করার API (Data Type ও User Check সহ সংশোধিত)
+ */
+app.post('/api/add_points', async (req, res) => {
+    const { telegramId, points } = req.body; 
+    const pointsToAdd = parseInt(points);
+
+    // 💡 Data Type Validation: NaN, 0 বা নেগেটিভ পয়েন্ট চেক করা
+    if (!telegramId || isNaN(pointsToAdd) || pointsToAdd <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid point amount received. Please reload the app or contact support.' });
+    }
+
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN'); 
+        
+        // User Check: ইউজার ডাটাবেসে আছে কিনা যাচাই করা
+        const userCheck = await client.query('SELECT 1 FROM users WHERE telegram_id = $1', [telegramId]);
+        
+        if (userCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: 'User account not found. Please reload the app to create your profile.' });
+        }
+
+
+        // Update user points
+        const updateQuery = `
+            UPDATE users 
+            SET total_points = total_points + $1 
+            WHERE telegram_id = $2 
+            RETURNING total_points`;
+            
+        const updateResult = await client.query(updateQuery, [pointsToAdd, telegramId]);
+
+
+        // Log the ad view
+        const logQuery = `
+            INSERT INTO ad_logs (user_telegram_id, points_awarded) 
+            VALUES ($1, $2)`;
+            
+        await client.query(logQuery, [telegramId, pointsToAdd]); 
+
+        await client.query('COMMIT'); 
+
+        res.json({ 
+            success: true, 
+            message: 'Points added successfully.',
+            newPoints: updateResult.rows[0].total_points
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK'); 
+        console.error('Error adding points and logging:', error.stack);
+        res.status(500).json({ success: false, message: 'Server error while adding points.' });
+    } finally {
+        client.release();
+    }
+});
+
+// ... (বাকি API এন্ডপয়েন্টগুলি একই থাকবে)
+
+// রুট URL-এ index.html ফাইল পরিবেশন করা
+app.get('/', (req, res) => {
+    // 💡 সংশোধন #২: 'public' ফোল্ডারের মধ্যে index.html ফাইলটি দেখানো হলো
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 404 এরর হ্যান্ডলিং: API কল ছাড়া অন্য কিছু হলে index.html ফাইল পরিবেশন করা
+app.use((req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+        next(); 
+    } else {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+});
+
+// ... (বাকি admin API কোড)
+
+/**
+ * অ্যাপ কনফিগারেশন ডেটা লোড করার API (আগের মতোই)
  */
 app.get('/api/config', async (req, res) => {
     try {
@@ -88,67 +168,7 @@ app.get('/api/config', async (req, res) => {
 
 
 /**
- * 💥 পয়েন্ট যোগ করার API (সংশোধিত: NaN এবং ইউজার চেক যোগ করা হয়েছে)
- */
-app.post('/api/add_points', async (req, res) => {
-    const { telegramId, points } = req.body; 
-    const pointsToAdd = parseInt(points);
-
-    // 💡 সংশোধন #১: ডেটা টাইপ কঠোরভাবে যাচাই করা
-    if (!telegramId || isNaN(pointsToAdd) || pointsToAdd <= 0) {
-        return res.status(400).json({ success: false, message: 'Invalid point amount received. Please contact support.' });
-    }
-
-    const client = await db.pool.connect();
-    try {
-        await client.query('BEGIN'); 
-        
-        // 💡 সংশোধন #২: ইউজার আছে কিনা তা যাচাই করা
-        const userCheck = await client.query('SELECT 1 FROM users WHERE telegram_id = $1', [telegramId]);
-        
-        if (userCheck.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ success: false, message: 'User account not found. Please reload the app to create your profile.' });
-        }
-
-
-        // 2. user এর total_points আপডেট করা
-        const updateQuery = `
-            UPDATE users 
-            SET total_points = total_points + $1 
-            WHERE telegram_id = $2 
-            RETURNING total_points`;
-            
-        const updateResult = await client.query(updateQuery, [pointsToAdd, telegramId]);
-
-
-        // 3. ad_logs টেবিলে লগ যোগ করা
-        const logQuery = `
-            INSERT INTO ad_logs (user_telegram_id, points_awarded) 
-            VALUES ($1, $2)`;
-            
-        await client.query(logQuery, [telegramId, pointsToAdd]); 
-
-        await client.query('COMMIT'); 
-
-        res.json({ 
-            success: true, 
-            message: 'Points added successfully.',
-            newPoints: updateResult.rows[0].total_points
-        });
-        
-    } catch (error) {
-        await client.query('ROLLBACK'); 
-        console.error('Error adding points and logging:', error.stack);
-        // সার্ভার এরর হলে এটি প্রদর্শিত হবে, কিন্তু এখন এর সম্ভাবনা অনেক কমে যাবে।
-        res.status(500).json({ success: false, message: 'Server error while adding points.' });
-    } finally {
-        client.release();
-    }
-});
-
-/**
- * উইথড্র রিকোয়েস্ট করার API
+ * উইথড্র রিকোয়েস্ট করার API (আগের মতোই)
  */
 app.post('/api/request_withdraw', async (req, res) => {
     const { telegramId, points, account } = req.body;
@@ -163,7 +183,6 @@ app.post('/api/request_withdraw', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. ইউজার এর পর্যাপ্ত পয়েন্ট আছে কিনা যাচাই করা এবং লক করা
         const userCheckResult = await client.query(
             'SELECT total_points FROM users WHERE telegram_id = $1 FOR UPDATE', 
             [telegramId]
@@ -181,13 +200,11 @@ app.post('/api/request_withdraw', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Insufficient points for withdrawal.' });
         }
 
-        // 2. total_points থেকে পয়েন্ট বিয়োগ করা
         const updatePointsResult = await client.query(
             'UPDATE users SET total_points = total_points - $1 WHERE telegram_id = $2 RETURNING total_points',
             [pointsRequested, telegramId]
         );
 
-        // 3. withdraw_requests টেবিলে লগ করা (স্ট্যাটাস 'Pending')
         const logWithdrawalQuery = `
             INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_details)
             VALUES ($1, $2, $3)`;
@@ -212,12 +229,8 @@ app.post('/api/request_withdraw', async (req, res) => {
 });
 
 
-// =======================================================
-// Admin API Endpoints
-// =======================================================
-
 /**
- * এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার
+ * এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার (আগের মতোই)
  */
 async function checkAdmin(req, res, next) {
     const telegramId = req.query.id || req.body.adminId;
@@ -241,7 +254,7 @@ async function checkAdmin(req, res, next) {
 
 
 /**
- * পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API
+ * পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API (আগের মতোই)
  */
 app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
     try {
@@ -269,7 +282,7 @@ app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
 
 
 /**
- * উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API
+ * উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API (আগের মতোই)
  */
 app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
     const { requestId, action } = req.body; 
@@ -296,13 +309,11 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
         
         let newStatus = action === 'Approve' ? 'Paid' : 'Rejected';
 
-        // 1. উইথড্র রিকোয়েস্ট আপডেট করা
         await client.query(
             'UPDATE withdraw_requests SET status = $1, processed_at = NOW() WHERE id = $2',
             [newStatus, requestId]
         );
 
-        // 2. Reject হলে পয়েন্ট ফেরত দেওয়া
         if (action === 'Reject') {
             await client.query(
                 'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2',
@@ -313,7 +324,6 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
             return res.json({ success: true, message: `Request ${requestId} rejected. Points returned to user.` });
         }
 
-        // Approve হলে (পয়েন্ট আগে থেকেই ডিডাক্ট করা ছিল)
         await client.query('COMMIT');
         res.json({ success: true, message: `Request ${requestId} approved and marked as Paid.` });
 
@@ -324,19 +334,4 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
     } finally {
         client.release();
     }
-});
-
-
-// 404 এরর হ্যান্ডলিং: index.html ফাইল পরিবেশন করা
-app.use((req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) {
-        next(); 
-    } else {
-        res.sendFile(path.join(__dirname, 'index.html'));
-    }
-});
-
-// রুট URL-এ index.html ফাইল পরিবেশন করা
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
 });
