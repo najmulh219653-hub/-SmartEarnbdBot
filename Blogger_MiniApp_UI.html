@@ -71,6 +71,13 @@
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
         }
+
+        /* অ্যাডমিন টেবিল স্ক্রলিং এর জন্য */
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -282,6 +289,31 @@
     }
 
     /**
+     * @function fetchAllUsers
+     * Admin function: Retrieves all user data from the backend.
+     */
+    async function fetchAllUsers() {
+        if (!appState.isAdmin) {
+            return { success: false, message: "অ্যাডমিন অ্যাক্সেস নেই।" };
+        }
+        
+        try {
+            // অ্যাডমিন অথেন্টিকেশন করার জন্য অ্যাডমিন আইডি পাঠানো হলো
+            const data = await fetchWithRetry(`${API_URL}/admin/all-users?adminId=${appState.telegramId}`, { method: 'GET' });
+            
+            if (data.success) {
+                return data;
+            } else {
+                return { success: false, message: data.message || "সকল ইউজার ডেটা লোড ব্যর্থ।" };
+            }
+        } catch (error) {
+            console.error("All users fetch error:", error);
+            return { success: false, message: "সার্ভার থেকে সকল ইউজার ডেটা লোড করা যায়নি।" };
+        }
+    }
+
+
+    /**
      * @function addPoints
      * Triggers the video ad and calls API on success.
      */
@@ -440,6 +472,8 @@
 
             if (response.success) {
                 showToast(response.message, 'success');
+                // ডেটা রিফ্রেশ করুন
+                await fetchUserData(); 
             } else {
                 showToast(response.message || "পয়েন্ট আপডেট ব্যর্থ।", 'error');
             }
@@ -462,6 +496,9 @@
      * Renders the Home page content.
      */
     function renderHomePage() {
+        // নতুন, সম্পূর্ণ শিরোনাম 
+        const guideTitle = "🔥 অ্যাড দেখুন, রেফার করুন এবং নিশ্চিত ইনকাম করুন 🔥";
+
         return `
             <div class="space-y-6">
                 <!-- হাইলাইট কার্ড -->
@@ -495,13 +532,13 @@
                     </div>
                 </div>
 
-                <!-- ইনকাম গাইডেন্স (মারকিউ ইফেক্ট সহ) -->
+                <!-- ইনকাম গাইডেন্স (মারকিউ ইফেক্ট সহ - সম্পূর্ণ শিরোনাম ব্যবহার করা হলো) -->
                 <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
                     <div class="flex items-center mb-2">
                         <i data-lucide="bell" class="w-5 h-5 text-red-400 mr-2 flex-shrink-0"></i>
                         <div class="marquee-container flex-grow">
                             <h3 class="font-semibold text-xl text-red-400 marquee-content">
-                                🔥🔥🔥 ইনকাম গাইডলাইন 🔥🔥🔥
+                                ${guideTitle}
                             </h3>
                         </div>
                     </div>
@@ -608,17 +645,75 @@
      * @function renderAdminPage
      * Renders the Admin page content (Only for admin user).
      */
-    function renderAdminPage() {
+    async function renderAdminPage() {
         if (!appState.isAdmin) {
             return `<p class="text-center text-red-500 mt-10 text-xl">আপনার অ্যাডমিন অ্যাক্সেস নেই।</p>`;
         }
+        
+        const contentArea = document.getElementById('page-content');
+        
+        // লোডিং স্টেট সেট করা
+        contentArea.innerHTML = `
+            <div class="text-center mt-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400 mx-auto"></div>
+                <p class="mt-2 text-red-400">সকল ইউজারের ডেটা লোড হচ্ছে...</p>
+            </div>
+        `;
+        
+        let userListHtml = '';
+        const allUsersData = await fetchAllUsers();
 
-        return `
+        if (allUsersData.success && allUsersData.users && allUsersData.users.length > 0) {
+            const users = allUsersData.users;
+
+            // টেবিল হেডলাইন
+            userListHtml += `
+                <div class="table-container bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-700 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ইউজারনেম</th>
+                                <th class="px-3 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">পয়েন্ট</th>
+                                <th class="px-3 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">রেফারেল</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+            `;
+            
+            // ডেটা রো
+            users.forEach(user => {
+                const username = user.username || (user.firstName ? user.firstName : 'N/A');
+                userListHtml += `
+                    <tr class="hover:bg-gray-800 transition-colors">
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-red-400 font-mono">${user.telegramId}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-white">${username}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-emerald-400 font-semibold text-right">${user.points.toLocaleString('bn-BD')}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-blue-400 text-right">${user.referralCount}</td>
+                    </tr>
+                `;
+            });
+
+            userListHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            userListHtml = `<p class="text-center text-yellow-400 mt-4">কোন ইউজার ডেটা পাওয়া যায়নি।</p>`;
+        }
+
+
+        // ফাইনাল অ্যাডমিন পেজ UI
+        const finalHtml = `
             <div class="space-y-6">
                 <h2 class="text-2xl font-bold text-red-400 border-b border-gray-700 pb-2">অ্যাডমিন ড্যাশবোর্ড</h2>
                 
+                <!-- পয়েন্ট ম্যানুয়াল আপডেট সেকশন -->
                 <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-600/30">
-                    <p class="text-lg font-semibold text-white mb-4">ইউজার পয়েন্ট ম্যানুয়ালি আপডেট করুন</p>
+                    <p class="text-lg font-semibold text-white mb-4 flex items-center">
+                        <i data-lucide="edit" class="w-5 h-5 mr-2 text-red-400"></i> ইউজার পয়েন্ট ম্যানুয়ালি আপডেট করুন
+                    </p>
 
                     <form id="admin-update-form" onsubmit="updatePointsAdmin(event)" class="space-y-4">
                         <div>
@@ -636,27 +731,44 @@
                         </button>
                     </form>
                 </div>
+
+                <!-- সকল ইউজার ডেটা সেকশন -->
+                <h3 class="text-xl font-bold text-white mt-8 border-b border-gray-700 pb-2 flex items-center">
+                    <i data-lucide="list-ordered" class="w-5 h-5 mr-2 text-white"></i> সকল ইউজার তথ্য (${allUsersData.users ? allUsersData.users.length.toLocaleString('bn-BD') : '0'} জন)
+                </h3>
+                ${userListHtml}
+
             </div>
         `;
+        
+        contentArea.innerHTML = finalHtml;
+        lucide.createIcons();
     }
+
 
     /**
      * @function renderPage
      * Main rendering function to switch between pages.
      */
-    function renderPage(pageName) {
+    async function renderPage(pageName) {
         if (appState.isLoading) return;
 
         appState.currentPage = pageName;
         const contentArea = document.getElementById('page-content');
-        let htmlContent = '';
         
         // সব নেভিগেশন বাটন থেকে active ক্লাস সরান
         document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active-nav'));
         // বর্তমান বাটনে active ক্লাস যোগ করুন
         const activeNav = document.getElementById(`nav-${pageName}`);
         if (activeNav) activeNav.classList.add('active-nav');
+        
+        // অ্যাসিঙ্ক্রোনাস রেন্ডারিংয়ের জন্য
+        let htmlContent = '';
 
+        if (pageName === 'Admin') {
+            await renderAdminPage();
+            return;
+        }
 
         switch (pageName) {
             case 'Home':
@@ -668,9 +780,6 @@
             case 'Withdraw':
                 htmlContent = renderWithdrawPage();
                 break;
-            case 'Admin':
-                htmlContent = renderAdminPage();
-                break; 
             default:
                 htmlContent = `<p class="text-center text-red-500">পেজটি খুঁজে পাওয়া যায়নি।</p>`;
         }
@@ -789,4 +898,4 @@
     window.addEventListener('load', initApp);
 </script>
 </body>
-    </html>
+</html>
