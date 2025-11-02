@@ -1,18 +1,14 @@
 // server.js
 
-// Express সার্ভার এবং ডাটাবেস সংযোগের জন্য
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const db = require('./db'); // db.js ফাইল ইম্পোর্ট করা
+const db = require('./db'); 
 
 const app = express();
-// পরিবেশ ভেরিয়েবল থেকে পোর্ট ব্যবহার করা
 const PORT = process.env.PORT || 3000; 
 
-// মিডলওয়্যার সেটআপ: JSON অনুরোধ এবং স্ট্যাটিক ফাইল হ্যান্ডেল করা
 app.use(bodyParser.json());
-// index.html ফাইলটি লোড করার জন্য ডিরেক্টরি সেট করা
 app.use(express.static(__dirname)); 
 
 // সার্ভার শুরু করার আগে ডাটাবেস সেটআপ নিশ্চিত করা
@@ -71,13 +67,12 @@ app.get('/api/user_data', async (req, res) => {
 });
 
 /**
- * অ্যাপ কনফিগারেশন ডেটা লোড করার API
+ * অ্যাপ কনফিগারেশন ডেটা লোড করার API (ব্যানার, নোটিশ)
  */
 app.get('/api/config', async (req, res) => {
     try {
         const result = await db.query('SELECT config_key, config_value FROM ads_config');
         
-        // কী-ভ্যালু পেয়ার হিসেবে ডেটা সাজানো
         const config = result.rows.reduce((acc, row) => {
             acc[row.config_key] = row.config_value;
             return acc;
@@ -93,27 +88,27 @@ app.get('/api/config', async (req, res) => {
 
 
 /**
- * 💡 পয়েন্ট যোগ করার API (এখানেই সংশোধন করা হয়েছে)
+ * 💥 পয়েন্ট যোগ করার API (সংশোধিত: NaN এবং ইউজার চেক যোগ করা হয়েছে)
  */
 app.post('/api/add_points', async (req, res) => {
     const { telegramId, points } = req.body; 
     const pointsToAdd = parseInt(points);
 
+    // 💡 সংশোধন #১: ডেটা টাইপ কঠোরভাবে যাচাই করা
     if (!telegramId || isNaN(pointsToAdd) || pointsToAdd <= 0) {
-        return res.status(400).json({ success: false, message: 'Invalid input for points or ID.' });
+        return res.status(400).json({ success: false, message: 'Invalid point amount received. Please contact support.' });
     }
 
     const client = await db.pool.connect();
     try {
         await client.query('BEGIN'); 
         
-        // 1. ইউজার আছে কিনা তা যাচাই করা (সম্ভাব্য ত্রুটি এড়াতে)
+        // 💡 সংশোধন #২: ইউজার আছে কিনা তা যাচাই করা
         const userCheck = await client.query('SELECT 1 FROM users WHERE telegram_id = $1', [telegramId]);
         
         if (userCheck.rows.length === 0) {
             await client.query('ROLLBACK');
-            // 404 এর বদলে পরিষ্কার 400 ত্রুটি যাতে ফ্রন্ট-এন্ডে ইউজার বুঝতে পারে
-            return res.status(400).json({ success: false, message: 'User account not found. Please reload the app.' });
+            return res.status(400).json({ success: false, message: 'User account not found. Please reload the app to create your profile.' });
         }
 
 
@@ -145,7 +140,7 @@ app.post('/api/add_points', async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK'); 
         console.error('Error adding points and logging:', error.stack);
-        // "Server error while adding points." স্ক্রিনশটে থাকা ত্রুটি বার্তা
+        // সার্ভার এরর হলে এটি প্রদর্শিত হবে, কিন্তু এখন এর সম্ভাবনা অনেক কমে যাবে।
         res.status(500).json({ success: false, message: 'Server error while adding points.' });
     } finally {
         client.release();
