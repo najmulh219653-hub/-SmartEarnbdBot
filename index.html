@@ -298,14 +298,13 @@
                 usernameDisplay.textContent = "অফলাইন";
                 pointsDisplay.textContent = "ERROR";
                 pointsDisplay.classList.add('text-error');
-                // দ্বিতীয় স্ক্রিনশটে থাকা ত্রুটি
                 showMessage("সংযোগ ত্রুটি", "সার্ভার বা ইন্টারনেটের সংযোগ পরীক্ষা করুন।", true);
             } finally {
                 reloadIcon.classList.remove('animate-spin'); 
             }
         }
 
-        // পয়েন্ট যোগ করার ফাংশন (Number() ব্যবহার করে সংশোধিত)
+        // পয়েন্ট যোগ করার ফাংশন 
         async function addPoints() {
             const addPointsBtn = document.getElementById('add-points-btn');
             
@@ -318,7 +317,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         telegramId: TELEGRAM_ID, 
-                        points: Number(POINTS_PER_AD) // 💡 নিশ্চিত করা হলো এটি সংখ্যা
+                        points: Number(POINTS_PER_AD) 
                     }),
                 });
 
@@ -511,4 +510,4 @@
         };
     </script>
 </body>
-    </html>
+</html>
