@@ -1,51 +1,79 @@
-// db.js
+// Node.js অ্যাপ্লিকেশন এবং PostgreSQL ডাটাবেসের মধ্যে সংযোগ স্থাপন এবং স্কিমা তৈরির জন্য
 const { Pool } = require('pg');
-require('dotenv').config();
 
+// .env ফাইল থেকে পরিবেশ ভেরিয়েবল লোড করার জন্য, যদি দরকার হয়।
+// Render বা অন্য হোস্টিং প্ল্যাটফর্মে DATABASE_URL স্বয়ংক্রিয়ভাবে সেট করা থাকে।
+// require('dotenv').config(); 
+
+// ডাটাবেস সংযোগের জন্য Pool তৈরি করা হলো
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    // SSL কনফিগারেশন রেন্ডারের জন্য দরকার হতে পারে
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-// ডাটাবেস টেবিল তৈরি (যদি না থাকে)
+// ডাটাবেস সংযোগ পরীক্ষা
+pool.on('connect', () => {
+    console.log('Database connected successfully!');
+});
+
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
+});
+
+// ডাটাবেসের টেবিলগুলো তৈরি করার ফাংশন (স্কিমা ফিক্স সহ)
 async function setupDatabase() {
     try {
-        await pool.query(`
-            -- 'users' টেবিল: telegram_id কে Primary Key হিসেবে ব্যবহার করা হচ্ছে
+        const client = await pool.connect();
+        
+        // 1. users টেবিল তৈরি করা
+        // referrer_id কলামটি যোগ করা হয়েছে, যা ডেটা লোডিং/রেফারাল লজিকে সমস্যা তৈরি করছিল।
+        const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
-                telegram_id BIGINT PRIMARY KEY,  /* user_id এর পরিবর্তে */
-                username VARCHAR(255),
+                telegram_id BIGINT PRIMARY KEY UNIQUE,
+                username VARCHAR(50) DEFAULT '',
                 total_points INTEGER DEFAULT 0,
-                referral_code VARCHAR(8) UNIQUE NOT NULL,
-                -- referrer_id এখন রেফারকারী ইউজারের telegram_id-কে রেফার করবে
-                referrer_id BIGINT REFERENCES users(telegram_id), 
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                referrer_id BIGINT NULL, 
+                is_admin BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT fk_referrer
+                    FOREIGN KEY (referrer_id)
+                    REFERENCES users(telegram_id)
+                    ON DELETE SET NULL
             );
+        `;
+        await client.query(createUsersTable);
+        console.log('Users table ensured (referrer_id column added/confirmed).');
+        
+        // 2. ad_logs টেবিল তৈরি করা
+        // user_telegram_id কলামটি যোগ করা হয়েছে, যা পয়েন্ট যোগ করার সময় সমস্যা তৈরি করছিল।
+        const createAdLogsTable = `
+            CREATE TABLE IF NOT EXISTS ad_logs (
+                id SERIAL PRIMARY KEY,
+                user_telegram_id BIGINT NOT NULL, 
+                points_awarded INTEGER NOT NULL,
+                logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT fk_ad_log_user
+                    FOREIGN KEY (user_telegram_id)
+                    REFERENCES users(telegram_id)
+                    ON DELETE CASCADE
+            );
+        `;
+        await client.query(createAdLogsTable);
+        console.log('Ad_logs table ensured (user_telegram_id column added/confirmed).');
 
-            -- 'withdraw_requests' টেবিল: user_telegram_id কে Foreign Key হিসেবে ব্যবহার করা হচ্ছে
-            CREATE TABLE IF NOT EXISTS withdraw_requests (
-                request_id SERIAL PRIMARY KEY,
-                user_telegram_id BIGINT REFERENCES users(telegram_id) NOT NULL, /* user_id এর পরিবর্তে */
-                points_requested INTEGER NOT NULL,
-                payment_method VARCHAR(50) NOT NULL,
-                payment_address VARCHAR(255) NOT NULL,
-                status VARCHAR(50) DEFAULT 'Pending',
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        console.log("✅ ডাটাবেস টেবিল সফলভাবে তৈরি বা বিদ্যমান আছে।");
-    } catch (error) {
-        console.error("❌ ডাটাবেস সেটআপ ত্রুটি:", error);
-        // যদি এটি Render এ এরর দেয়, তবে এটি গুরুত্বপূর্ণ
-        // Render এরর দেখালে আপনাকে ডেটাবেস ম্যানুয়ালি ড্রপ করতে হবে
+        client.release();
+    } catch (err) {
+        console.error('Error setting up database tables:', err);
     }
 }
 
-setupDatabase();
-
+// ডাটাবেস পুল এবং সেটআপ ফাংশন এক্সপোর্ট করা হলো
 module.exports = {
+    query: (text, params) => pool.query(text, params),
     pool,
     setupDatabase
 };
