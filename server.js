@@ -39,6 +39,7 @@ app.get('/', (req, res) => {
 
 // অ্যাডমিন পেজ সার্ভ করা হচ্ছে
 app.get('/admin.html', (req, res) => {
+    // এই ফাইলটি আপনার প্রজেক্ট রুটে না থাকলে Render লগ থেকে ENOENT Error আসতে পারে।
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
@@ -49,7 +50,7 @@ app.get('/admin.html', (req, res) => {
 
 /**
  * ইউজার এবং অন্যান্য টেবিল তৈরি করে যদি না থাকে।
- * ad_logs টেবিলে কলামের নাম 'user_telegram_id' এ ফিক্স করা হয়েছে।
+ * ad_logs টেবিলে কলামের নাম 'telegram_id' এ ফিক্স করা হয়েছে।
  */
 async function initializeDatabase() {
     try {
@@ -81,11 +82,11 @@ async function initializeDatabase() {
             );
         `);
 
-        // 3. ad_logs টেবিল তৈরি করা (ফিক্সড: 'user_telegram_id' ব্যবহার করা হলো, যা আপনার লগ ত্রুটির সাথে মেলে)
+        // 3. ad_logs টেবিল তৈরি করা (ফিক্সড: এখন 'telegram_id' ব্যবহার করা হলো, যা লাইভ ডেটাবেসের সাথে সামঞ্জস্যপূর্ণ)
         await client.query(`
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
-                user_telegram_id BIGINT REFERENCES users(telegram_id), 
+                telegram_id BIGINT REFERENCES users(telegram_id), 
                 points_earned INTEGER NOT NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
@@ -237,10 +238,9 @@ app.post('/api/add-points', async (req, res) => {
 
         const newPoints = updateResult.rows[0].total_points;
 
-        // 🔥🔥🔥 ফিক্স: ad_logs টেবিলে 'telegram_id' এর পরিবর্তে 'user_telegram_id' ব্যবহার করা হলো 🔥🔥🔥
-        // এই পরিবর্তনটি PostgreSQL এর ত্রুটি (column "telegram_id" does not exist) সমাধান করবে।
+        // 🔥🔥🔥 ফিক্স: ad_logs টেবিলে 'telegram_id' ব্যবহার করা হলো, যা আপনার লাইভ ডেটাবেসে থাকা উচিত 🔥🔥🔥
         await client.query(
-            'INSERT INTO ad_logs (user_telegram_id, points_earned) VALUES ($1, $2)', 
+            'INSERT INTO ad_logs (telegram_id, points_earned) VALUES ($1, $2)', 
             [telegramId, points]
         );
         
