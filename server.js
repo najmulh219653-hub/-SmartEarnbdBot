@@ -2,23 +2,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const db = require('./db'); // আমাদের ডাটাবেস মডিউল
+const db = require('./db'); 
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// পরিবেশ ভেরিয়েবল থেকে পোর্ট ব্যবহার করা
+const PORT = process.env.PORT || 3000; 
 
-// মিডলওয়্যার সেটআপ
+// মিডলওয়্যার সেটআপ: JSON অনুরোধ এবং স্ট্যাটিক ফাইল হ্যান্ডেল করা
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname))); // স্ট্যাটিক ফাইল পরিবেশনের জন্য
+app.use(express.static(__dirname)); 
 
 // সার্ভার শুরু করার আগে ডাটাবেস সেটআপ নিশ্চিত করা
 db.setupDatabase().then(() => {
-    // ডাটাবেস সেটআপ সফল হলে সার্ভার শুরু করা হবে
     app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+        console.log(`Server is running successfully on port ${PORT}`);
     });
 }).catch(err => {
-    console.error('Failed to start server due to database setup error:', err);
+    console.error('FATAL: Failed to start server due to database setup error:', err);
+    process.exit(1); 
 });
 
 
@@ -26,89 +27,85 @@ db.setupDatabase().then(() => {
 // API Endpoints
 // =======================================================
 
-// A. ইউজার ডেটা লোড করার API
-// এই API কল করে ইউজার তার পয়েন্ট এবং অন্যান্য তথ্য লোড করবে।
-// Fix: এখানে ভুল কলাম বা কোয়েরি সমস্যার সমাধান করা হয়েছে।
+/**
+ * ইউজার ডেটা লোড করার API
+ * is_admin স্ট্যাটাস সহ ইউজার ডেটা রিটার্ন করবে।
+ */
 app.get('/api/user_data', async (req, res) => {
-    // সাধারণত Telegram ID query parameter (যেমন ?id=123456) থেকে আসবে
     const telegramId = req.query.id; 
+    const username = req.query.username || 'GuestUser'; 
 
     if (!telegramId) {
-        // যদি Telegram ID না থাকে, তবে frontend-কে জানাতে হবে
-        console.error('Missing Telegram ID in request.');
         return res.status(400).json({ success: false, message: 'Telegram ID is required.' });
     }
 
     try {
-        // 1. ইউজার ডেটা আনা
+        // ইউজার ডেটা আনা, না থাকলে INSERT, এবং is_admin সহ রিটার্ন করা
         const userResult = await db.query(
-            `SELECT 
-                u.telegram_id, 
-                u.username, 
-                u.total_points, 
-                u.referrer_id
-             FROM users u
-             WHERE u.telegram_id = $1`, 
+            `INSERT INTO users (telegram_id, username) 
+             VALUES ($1, $2)
+             ON CONFLICT (telegram_id) 
+             DO UPDATE SET username = EXCLUDED.username
+             RETURNING telegram_id, username, total_points, referrer_id, is_admin`, // is_admin যোগ করা হলো
+            [telegramId, username]
+        );
+        
+        const user = userResult.rows[0];
+
+        // রেফারাল সংখ্যা গণনা করা
+        const referralCountResult = await db.query(
+            'SELECT COUNT(*) FROM users WHERE referrer_id = $1',
             [telegramId]
         );
 
-        if (userResult.rows.length === 0) {
-            // যদি ইউজার না থাকে, তবে তাকে রেজিস্টার করতে হবে (নতুন ইউজার)
-            console.log(`User ${telegramId} not found. Registering.`);
-            await db.query(
-                `INSERT INTO users (telegram_id, username, total_points) 
-                 VALUES ($1, $2, 0)
-                 ON CONFLICT (telegram_id) DO NOTHING`,
-                [telegramId, 'NewUser_' + telegramId] // একটি ডিফল্ট নাম ব্যবহার করা হলো
-            );
-            
-            // ডেটা আবার নিয়ে আসা
-            const newUserResult = await db.query(
-                `SELECT telegram_id, username, total_points, referrer_id FROM users WHERE telegram_id = $1`, 
-                [telegramId]
-            );
+        user.referral_count = parseInt(referralCountResult.rows[0].count) || 0;
 
-            if (newUserResult.rows.length > 0) {
-                 res.json({ success: true, user: newUserResult.rows[0], isNew: true });
-            } else {
-                 res.status(500).json({ success: false, message: 'User registration failed.' });
-            }
-
-        } else {
-            // ইউজার থাকলে ডেটা পাঠানো
-            const user = userResult.rows[0];
-            
-            // 2. রেফারাল সংখ্যা গণনা করা
-            const referralCountResult = await db.query(
-                'SELECT COUNT(*) FROM users WHERE referrer_id = $1',
-                [telegramId]
-            );
-
-            user.referral_count = parseInt(referralCountResult.rows[0].count);
-
-            res.json({ success: true, user });
-        }
+        res.json({ success: true, user });
 
     } catch (error) {
         console.error('Error fetching user data:', error.stack);
-        // ডাটাবেস ত্রুটির ক্ষেত্রে "Server error" পাঠানো
         res.status(500).json({ success: false, message: 'Server error while loading data.' });
     }
 });
 
-// B. পয়েন্ট যোগ করার API
-// Fix: ad_logs টেবিলে user_telegram_id কলামের নাম ব্যবহার করে ঠিক করা হয়েছে।
+/**
+ * অ্যাপ কনফিগারেশন ডেটা লোড করার API (ব্যানার, নোটিশ)
+ * Endpoint: /api/config
+ */
+app.get('/api/config', async (req, res) => {
+    try {
+        const result = await db.query('SELECT config_key, config_value FROM ads_config');
+        
+        // কী-ভ্যালু পেয়ার হিসেবে ডেটা সাজানো
+        const config = result.rows.reduce((acc, row) => {
+            acc[row.config_key] = row.config_value;
+            return acc;
+        }, {});
+        
+        res.json({ success: true, config });
+
+    } catch (error) {
+        console.error('Error fetching config data:', error.stack);
+        res.status(500).json({ success: false, message: 'Failed to load app configuration.' });
+    }
+});
+
+
+/**
+ * পয়েন্ট যোগ করার API
+ * Endpoint: /api/add_points
+ */
 app.post('/api/add_points', async (req, res) => {
-    const { telegramId, points } = req.body; // telegramId এখন user_telegram_id হিসেবে ব্যবহৃত হবে
+    const { telegramId, points } = req.body; 
     const pointsToAdd = parseInt(points);
 
     if (!telegramId || isNaN(pointsToAdd) || pointsToAdd <= 0) {
-        return res.status(400).json({ success: false, message: 'Invalid input.' });
+        return res.status(400).json({ success: false, message: 'Invalid input for points or ID.' });
     }
 
     const client = await db.pool.connect();
     try {
-        await client.query('BEGIN'); // ট্রানজেকশন শুরু
+        await client.query('BEGIN'); 
 
         // 1. user এর total_points আপডেট করা
         const updateQuery = `
@@ -121,18 +118,17 @@ app.post('/api/add_points', async (req, res) => {
 
         if (updateResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ success: false, message: 'User not found.' });
+            return res.status(404).json({ success: false, message: 'User not found for points update.' });
         }
 
         // 2. ad_logs টেবিলে লগ যোগ করা
-        // Fix: user_telegram_id কলামের নাম ব্যবহার করা হয়েছে
         const logQuery = `
             INSERT INTO ad_logs (user_telegram_id, points_awarded) 
             VALUES ($1, $2)`;
             
         await client.query(logQuery, [telegramId, pointsToAdd]); 
 
-        await client.query('COMMIT'); // ট্রানজেকশন সফলভাবে শেষ করা
+        await client.query('COMMIT'); 
 
         res.json({ 
             success: true, 
@@ -141,16 +137,208 @@ app.post('/api/add_points', async (req, res) => {
         });
         
     } catch (error) {
-        await client.query('ROLLBACK'); // কোনো ত্রুটি হলে ট্রানজেকশন বাতিল করা
+        await client.query('ROLLBACK'); 
         console.error('Error adding points and logging:', error.stack);
-        // আপনার স্ক্রিনশটে থাকা "Server error while adding points." মেসেজটি ঠিক করা হলো
-        res.status(500).json({ success: false, message: 'Server error while adding points. (Backend Error)' });
+        res.status(500).json({ success: false, message: 'Server error while adding points.' });
     } finally {
         client.release();
     }
 });
 
-// API ত্রুটি হ্যান্ডলিং (404 এরর)
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'Blogger_MiniApp_UI.html'));
+/**
+ * উইথড্র রিকোয়েস্ট করার API
+ * Endpoint: /api/request_withdraw
+ */
+app.post('/api/request_withdraw', async (req, res) => {
+    const { telegramId, points, account } = req.body;
+    const pointsRequested = parseInt(points);
+    const MIN_WITHDRAW_POINTS = 5000; 
+
+    if (!telegramId || isNaN(pointsRequested) || pointsRequested < MIN_WITHDRAW_POINTS || !account || account.trim() === '') {
+        return res.status(400).json({ success: false, message: `Invalid input or minimum withdrawal is ${MIN_WITHDRAW_POINTS} points.` });
+    }
+
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. ইউজার এর পর্যাপ্ত পয়েন্ট আছে কিনা যাচাই করা এবং লক করা
+        const userCheckResult = await client.query(
+            'SELECT total_points FROM users WHERE telegram_id = $1 FOR UPDATE', 
+            [telegramId]
+        );
+
+        if (userCheckResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        const currentPoints = userCheckResult.rows[0].total_points;
+
+        if (currentPoints < pointsRequested) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: 'Insufficient points for withdrawal.' });
+        }
+
+        // 2. total_points থেকে পয়েন্ট বিয়োগ করা
+        const updatePointsResult = await client.query(
+            'UPDATE users SET total_points = total_points - $1 WHERE telegram_id = $2 RETURNING total_points',
+            [pointsRequested, telegramId]
+        );
+
+        // 3. withdraw_requests টেবিলে লগ করা (স্ট্যাটাস 'Pending')
+        const logWithdrawalQuery = `
+            INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_details)
+            VALUES ($1, $2, $3)`;
+            
+        await client.query(logWithdrawalQuery, [telegramId, pointsRequested, JSON.stringify({ account })]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: 'Withdrawal request submitted successfully.',
+            newPoints: updatePointsResult.rows[0].total_points
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error processing withdrawal request:', error.stack);
+        res.status(500).json({ success: false, message: 'Server error while processing withdrawal.' });
+    } finally {
+        client.release();
+    }
+});
+
+
+// =======================================================
+// Admin API Endpoints
+// =======================================================
+
+/**
+ * এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার
+ */
+async function checkAdmin(req, res, next) {
+    const telegramId = req.query.id || req.body.adminId;
+
+    if (!telegramId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: Admin ID required.' });
+    }
+
+    try {
+        const result = await db.query('SELECT is_admin FROM users WHERE telegram_id = $1', [telegramId]);
+
+        if (result.rows.length === 0 || !result.rows[0].is_admin) {
+            return res.status(403).json({ success: false, message: 'Forbidden: User is not an admin.' });
+        }
+        next();
+    } catch (error) {
+        console.error('Admin check error:', error.stack);
+        res.status(500).json({ success: false, message: 'Server error during admin verification.' });
+    }
+}
+
+
+/**
+ * পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API
+ * Endpoint: /api/admin/withdrawals?id=<adminId>
+ */
+app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                wr.id, 
+                wr.user_telegram_id, 
+                wr.points_requested, 
+                wr.payment_details,
+                wr.requested_at,
+                u.username 
+            FROM withdraw_requests wr
+            JOIN users u ON wr.user_telegram_id = u.telegram_id
+            WHERE wr.status = 'Pending'
+            ORDER BY wr.requested_at ASC`;
+
+        const result = await db.query(query);
+
+        res.json({ success: true, withdrawals: result.rows });
+    } catch (error) {
+        console.error('Error fetching withdrawals:', error.stack);
+        res.status(500).json({ success: false, message: 'Failed to fetch pending withdrawals.' });
+    }
+});
+
+
+/**
+ * উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API
+ * Endpoint: /api/admin/update_withdrawal
+ * body: { adminId: number, requestId: number, action: 'Approve' | 'Reject' }
+ */
+app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
+    const { requestId, action } = req.body; 
+
+    if (!requestId || !['Approve', 'Reject'].includes(action)) {
+        return res.status(400).json({ success: false, message: 'Invalid request parameters.' });
+    }
+
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const requestQuery = await client.query(
+            'SELECT user_telegram_id, points_requested, status FROM withdraw_requests WHERE id = $1 FOR UPDATE', 
+            [requestId]
+        );
+
+        if (requestQuery.rows.length === 0 || requestQuery.rows[0].status !== 'Pending') {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'Withdrawal request not found or already processed.' });
+        }
+
+        const { user_telegram_id, points_requested } = requestQuery.rows[0];
+        
+        let newStatus = action === 'Approve' ? 'Paid' : 'Rejected';
+
+        // 1. উইথড্র রিকোয়েস্ট আপডেট করা
+        await client.query(
+            'UPDATE withdraw_requests SET status = $1, processed_at = NOW() WHERE id = $2',
+            [newStatus, requestId]
+        );
+
+        // 2. Reject হলে পয়েন্ট ফেরত দেওয়া
+        if (action === 'Reject') {
+            await client.query(
+                'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2',
+                [points_requested, user_telegram_id]
+            );
+            
+            await client.query('COMMIT');
+            return res.json({ success: true, message: `Request ${requestId} rejected. Points returned to user.` });
+        }
+
+        // Approve হলে (পয়েন্ট আগে থেকেই ডিডাক্ট করা ছিল)
+        await client.query('COMMIT');
+        res.json({ success: true, message: `Request ${requestId} approved and marked as Paid.` });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating withdrawal status:', error.stack);
+        res.status(500).json({ success: false, message: 'Server error while processing admin action.' });
+    } finally {
+        client.release();
+    }
+});
+
+
+// 404 এরর হ্যান্ডলিং: HTML ফাইল পরিবেশন করা
+app.use((req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+        next(); 
+    } else {
+        res.sendFile(path.join(__dirname, 'Blogger_MiniApp_UI.html'));
+    }
+});
+
+// রুট URL-এ HTML ফাইল পরিবেশন করা
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Blogger_MiniApp_UI.html'));
 });
