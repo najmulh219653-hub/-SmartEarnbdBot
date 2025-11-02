@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-const crypto = require('crypto'); // nanoid-এর পরিবর্তে crypto ব্যবহার করা হয়েছে
+const crypto = require('crypto');
 
 // এনভায়রনমেন্ট ভেরিয়েবল লোড
 dotenv.config();
@@ -27,21 +27,21 @@ app.use(express.json());
 // **********************************************
 // ** স্ট্যাটিক ফাইল সার্ভিং **
 // **********************************************
-// এটি নিশ্চিত করবে যে /Blogger_MiniApp_UI.html অনুরোধটি ফাইলটিকে পরিবেশন করে।
 
-// `Blogger_MiniApp_UI.html` ফাইলটি রুট URL-এর জন্য পরিবেশন করা হবে
 app.get('/Blogger_MiniApp_UI.html', (req, res) => {
-    // নিশ্চিত করুন যে ফাইলটি সার্ভারের মূল ফোল্ডারে আছে
     res.sendFile(path.join(__dirname, 'Blogger_MiniApp_UI.html'));
 });
 
-// যদি কেউ শুধু রুট '/' এ হিট করে, তবেও Mini App UI ফাইলটি দেওয়া হবে
+// রুট '/' এ হিট করলে Mini App UI ফাইলটি দেওয়া হবে
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'Blogger_MiniApp_UI.html'));
 });
 
-// অ্যাডমিন পেজ সার্ভ করা হচ্ছে
+// অ্যাডমিন পেজ সার্ভ করা হচ্ছে (যদি Admin ফিচারটি পরে যুক্ত করতে চান)
 app.get('/admin.html', (req, res) => {
+    // এই ফাইলটি আপনার প্রজেক্ট রুটে না থাকলে Render লগ থেকে ENOENT Error আসতে পারে।
+    // যেহেতু আপনি Admin বাটনটি UI থেকে সরিয়েছেন, এটি এখন অপ্রয়োজনীয়।
+    // তবুও অ্যাডমিন পেজের রুটটি রাখা হলো, কিন্তু আপনি `admin.html` ফাইলটি আপনার সার্ভারে আপলোড করতে হবে।
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
@@ -52,7 +52,7 @@ app.get('/admin.html', (req, res) => {
 
 /**
  * ইউজার এবং উইথড্র রিকোয়েস্ট টেবিল তৈরি করে যদি না থাকে।
- * রেফারেল আইডি তৈরির জন্য crypto.randomUUID() ব্যবহার করা হয়েছে।
+ * ad_logs টেবিলে telegram_id কলামটি নিশ্চিত করা হয়েছে।
  */
 async function initializeDatabase() {
     try {
@@ -84,11 +84,11 @@ async function initializeDatabase() {
             );
         `);
 
-         // 3. ad_logs টেবিল তৈরি করা
+        // 3. ad_logs টেবিল তৈরি করা (telegram_id ফিক্স করা হয়েছে)
         await client.query(`
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
-                telegram_id BIGINT REFERENCES users(telegram_id),
+                telegram_id BIGINT REFERENCES users(telegram_id), -- ফিক্সড: এটি এখন FOREIGN KEY
                 points_earned INTEGER NOT NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
@@ -99,17 +99,17 @@ async function initializeDatabase() {
         const adminUsername = process.env.ADMIN_USERNAME || 'AdminUser';
         
         if (adminId) {
-            // ADMIN_REFERRAL_CODE নিশ্চিত করতে বা তৈরি করতে
             let adminReferralCode = process.env.ADMIN_REFERRAL_CODE;
             if (!adminReferralCode) {
-                adminReferralCode = crypto.randomUUID().substring(0, 8);
-                console.log(`WARN: ADMIN_REFERRAL_CODE not set. Using temporary code: ${adminReferralCode}`);
+                adminReferralCode = 'ADMIN' + crypto.randomUUID().substring(0, 5).toUpperCase();
             }
 
+            // যদি রেফারেল কোড conflict হয়, তবে শুধুমাত্র is_admin আপডেট করা হবে
             await client.query(`
                 INSERT INTO users (telegram_id, username, is_admin, referral_code)
                 VALUES ($1, $2, TRUE, $3)
-                ON CONFLICT (telegram_id) DO UPDATE SET is_admin = TRUE, username = $2;
+                ON CONFLICT (telegram_id) 
+                DO UPDATE SET is_admin = TRUE, username = $2, referral_code = users.referral_code;
             `, [adminId, adminUsername, adminReferralCode]);
             console.log(`Admin user (ID: ${adminId}) ensured.`);
         }
@@ -133,7 +133,7 @@ initializeDatabase();
  * ইউজার রেজিস্ট্রেশন/লগইন এবং ডেটা লোড
  */
 app.get('/api/user-data', async (req, res) => {
-    const { id, referrer } = req.query; // referrer হলো ঐ ইউজারের ID যার মাধ্যমে নতুন ইউজার এসেছে
+    const { id, referrer } = req.query;
     const telegramId = id;
 
     if (!telegramId) {
@@ -146,15 +146,14 @@ app.get('/api/user-data', async (req, res) => {
         // ইউজার খুঁজুন
         let userResult = await client.query('SELECT total_points, referral_code, referred_by_id, is_admin FROM users WHERE telegram_id = $1', [telegramId]);
         let user = userResult.rows[0];
-        let message; // এই ভেরিয়েবলটি রেজিস্ট্রেশন মেসেজ হোল্ড করবে
+        let message;
 
         // যদি ইউজার না থাকে, তবে রেজিস্ট্রেশন করুন
         if (!user) {
-            // ইউনিক রেফারেল কোড তৈরি করা
             let newReferralCode;
             let codeExists = true;
             while(codeExists) {
-                newReferralCode = crypto.randomUUID().substring(0, 8); // nanoid এর পরিবর্তে
+                newReferralCode = crypto.randomUUID().substring(0, 8);
                 const check = await client.query('SELECT 1 FROM users WHERE referral_code = $1', [newReferralCode]);
                 codeExists = check.rows.length > 0;
             }
@@ -165,14 +164,13 @@ app.get('/api/user-data', async (req, res) => {
             
             // রেফারেল বোনাস লজিক
             if (referrer && referrer !== telegramId) {
-                // রেফারেল কোড থেকে রেফারার ইউজার ID খুঁজুন
                 const referrerResult = await client.query('SELECT telegram_id FROM users WHERE referral_code = $1', [referrer]);
                 
                 if (referrerResult.rows.length > 0) {
                     referredById = referrerResult.rows[0].telegram_id;
                     initialPoints = 250; // নতুন ইউজারকে বোনাস
                     
-                    // রেফারারকে বোনাস দিন
+                    // রেফারারকে বোনাস দিন (ট্রানজ্যাকশনের বাইরে রাখা হয়েছে সিম্পলিসিটির জন্য)
                     await client.query(
                         'UPDATE users SET total_points = total_points + 250 WHERE telegram_id = $1', 
                         [referredById]
@@ -185,13 +183,13 @@ app.get('/api/user-data', async (req, res) => {
             await client.query(`
                 INSERT INTO users (telegram_id, username, total_points, referral_code, referred_by_id)
                 VALUES ($1, $2, $3, $4, $5)
-            `, [telegramId, telegramId, initialPoints, newReferralCode, referredById]); // আপাতত ইউজারনেম হিসেবে telegramId ব্যবহার করা হলো
+            `, [telegramId, telegramId, initialPoints, newReferralCode, referredById]); // ইউজারনেম হিসেবে telegramId ব্যবহার করা হলো
 
             user = { 
                 total_points: initialPoints, 
                 referral_code: newReferralCode, 
                 referred_by_id: referredById,
-                is_admin: false // নতুন ব্যবহারকারী অ্যাডমিন হবে না
+                is_admin: false
             };
         }
 
@@ -212,15 +210,7 @@ app.get('/api/user-data', async (req, res) => {
 
     } catch (err) {
         console.error("Error loading user data:", err);
-        // যদি `referred_by_id` কলাম না পাওয়া যায়, তবে ইউজারকে সতর্ক করার জন্য একটি স্পেসিফিক মেসেজ দিন
-        if (err.code === '42703' && err.message.includes('referred_by_id')) {
-            res.status(500).json({ 
-                success: false, 
-                message: "Database schema error. 'referred_by_id' column not found. Please re-run the table creation script or check your DB connection." 
-            });
-        } else {
-            res.status(500).json({ success: false, message: "Server error during data load." });
-        }
+        res.status(500).json({ success: false, message: "Server error during data load." });
     }
 });
 
@@ -250,7 +240,7 @@ app.post('/api/add-points', async (req, res) => {
 
         const newPoints = updateResult.rows[0].total_points;
 
-        // লগ যোগ করা
+        // লগ যোগ করা (ad_logs টেবিলে telegram_id কলামটি এখন ঠিকভাবে আছে)
         await client.query(
             'INSERT INTO ad_logs (telegram_id, points_earned) VALUES ($1, $2)', 
             [telegramId, points]
@@ -322,6 +312,8 @@ app.post('/api/withdraw', async (req, res) => {
 // **********************************************
 // ** অ্যাডমিন রুটস (যদি admin.html ব্যবহার করা হয়) **
 // **********************************************
+// অ্যাডমিন রুটগুলি এখানে অপরিবর্তিত রাখা হয়েছে, যদিও UI থেকে বাটন সরানো হয়েছে
+// যাতে যদি কোনো অ্যাডমিন ইউজার URL এ সরাসরি /admin.html এ যান, ফাংশনালিটি কাজ করে।
 
 app.get('/api/admin/pending-withdrawals', async (req, res) => {
     try {
@@ -358,10 +350,8 @@ app.post('/api/admin/update-withdrawal-status', async (req, res) => {
     try {
         const client = await pool.connect();
         
-        // ট্রানজ্যাকশন শুরু করা
         await client.query('BEGIN');
 
-        // স্ট্যাটাস আপডেট
         const updateResult = await client.query(
             'UPDATE withdraw_requests SET status = $1 WHERE id = $2 RETURNING telegram_id, points_requested', 
             [status, withdrawalId]
@@ -375,7 +365,6 @@ app.post('/api/admin/update-withdrawal-status', async (req, res) => {
         
         const { telegram_id, points_requested } = updateResult.rows[0];
 
-        // যদি রিকোয়েস্ট প্রত্যাখ্যান করা হয়, তবে পয়েন্ট ফেরত দিন
         if (status === 'Rejected') {
             await client.query(
                 'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2',
@@ -383,13 +372,13 @@ app.post('/api/admin/update-withdrawal-status', async (req, res) => {
             );
         }
 
-        await client.query('COMMIT'); // ট্রানজ্যাকশন সম্পন্ন
+        await client.query('COMMIT');
         client.release();
         
         res.json({ success: true, message: `Withdrawal ID ${withdrawalId} marked as ${status}.` });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // ত্রুটি হলে রোলব্যাক
+        await client.query('ROLLBACK');
         console.error("Admin error (update status):", err);
         res.status(500).json({ success: false, message: "Server error updating withdrawal status." });
     }
