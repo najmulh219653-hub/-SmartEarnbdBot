@@ -146,6 +146,7 @@ app.get('/api/user-data', async (req, res) => {
         // ইউজার খুঁজুন
         let userResult = await client.query('SELECT total_points, referral_code, referred_by_id, is_admin FROM users WHERE telegram_id = $1', [telegramId]);
         let user = userResult.rows[0];
+        let message; // এই ভেরিয়েবলটি রেজিস্ট্রেশন মেসেজ হোল্ড করবে
 
         // যদি ইউজার না থাকে, তবে রেজিস্ট্রেশন করুন
         if (!user) {
@@ -160,7 +161,7 @@ app.get('/api/user-data', async (req, res) => {
 
             let referredById = null;
             let initialPoints = 0;
-            let message = "Registration successful.";
+            message = "Registration successful.";
             
             // রেফারেল বোনাস লজিক
             if (referrer && referrer !== telegramId) {
@@ -211,7 +212,15 @@ app.get('/api/user-data', async (req, res) => {
 
     } catch (err) {
         console.error("Error loading user data:", err);
-        res.status(500).json({ success: false, message: "Server error during data load." });
+        // যদি `referred_by_id` কলাম না পাওয়া যায়, তবে ইউজারকে সতর্ক করার জন্য একটি স্পেসিফিক মেসেজ দিন
+        if (err.code === '42703' && err.message.includes('referred_by_id')) {
+            res.status(500).json({ 
+                success: false, 
+                message: "Database schema error. 'referred_by_id' column not found. Please re-run the table creation script or check your DB connection." 
+            });
+        } else {
+            res.status(500).json({ success: false, message: "Server error during data load." });
+        }
     }
 });
 
