@@ -111,6 +111,7 @@
     // *******************************************************************
 
     // API সার্ভারের URL সেট করা হয়েছে
+    // **অনুগ্রহ করে নিশ্চিত করুন যে এই URL টি আপনার Render সার্ভারের সঠিক URL**
     const API_URL = "https://smartearnbdbot.onrender.com/api"; 
     
     // ইউজার ডেটা এবং স্টেট ম্যানেজমেন্ট
@@ -191,7 +192,11 @@
      * Retrieves user points and referral data from the backend.
      */
     async function fetchUserData() {
-        if (!appState.telegramId) return;
+        if (!appState.telegramId) {
+            // যদি টেলিগ্রাম আইডি না থাকে, লোড করার চেষ্টা করবেন না
+            document.getElementById('current-points').textContent = 'N/A';
+            return;
+        }
 
         try {
             // লোডিং অবস্থা দেখান
@@ -199,11 +204,11 @@
             
             // রেফারেল কোড প্যারামিটার যোগ করা
             const urlParams = new URLSearchParams(window.Telegram.WebApp.initData);
-            const startParam = urlParams.get('start');
+            // 'start' প্যারামিটার রেফারেল কোড হিসেবে ব্যবহার করা হচ্ছে
+            const startParam = urlParams.get('start'); 
             
             let fetchUrl = `${API_URL}/user-data?id=${appState.telegramId}`;
             if (startParam) {
-                // 'start' প্যারামিটার রেফারেল কোড হিসেবে ব্যবহার করা হচ্ছে
                 fetchUrl += `&referrer=${startParam}`; 
             }
 
@@ -216,11 +221,9 @@
                 
                 // UI আপডেট করুন
                 document.getElementById('current-points').textContent = data.points.toLocaleString('bn-BD');
-                if (document.getElementById('referral-code-display')) {
-                    document.getElementById('referral-code-display').textContent = data.referral_code;
-                }
-                if (document.getElementById('referral-count-display')) {
-                    document.getElementById('referral-count-display').textContent = data.referral_count.toLocaleString('bn-BD');
+                // রেন্ডার করা পেজে রেফারেল ডেটা আপডেট
+                if (appState.currentPage === 'Referral') {
+                    renderPage('Referral'); 
                 }
             } else {
                 showToast(data.message || "ইউজার ডেটা লোড ব্যর্থ।", 'error');
@@ -534,10 +537,12 @@
      * Opens the separate admin.html file (if applicable).
      */
     function openAdmin() {
-        if (appState.adminUrl.includes("YOUR_BACKEND_API_URL")) {
-             showToast("অ্যাডমিন প্যানেলের URL কনফিগার করা হয়নি।", 'info');
+        if (!appState.telegramId) {
+             showToast("অ্যাডমিন প্যানেল দেখতে আপনার টেলিগ্রাম আইডি প্রয়োজন।", 'error');
              return;
         }
+        // যদি আপনার অ্যাডমিন প্যানেলটি সুরক্ষিত না হয় তবে এটি সবার জন্য উন্মুক্ত থাকবে।
+        // অ্যাডমিন চেকটি সার্ভারে করা হয়, তাই অ্যাডমিন URL টি খোলা নিরাপদ।
         window.open(appState.adminUrl, '_blank');
     }
 
@@ -551,26 +556,46 @@
      */
     async function initApp() {
         try {
-            // Telegram Web App তৈরি হওয়ার জন্য অপেক্ষা করা 
+            // 1. Telegram Web App তৈরি হওয়ার জন্য অপেক্ষা করা 
+            if (typeof window.Telegram === 'undefined' || typeof window.Telegram.WebApp === 'undefined') {
+                throw new Error("Telegram WebApp object is not available. Are you running this outside a Telegram client?");
+            }
+
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand(); // পূর্ণ স্ক্রিনে এক্সপ্যান্ড করা
 
             const user = window.Telegram.WebApp.initDataUnsafe.user;
             
+            // 2. ইউজার ডেটা চেক করা
             if (!user || !user.id) {
-                document.getElementById('loading-screen').innerHTML = '<p class="text-red-500 p-4 text-center">Telegram ID খুঁজে পাওয়া যায়নি। শুধুমাত্র বটের মধ্যে এটি ব্যবহার করুন।</p>';
-                return;
+                // টেলিগ্রাম আইডি না পাওয়া গেলে ত্রুটি স্ক্রিন দেখানো
+                document.getElementById('loading-screen').classList.remove('hidden');
+                document.getElementById('loading-screen').style.opacity = '1';
+                document.getElementById('loading-screen').innerHTML = `
+                    <div class="p-6 text-center max-w-sm mx-auto bg-gray-800 rounded-xl shadow-2xl">
+                        <i data-lucide="alert-triangle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
+                        <h2 class="text-xl font-bold text-white mb-2">প্রয়োজনীয় ডেটা অনুপস্থিত!</h2>
+                        <p class="text-red-400 mb-4">টেলিগ্রাম আইডি খুঁজে পাওয়া যায়নি।</p>
+                        <p class="text-gray-300 text-sm">অনুগ্রহ করে এটি শুধুমাত্র বটের **Inline Keyboard** বা **Web App** বাটন ব্যবহার করে চালু করুন। সরাসরি ব্রাউজারে এটি কাজ করবে না।</p>
+                        <button onclick="window.Telegram.WebApp.close()" class="mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                           অ্যাপ বন্ধ করুন
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return; // এখানেই ইনিশিয়ালাইজেশন বন্ধ করা হলো
             }
 
+            // 3. ডেটা সেট করা
             appState.telegramId = user.id.toString(); // API এর জন্য ID কে স্ট্রিং এ রাখা
             appState.username = user.username || user.first_name;
             
             document.getElementById('user-name').textContent = appState.username;
 
-            // ডেটা লোড করা
+            // 4. ডেটা লোড করা
             await fetchUserData();
 
-            // লোডিং শেষ, UI দেখান
+            // 5. লোডিং শেষ, UI দেখান
             appState.isLoading = false;
             document.getElementById('loading-screen').style.opacity = '0';
             setTimeout(() => {
@@ -582,7 +607,17 @@
 
         } catch (e) {
             console.error("Initialization error:", e);
-            document.getElementById('loading-screen').innerHTML = '<p class="text-red-500 p-4 text-center">অ্যাপ চালু করতে ব্যর্থ। ডেটাবেস/API URL চেক করুন।</p>';
+            document.getElementById('loading-screen').classList.remove('hidden');
+            document.getElementById('loading-screen').style.opacity = '1';
+            document.getElementById('loading-screen').innerHTML = `
+                <div class="p-6 text-center max-w-sm mx-auto bg-gray-800 rounded-xl shadow-2xl">
+                    <i data-lucide="wifi-off" class="w-12 h-12 text-yellow-500 mx-auto mb-4"></i>
+                    <h2 class="text-xl font-bold text-white mb-2">ত্রুটি: অ্যাপ চালু করা যায়নি</h2>
+                    <p class="text-gray-300 text-sm">যদি আপনি টেলিগ্রামের মধ্যে থাকেন, তবে আপনার ইন্টারনেট সংযোগ বা Render সার্ভারের স্থিতি পরীক্ষা করুন।</p>
+                    <p class="text-red-400 text-xs mt-2">বিস্তারিত: ${e.message}</p>
+                </div>
+            `;
+            lucide.createIcons();
         }
     }
 
@@ -590,4 +625,3 @@
 </script>
 </body>
 </html>
-
