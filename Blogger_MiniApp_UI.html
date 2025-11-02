@@ -39,6 +39,14 @@
             height: 64px; /* ব্যানার অ্যাডের জন্য নির্দিষ্ট উচ্চতা */
             transition: all 0.3s ease-in-out;
         }
+        /* ফিক্সড বটম UI এর জন্য max-w-lg কে নিশ্চিত করা */
+        .fixed-bottom-ui {
+            width: 100%;
+            max-width: 640px; /* Tailwind এর sm:max-w-xl এর কাছাকাছি */
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -76,17 +84,18 @@
 
             <!-- ফিক্সড ব্যানার অ্যাড কন্টেইনার (সব পেজে শো করবে) -->
             <!-- এটি বটম নেভিগেশনের ঠিক উপরে থাকবে -->
-            <div class="banner-ad-container fixed bottom-16 left-0 right-0 z-20 flex justify-center w-full max-w-lg mx-auto bg-gray-900 border-t border-gray-700 shadow-xl">
+            <div class="banner-ad-container fixed-bottom-ui fixed bottom-16 z-20 flex justify-center bg-gray-900 border-t border-gray-700 shadow-xl">
                 <div class="flex items-center justify-center w-full h-full text-center text-sm font-semibold text-yellow-400 bg-gray-800">
                     <!-- এখানে আপনার ব্যানার অ্যাড কোড বা ইমেজ বসান -->
                     <i data-lucide="megaphone" class="w-5 h-5 mr-2"></i> স্পনসরড ব্যানার অ্যাড
+                    <!-- যদি আপনি AdZilla বা অন্য কোনো অ্যাড নেটওয়ার্ক ব্যবহার করেন, তবে সেই HTML/JS কোডটি এখানে বসাতে হবে -->
                 </div>
             </div>
 
 
-            <!-- ফ্লোটিং বটম নেভিগেশন (অ্যাডমিন বাটন বাদ দেওয়া হয়েছে) -->
-            <footer class="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto bg-[#1A202C] border-t border-gray-700 shadow-xl z-30 rounded-t-xl">
-                <div class="flex justify-around items-center h-16">
+            <!-- ফ্লোটিং বটম নেভিগেশন (অ্যাডমিন লজিক যুক্ত করা হলো) -->
+            <footer class="fixed-bottom-ui fixed bottom-0 bg-[#1A202C] border-t border-gray-700 shadow-xl z-30 rounded-t-xl">
+                <div id="nav-container" class="flex justify-around items-center h-16">
                     <button class="nav-button flex flex-col items-center p-2 transition-colors text-gray-400" onclick="renderPage('Home')" id="nav-Home">
                         <i data-lucide="home" class="w-6 h-6"></i>
                         <span class="text-xs">হোম</span>
@@ -99,13 +108,17 @@
                         <i data-lucide="send" class="w-6 h-6"></i>
                         <span class="text-xs">উইথড্র</span>
                     </button>
+                    <!-- অ্যাডমিন বাটন (শুরুতে লুকানো থাকবে) -->
+                    <button class="nav-button flex-col items-center p-2 transition-colors text-gray-400 hidden" onclick="renderPage('Admin')" id="nav-Admin">
+                        <i data-lucide="cog" class="w-6 h-6"></i>
+                        <span class="text-xs">অ্যাডমিন</span>
+                    </button>
                 </div>
             </footer>
         </div>
     </div>
 
     <!-- টোস্ট নোটিফিকেশন কন্টেইনার -->
-    <!-- ব্যানার অ্যাড এবং নেভিগেশন থেকে উপরে দেখানো হবে -->
     <div id="toast-container" class="fixed bottom-36 right-4 left-4 z-50 flex flex-col items-center pointer-events-none"></div>
 
 
@@ -114,8 +127,10 @@
     // ** Telegram Mini App & Backend API Configuration         **
     // *******************************************************************
 
-    // API সার্ভারের URL সেট করা হয়েছে
+    // API সার্ভারের URL
     const API_URL = "https://smartearnbdbot.onrender.com/api"; 
+    // !!! এখানে আপনার Telegram ID বসান। এই ID-এর জন্য অ্যাডমিন বাটন দেখা যাবে। !!!
+    const ADMIN_TELEGRAM_ID = "8320840106"; // যেমন: "123456789"
     
     // ইউজার ডেটা এবং স্টেট ম্যানেজমেন্ট
     let appState = {
@@ -126,6 +141,7 @@
         referralCount: 0,
         currentPage: 'Home',
         isLoading: true,
+        isAdmin: false, // নতুন স্টেট যোগ করা হলো
     };
 
     // *******************************************************************
@@ -171,7 +187,6 @@
             try {
                 const response = await fetch(url, options);
                 if (!response.ok) {
-                    // If server returns 4xx or 5xx, throw to enter catch block
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
@@ -194,18 +209,14 @@
      */
     async function fetchUserData() {
         if (!appState.telegramId) {
-            // যদি টেলিগ্রাম আইডি না থাকে, লোড করার চেষ্টা করবেন না
             document.getElementById('current-points').textContent = 'N/A';
             return;
         }
 
         try {
-            // লোডিং অবস্থা দেখান
             document.getElementById('current-points').textContent = '...';
             
-            // রেফারেল কোড প্যারামিটার যোগ করা
             const urlParams = new URLSearchParams(window.Telegram.WebApp.initData);
-            // 'start' প্যারামিটার রেফারেল কোড হিসেবে ব্যবহার করা হচ্ছে
             const startParam = urlParams.get('start'); 
             
             let fetchUrl = `${API_URL}/user-data?id=${appState.telegramId}`;
@@ -222,7 +233,6 @@
                 
                 // UI আপডেট করুন
                 document.getElementById('current-points').textContent = data.points.toLocaleString('bn-BD');
-                // রেন্ডার করা পেজে ডেটা আপডেট
                 renderPage(appState.currentPage); 
             } else {
                 showToast(data.message || "ইউজার ডেটা লোড ব্যর্থ।", 'error');
@@ -231,7 +241,6 @@
             console.error("User data fetch error:", error);
             showToast("সার্ভার থেকে ডেটা লোড করা যায়নি। (Database/Connection Error)", 'error');
         } finally {
-            // নিশ্চিত করুন যে সব Lucide আইকন রেন্ডার হয়েছে
             lucide.createIcons();
         }
     }
@@ -244,8 +253,6 @@
         if (!appState.telegramId) return showToast("ব্যবহারকারী আইডি উপলব্ধ নয়।", 'error');
 
         const earnButton = document.getElementById('earn-button');
-        
-        // বাটনটি শুধুমাত্র হোম পেজে থাকায়, এটি চেক করা নিরাপদ
         if (!earnButton) return; 
 
         earnButton.disabled = true;
@@ -263,7 +270,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     telegramId: appState.telegramId, 
-                    points: 5 // প্রতি বিজ্ঞাপনে 5 পয়েন্ট 
+                    points: 5 
                 }),
             });
 
@@ -279,7 +286,6 @@
             console.error("Add points error:", error);
             showToast("পয়েন্ট যোগ করার সময় সার্ভার ত্রুটি।", 'error');
         } finally {
-            // বাটন স্বাভাবিক অবস্থায় ফিরিয়ে আনা
             earnButton.innerHTML = `
                 <i data-lucide="monitor" class="w-6 h-6 mr-2"></i> অ্যাড দেখুন ও ইনকাম করুন
             `;
@@ -328,7 +334,6 @@
                 document.getElementById('current-points').textContent = response.new_points.toLocaleString('bn-BD');
                 document.getElementById('withdraw-form').reset();
                 showToast(response.message, 'success');
-                // উইথড্র সফল হলে হোম পেজ রেন্ডার করে ব্যালেন্স আপডেট দেখানো
                 renderPage('Withdraw'); 
             } else {
                 showToast(response.message || "উইথড্র রিকোয়েস্ট ব্যর্থ।", 'error');
@@ -341,6 +346,54 @@
             submitButton.textContent = 'উইথড্র রিকোয়েস্ট পাঠান';
         }
     }
+    
+    /**
+     * @function updatePointsAdmin
+     * Admin function to manually update user points.
+     */
+    async function updatePointsAdmin(event) {
+        event.preventDefault();
+
+        const targetId = document.getElementById('target-id').value.trim();
+        const pointsChange = parseInt(document.getElementById('points-change').value);
+        const submitButton = document.getElementById('admin-update-submit');
+
+        if (!targetId || isNaN(pointsChange)) {
+            return showToast("সকল ঘর পূরণ করুন এবং পয়েন্ট সংখ্যা সঠিক হতে হবে।", 'error');
+        }
+
+        if (!appState.isAdmin) {
+             return showToast("আপনি অ্যাডমিন নন।", 'error');
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'আপডেট করা হচ্ছে...';
+
+        try {
+            const response = await fetchWithRetry(`${API_URL}/admin/update-points`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    adminId: appState.telegramId, // অ্যাডমিন আইডি পাঠানো হলো 
+                    targetId: targetId, 
+                    points: pointsChange, 
+                }),
+            });
+
+            if (response.success) {
+                showToast(response.message, 'success');
+            } else {
+                showToast(response.message || "পয়েন্ট আপডেট ব্যর্থ।", 'error');
+            }
+        } catch (error) {
+            console.error("Admin update error:", error);
+            showToast("অ্যাডমিন আপডেটের সময় সার্ভার ত্রুটি।", 'error');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'পয়েন্ট আপডেট করুন';
+        }
+    }
+
 
     // *******************************************************************
     // ** Rendering                           **
@@ -402,12 +455,10 @@
      * Renders the Referral page content.
      */
     function renderReferralPage() {
-        // Mini App URL এর লিঙ্ক তৈরি করা
         let startLink = "";
-        const botUsername = "EarnQuick_Official"; // আপনার বটের ইউজারনেমটি এখানে সেট করুন
+        const botUsername = "EarnQuick_Official"; 
         
         if (appState.referralCode && botUsername) {
-            // এখানে bot_username আপনার Telegram Bot username হবে
             startLink = `https://t.me/${botUsername}?start=${appState.referralCode}`;
         }
 
@@ -489,6 +540,42 @@
     }
 
     /**
+     * @function renderAdminPage
+     * Renders the Admin page content (Only for admin user).
+     */
+    function renderAdminPage() {
+        if (!appState.isAdmin) {
+            return `<p class="text-center text-red-500 mt-10 text-xl">আপনার অ্যাডমিন অ্যাক্সেস নেই।</p>`;
+        }
+
+        return `
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-red-400 border-b border-gray-700 pb-2">অ্যাডমিন ড্যাশবোর্ড</h2>
+                
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-600/30">
+                    <p class="text-lg font-semibold text-white mb-4">ইউজার পয়েন্ট ম্যানুয়ালি আপডেট করুন</p>
+
+                    <form id="admin-update-form" onsubmit="updatePointsAdmin(event)" class="space-y-4">
+                        <div>
+                            <label for="target-id" class="block text-sm font-medium text-gray-300 mb-1">ইউজার টেলিগ্রাম আইডি</label>
+                            <input type="text" id="target-id" required class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-red-500 focus:ring focus:ring-red-500/50" placeholder="ইউজারের টেলিগ্রাম আইডি">
+                        </div>
+                        
+                        <div>
+                            <label for="points-change" class="block text-sm font-medium text-gray-300 mb-1">পয়েন্ট পরিবর্তন (+/-)</label>
+                            <input type="number" id="points-change" required class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-red-500 focus:ring focus:ring-red-500/50" placeholder="যোগ/বিয়োগ করার জন্য পয়েন্ট সংখ্যা">
+                        </div>
+
+                        <button type="submit" id="admin-update-submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-red-700/50">
+                            পয়েন্ট আপডেট করুন
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * @function renderPage
      * Main rendering function to switch between pages.
      */
@@ -516,6 +603,9 @@
             case 'Withdraw':
                 htmlContent = renderWithdrawPage();
                 break;
+            case 'Admin':
+                htmlContent = renderAdminPage();
+                break; // নতুন অ্যাডমিন পেজ
             default:
                 htmlContent = `<p class="text-center text-red-500">পেজটি খুঁজে পাওয়া যায়নি।</p>`;
         }
@@ -549,22 +639,19 @@
      */
     async function initApp() {
         try {
-            // 1. Telegram Web App তৈরি হওয়ার জন্য অপেক্ষা করা 
             if (typeof window.Telegram === 'undefined' || typeof window.Telegram.WebApp === 'undefined') {
                 throw new Error("Telegram WebApp object is not available. Are you running this outside a Telegram client?");
             }
 
             window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand(); // পূর্ণ স্ক্রিনে এক্সপ্যান্ড করা
+            window.Telegram.WebApp.expand(); 
             
-            // UI কালার থিম টেলিগ্রামের সাথে সিঙ্ক করা
             document.documentElement.style.backgroundColor = window.Telegram.WebApp.themeParams.bg_color || '#0D1117';
             document.body.style.backgroundColor = window.Telegram.WebApp.themeParams.bg_color || '#0D1117';
 
 
             const user = window.Telegram.WebApp.initDataUnsafe.user;
             
-            // 2. ইউজার ডেটা চেক করা
             if (!user || !user.id) {
                 // টেলিগ্রাম আইডি না পাওয়া গেলে ত্রুটি স্ক্রিন দেখানো
                 document.getElementById('loading-screen').classList.remove('hidden');
@@ -574,21 +661,33 @@
                         <i data-lucide="alert-triangle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
                         <h2 class="text-xl font-bold text-white mb-2">প্রয়োজনীয় ডেটা অনুপস্থিত!</h2>
                         <p class="text-red-400 mb-4">টেলিগ্রাম আইডি খুঁজে পাওয়া যায়নি।</p>
-                        <p class="text-gray-300 text-sm">অনুগ্রহ করে এটি শুধুমাত্র বটের **Inline Keyboard** বা **Web App** বাটন ব্যবহার করে চালু করুন। সরাসরি ব্রাউজারে এটি কাজ করবে না।</p>
+                        <p class="text-gray-300 text-sm">অনুগ্রহ করে এটি শুধুমাত্র বটের **Inline Keyboard** বা **Web App** বাটন ব্যবহার করে চালু করুন।</p>
                         <button onclick="window.Telegram.WebApp.close()" class="mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                            অ্যাপ বন্ধ করুন
                         </button>
                     </div>
                 `;
                 lucide.createIcons();
-                return; // এখানেই ইনিশিয়ালাইজেশন বন্ধ করা হলো
+                return; 
             }
 
             // 3. ডেটা সেট করা
-            appState.telegramId = user.id.toString(); // API এর জন্য ID কে স্ট্রিং এ রাখা
+            appState.telegramId = user.id.toString(); 
             appState.username = user.username || user.first_name || 'ইউজার';
+            appState.isAdmin = (appState.telegramId === ADMIN_TELEGRAM_ID); // অ্যাডমিন চেক করা
+
             
             document.getElementById('user-name').textContent = appState.username;
+
+            // অ্যাডমিন বাটন দৃশ্যমান করা
+            const adminButton = document.getElementById('nav-Admin');
+            if (appState.isAdmin) {
+                adminButton.classList.remove('hidden');
+                adminButton.classList.add('flex'); // flex দিয়ে দেখানো
+            } else {
+                 adminButton.classList.add('hidden');
+            }
+
 
             // 4. ডেটা লোড করা
             await fetchUserData();
@@ -611,7 +710,7 @@
                 <div class="p-6 text-center max-w-sm mx-auto bg-gray-800 rounded-xl shadow-2xl">
                     <i data-lucide="wifi-off" class="w-12 h-12 text-yellow-500 mx-auto mb-4"></i>
                     <h2 class="text-xl font-bold text-white mb-2">ত্রুটি: অ্যাপ চালু করা যায়নি</h2>
-                    <p class="text-gray-300 text-sm">আপনার ইন্টারনেট সংযোগ বা Render সার্ভারের স্থিতি পরীক্ষা করুন।</p>
+                    <p class="text-gray-300 text-sm">আপনার ইন্টারনেট সংযোগ বা সার্ভারের স্থিতি পরীক্ষা করুন।</p>
                     <p class="text-red-400 text-xs mt-2">বিস্তারিত: ${e.message}</p>
                 </div>
             `;
@@ -622,4 +721,4 @@
     window.addEventListener('load', initApp);
 </script>
 </body>
-    </html>
+</html>
