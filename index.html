@@ -2,117 +2,239 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnQuick Official</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EarnQuick Official Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* প্রফেশনাল, মোবাইল-ফ্রেন্ডলি ডিজাইন এবং ব্যাকগ্রাউন্ড */
+        :root {
+            --primary-color: #28a745; /* Green for action */
+            --secondary-color: #007bff; /* Blue for info */
+            --background-color: #1a1a1a; /* Dark background */
+            --card-color: #2c2c2c; /* Darker card */
+            --text-color: #ffffff;
+            --highlight-color: #ffc107; /* Yellow for points */
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #212529; /* Dark background like Telegram */
-            color: #f8f9fa;
-            text-align: center;
+            padding-bottom: 60px; /* Space for fixed menu */
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overscroll-behavior-y: none; /* Prevents bounce effect */
         }
         .container {
-            max-width: 400px;
+            padding: 15px;
+            max-width: 500px;
             margin: 0 auto;
         }
         .header {
             font-size: 24px;
-            margin-bottom: 20px;
-            color: #28a745; /* Green color */
+            font-weight: 700;
+            color: var(--primary-color);
+            padding: 10px 0;
+            margin-bottom: 10px;
         }
-        .info-box {
-            background-color: #343a40;
-            padding: 15px;
-            border-radius: 8px;
+        .marquee-container {
+            background-color: #333333;
+            color: var(--highlight-color);
+            padding: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .marquee {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+        @keyframes marquee {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+        .card {
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             margin-bottom: 15px;
         }
-        .points-display {
-            font-size: 36px;
-            font-weight: bold;
-            color: #ffc107; /* Yellow for points */
+        .points-box {
+            background-color: var(--primary-color);
+            padding: 15px;
+            border-radius: 10px;
             margin: 10px 0;
         }
+        .points-display {
+            font-size: 40px;
+            font-weight: bold;
+            color: var(--highlight-color);
+            margin: 5px 0;
+        }
         .button {
-            display: block;
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-top: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .btn-green { background-color: #28a745; color: white; }
-        .btn-blue { background-color: #007bff; color: white; }
-        .error-message {
-            color: #dc3545;
-            background-color: #493132;
+        .btn-action { 
+            background-color: var(--primary-color); 
+            color: var(--text-color); 
+        }
+        .btn-secondary { 
+            background-color: var(--secondary-color); 
+            color: var(--text-color); 
+        }
+        .stats-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .stat-item {
+            flex-grow: 1;
             padding: 10px;
-            border-radius: 5px;
-            margin-top: 15px;
+            background-color: #444;
+            border-radius: 8px;
+            font-size: 14px;
         }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--highlight-color);
+        }
+        /* Fixed Footer Menu */
+        .footer-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 55px;
+            background-color: #111; /* Even darker */
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .menu-item {
+            color: #ccc;
+            text-align: center;
+            font-size: 10px;
+            cursor: pointer;
+            padding: 5px 0;
+        }
+        .menu-item i {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .menu-item.active {
+            color: var(--primary-color);
+        }
+        /* Font Awesome Icons (Dummies, you need to link a real CDN or use your own icons) */
+        .fa-home:before { content: "🏠"; }
+        .fa-link:before { content: "🔗"; }
+        .fa-money:before { content: "💸"; }
+        .fa-user-cog:before { content: "⚙️"; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">💰 EarnQuick Official Mini App</div>
-
-        <div id="connection-error" class="error-message" style="display: none;">
-            সার্ভার সংযোগ ত্রুটি। অনুগ্রহ করে পরে আবার চেষ্টা করুন।
-        </div>
-        
-        <div class="info-box">
-            <p>ইউজার: <span id="username-display">অফলাইন</span></p>
-            <div class="points-display"><span id="points-display">...</span> পয়েন্ট</div>
+        <div class="marquee-container">
+            <span class="marquee" id="running-notice">
+                📢 নতুন আপডেট! প্রতিদিন অ্যাড দেখে ইনকাম করুন এবং সাথে সাথে উইথড্র করুন! 💰
+            </span>
         </div>
 
-        <button class="button btn-green" onclick="addPoints()">অ্যাড দেখুন ও ইনকাম করুন (৫০ পয়েন্ট)</button>
-        
-        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-            <div class="info-box" style="width: 48%;">
-                <small>রেফারেল বোনাস:</small>
-                <p>২৫০ পয়েন্ট</p>
+        <div class="header">EarnQuick Official Mini App</div>
+
+        <div class="card">
+            <p>ইউজার: <span id="username-display">লোডিং...</span></p>
+            <div class="points-box">
+                <p style="margin: 0; font-size: 14px;">আপনার বর্তমান পয়েন্ট</p>
+                <div class="points-display"><span id="points-display">...</span></div>
             </div>
-            <div class="info-box" style="width: 48%;">
-                <small>রেফারেল সংখ্যা:</small>
-                <p><span id="referral-count-display">...</span> জন</p>
+            <button class="button btn-action" onclick="addPoints()">অ্যাড দেখুন ও ইনকাম করুন (৫০ পয়েন্ট)</button>
+        </div>
+
+        <div class="card">
+            <h3>ইনকামের তথ্য</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <small>রেফারেল বোনাস</small>
+                    <div class="stat-value">২৫০ pt</div>
+                </div>
+                <div class="stat-item">
+                    <small>রেফারেল সংখ্যা</small>
+                    <div class="stat-value"><span id="referral-count-display">...</span></div>
+                </div>
+                <div class="stat-item">
+                    <small>ন্যূনতম উইথড্র</small>
+                    <div class="stat-value">৫,০০০ pt</div>
+                </div>
             </div>
+            
+            <button class="button btn-secondary" onclick="requestWithdraw()">পয়েন্ট উইথড্র করুন</button>
+        </div>
+
+        <div class="card" style="padding: 5px; text-align: center;">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '00605022df81b880d400151bfc7c2185',
+                    'format' : 'iframe',
+                    'height' : 90,
+                    'width' : 728,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
         </div>
         
-        <div class="info-box">
-            <small>ন্যূনতম উইথড্র: ৫,০০০ পয়েন্ট</small>
-            <button class="button btn-blue" onclick="requestWithdraw()">পয়েন্ট উইথড্র করুন</button>
+        <div class="card" style="padding: 5px; text-align: center;">
+             <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
+        </div>
+
+    </div>
+
+    <div class="footer-menu">
+        <div class="menu-item active" onclick="webApp.showAlert('হোম পেইজ!')">
+            <i class="fa-home"></i> হোম
+        </div>
+        <div class="menu-item" onclick="webApp.showAlert('রেফার করুন লজিক!')">
+            <i class="fa-link"></i> রেফার
+        </div>
+        <div class="menu-item" onclick="requestWithdraw()">
+            <i class="fa-money"></i> উইথড্র
+        </div>
+        <div class="menu-item" id="admin-menu-item" style="display:none;" onclick="webApp.showAlert('এডমিন প্যানেল!')">
+            <i class="fa-user-cog"></i> এডমিন
         </div>
     </div>
 
+
     <script>
-        // 🛑 আপনার বটের সঠিক ইউজারনেম
         const BOT_USERNAME = "EarnQuick_Official_bot"; 
-
         const webApp = window.Telegram.WebApp;
+        let IS_ADMIN = false;
 
-        // ডেটা লোড করার মূল ফাংশন
         async function loadUserData() {
-            const errorElement = document.getElementById('connection-error');
-            errorElement.style.display = 'none';
-
             const tgData = webApp.initDataUnsafe.user;
             const urlParams = new URLSearchParams(webApp.initData);
 
-            if (!tgData) {
-                errorElement.innerText = "Telegram ডেটা পাওয়া যায়নি। বট-এর মাধ্যমে খুলুন।";
-                errorElement.style.display = 'block';
-                return;
-            }
+            if (!tgData) return;
 
             const telegramId = tgData.id;
             const username = tgData.username || tgData.first_name;
             const startParam = urlParams.get('start'); 
             
-            // সার্ভার API কল
             const apiUrl = `/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
 
             try {
@@ -120,41 +242,50 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // সফল হলে স্ক্রিন আপডেট করা
-                    document.getElementById('username-display').innerText = data.user.username; 
+                    // ডেটা ডিসপ্লে
+                    document.getElementById('username-display').innerText = data.user.username || 'User'; 
                     document.getElementById('points-display').innerText = data.user.total_points.toLocaleString('bn-BD'); 
                     document.getElementById('referral-count-display').innerText = data.user.referral_count.toLocaleString('bn-BD');
                     
+                    // 🛑 এডমিন বাটন নিয়ন্ত্রণ
+                    IS_ADMIN = data.user.is_admin;
+                    if (IS_ADMIN) {
+                         document.getElementById('admin-menu-item').style.display = 'block';
+                    } else {
+                         document.getElementById('admin-menu-item').style.display = 'none';
+                    }
+                    
                     if(data.referralRewardGiven) {
-                        webApp.showAlert("অভিনন্দন! আপনি রেফারেল বোনাস পেয়েছেন!");
+                        webApp.showAlert("অভিনন্দন! রেফারেল বোনাস পেয়েছেন!");
                     }
 
                 } else {
-                    errorElement.innerText = data.message || "ইউজার ডেটা লোড করতে ব্যর্থ।";
-                    errorElement.style.display = 'block';
+                    webApp.showAlert("ডেটা লোড করতে ব্যর্থ: " + (data.message || "সার্ভার এরর।"));
                 }
                 
             } catch (error) {
                 console.error("Data loading failed:", error);
-                errorElement.innerText = "সার্ভার সংযোগ ত্রুটি। আপনার সার্ভার বা ইন্টারনেট পরীক্ষা করুন।";
-                errorElement.style.display = 'block';
+                webApp.showAlert("সার্ভার সংযোগ ত্রুটি।");
             }
         }
 
-        // পয়েন্ট যোগ করার ডামি ফাংশন (আপনাকে এর API কল লজিক পরে লিখতে হবে)
+        // অ্যাড পয়েন্ট ফাংশন (আপনাকে এর আসল লজিক লিখতে হবে)
         function addPoints() {
+            // এইখানে আপনার Monetag SDK শো অ্যাড লজিক আসবে
+            // অ্যাড দেখার পরে সার্ভারকে কল করতে হবে: fetch('/api/add_points', ...)
             webApp.showAlert("অ্যাড দেখার লজিক এখানে যুক্ত হবে।");
         }
         
-        // উইথড্র করার ডামি ফাংশন (আপনাকে এর API কল লজিক পরে লিখতে হবে)
+        // উইথড্র ফাংশন (আপনাকে এর আসল লজিক লিখতে হবে)
         function requestWithdraw() {
+            // উইথড্র ফর্ম এবং API কল লজিক
             webApp.showAlert("উইথড্র করার ফর্ম এবং লজিক এখানে যুক্ত হবে।");
         }
         
         // টেলিগ্রাম অ্যাপ লোড হলে
         webApp.ready(() => {
             webApp.expand(); // ফুল স্ক্রিন
-            loadUserData();  // ডেটা লোড করা শুরু করুন
+            loadUserData();  // ডেটা লোড করা শুরু
         });
     </script>
 </body>
