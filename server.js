@@ -1,4 +1,4 @@
-// server.js
+// server.js (চূড়ান্ত সংশোধিত কোড - ফাইল পাথ ঠিক করা হয়েছে)
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -7,20 +7,22 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 10000; 
 
-// 🛑 গুরুত্বপূর্ণ নতুন সংযোজন: Render-এর জন্য প্রক্সি ট্রাস্ট সক্ষম করা
+// Render-এর জন্য প্রক্সি ট্রাস্ট সক্ষম করা
 app.set('trust proxy', true); 
 
 app.use(bodyParser.json());
 
-// 💡 Mini App-এর ফাইল খুঁজে পাওয়ার জন্য প্রধান লাইন
-app.use(express.static(path.join(__dirname, 'public'))); 
+// 💡 পরিবর্তন ১: 'public' ফোল্ডার বাদ দেওয়া হয়েছে, index.html মেইন ডিরেক্টরিতে আছে।
+app.use(express.static(path.join(__dirname))); 
 
 db.setupDatabase().then(() => {
+    // এখানে সার্ভার শুরু হওয়ার আগে ডাটাবেস সংযোগ সফল হয়েছে নিশ্চিত হবে (যদি DATABASE_URL সেট করা থাকে)
     app.listen(PORT, () => {
         console.log(`Server is running successfully on port ${PORT}`);
     });
 }).catch(err => {
     console.error('FATAL: Failed to start server due to database setup error:', err);
+    // যদি ডাটাবেস সংযোগ না হয়, সার্ভার বন্ধ হবে। (Render এ DATABASE_URL না থাকার কারণে হয়)
     process.exit(1); 
 });
 
@@ -30,7 +32,6 @@ db.setupDatabase().then(() => {
 // =======================================================
 
 app.get('/api/user_data', async (req, res) => {
-    // URL থেকে referrerId নিতে start প্যারামিটার ব্যবহার করা হচ্ছে
     const telegramId = req.query.id; 
     const username = req.query.username || 'GuestUser'; 
     const referrerIdFromUrl = req.query.start; 
@@ -52,7 +53,6 @@ app.get('/api/user_data', async (req, res) => {
             let referrerExists = false;
 
             if (referrerIdFromUrl && referrerIdFromUrl !== telegramId) {
-                // নিশ্চিত করা হচ্ছে রেফারার আইডি একটি বৈধ টেলিগ্রাম আইডি (সংখ্যা)
                 const referrerCheck = await client.query('SELECT telegram_id FROM users WHERE telegram_id = $1', [referrerIdFromUrl]);
                 if (referrerCheck.rows.length > 0) {
                     referrerId = referrerIdFromUrl;
@@ -60,14 +60,12 @@ app.get('/api/user_data', async (req, res) => {
                 }
             }
             
-            // ইউজার তৈরি করা
             await client.query(
                 `INSERT INTO users (telegram_id, username, referrer_id) 
                  VALUES ($1, $2, $3)`,
                 [telegramId, username, referrerId]
             );
 
-            // রেফারেল বোনাস দেওয়ার লজিক
             if (referrerExists) {
                 const configResult = await client.query('SELECT config_key, config_value FROM ads_config WHERE config_key IN ($1, $2)', ['referral_bonus_new_user', 'referral_bonus_referrer']);
                 const config = configResult.rows.reduce((acc, row) => {
@@ -78,13 +76,11 @@ app.get('/api/user_data', async (req, res) => {
                 const newUserBonus = config.referral_bonus_new_user || 50;
                 const referrerBonus = config.referral_bonus_referrer || 100;
                 
-                // ১. নতুন ইউজারকে বোনাস
                 await client.query(
                     'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2',
                     [newUserBonus, telegramId]
                 );
                 
-                // ২. রেফারারকে বোনাস
                 await client.query(
                     'UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2',
                     [referrerBonus, referrerId]
@@ -93,7 +89,6 @@ app.get('/api/user_data', async (req, res) => {
                 referralRewardGiven = true;
             }
         } else {
-             // বিদ্যমান ইউজার হলে শুধু Username আপডেট করা
              await client.query(
                 'UPDATE users SET username = $1 WHERE telegram_id = $2',
                 [username, telegramId]
@@ -128,7 +123,7 @@ app.get('/api/user_data', async (req, res) => {
 });
 
 
-// অ্যাপ কনফিগারেশন ডেটা লোড করার API
+// অ্যাপ কনফিগারেশন ডেটা লোড করার API (unchanged)
 app.get('/api/config', async (req, res) => {
     try {
         const result = await db.query('SELECT config_key, config_value FROM ads_config');
@@ -356,14 +351,16 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
 
 
 // রুট এবং 404 হ্যান্ডলার
+// 💡 পরিবর্তন ২: 'public' ফোল্ডার বাদ দেওয়া হয়েছে
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use((req, res, next) => {
     if (req.originalUrl.startsWith('/api')) {
         next(); 
     } else {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        // 💡 পরিবর্তন ৩: 'public' ফোল্ডার বাদ দেওয়া হয়েছে
+        res.sendFile(path.join(__dirname, 'index.html'));
     }
 });
