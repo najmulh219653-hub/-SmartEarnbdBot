@@ -8,6 +8,10 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 10000; 
 
+// 🛑 গুরুত্বপূর্ণ নতুন সংযোজন 🛑
+// Render এর Reverse Proxy-এর মাধ্যমে সঠিক IP Address পেতে এটি আবশ্যক
+app.set('trust proxy', true); 
+
 app.use(bodyParser.json());
 
 // 💡 গুরুত্বপূর্ণ: এটিই আপনার Mini App-এর ফাইল খুঁজে পাওয়ার জন্য প্রধান লাইন।
@@ -29,6 +33,7 @@ db.setupDatabase().then(() => {
 // =======================================================
 
 app.get('/api/user_data', async (req, res) => {
+    // URL থেকে referrerId নিতে start প্যারামিটার ব্যবহার করা হচ্ছে
     const telegramId = req.query.id; 
     const username = req.query.username || 'GuestUser'; 
     const referrerIdFromUrl = req.query.start; 
