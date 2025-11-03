@@ -6,7 +6,6 @@
     <title>EarnQuick_Official MiniApp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind কনফিগারেশন: কালার থিম
         tailwind.config = {
             theme: {
                 extend: {
@@ -23,14 +22,14 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* bg-dark */
+            background-color: #0f172a; 
             color: white;
             padding: 0;
             margin: 0;
             user-select: none;
         }
         .card {
-            background-color: #1f2937; /* secondary-dark */
+            background-color: #1f2937; 
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             padding: 16px;
@@ -42,13 +41,12 @@
             transform: scale(0.98);
         }
         .text-error {
-            color: #ef4444; /* error-red */
+            color: #ef4444; 
         }
-        /* Marquee/Running Headline Style */
         .marquee-container {
             overflow: hidden;
             white-space: nowrap;
-            background-color: #0d9488; /* Teal-700 for notice */
+            background-color: #0d9488; 
             padding: 6px 0;
         }
         .marquee-content {
@@ -93,7 +91,7 @@
     </header>
 
     <div id="running-notice-container" class="marquee-container text-white text-sm font-medium mb-4">
-        <p id="running-notice" class="marquee-content px-4"></p>
+        <p id="running-notice" class="marquee-content px-4">সার্ভার সংযোগ ত্রুটি। নোটিশ লোড করা যায়নি।</p>
     </div>
 
     <div id="main-app-view" class="p-4 space-y-6 max-w-lg mx-auto">
@@ -171,11 +169,9 @@
 
     
     <script>
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // 💡 গুরুত্বপূর্ণ: এই BASE_URL-টি অবশ্যই আপনার Render সার্ভারের URL দিয়ে পরিবর্তন করুন।
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        const BASE_URL = "YOUR_RENDER_SERVICE_URL_HERE"; // উদাহরণ: "https://earning-miniapp-server.onrender.com"
-        const BOT_USERNAME = "YourBotUsername"; // আপনার Telegram Bot-এর Username দিন
+        // 💡 গুরুত্বপূর্ণ তথ্য: আপনার প্রদত্ত URL এবং Bot Username এখানে ব্যবহার করা হয়েছে
+        const BASE_URL = "https://smartearnbdbot.onrender.com"; 
+        const BOT_USERNAME = "najmulhoqueforhad"; 
         
         const MIN_WITHDRAWAL = 5000;
         const POINTS_PER_AD = 10;
@@ -186,7 +182,7 @@
         let TELEGRAM_START_PARAM = new URLSearchParams(window.location.search).get('start');
         let IS_ADMIN = false;
 
-        // ডামি ID, যদি Telegram ID না পাওয়া যায়
+        // ডামি ID, যদি Telegram ID না পাওয়া যায় (পরীক্ষার জন্য)
         if (!TELEGRAM_ID) {
             console.warn('Telegram ID not found. Using DUMMY ID for dev.');
             TELEGRAM_ID = '123456789'; 
@@ -194,7 +190,7 @@
 
         let CURRENT_POINTS = 0; 
 
-        // DOM এলিমেন্টগুলো
+        // DOM এলিমেন্ট (সংক্ষেপিত)
         const pointsDisplay = document.getElementById('points-display');
         const usernameDisplay = document.getElementById('username-display');
         const adminBtn = document.getElementById('admin-btn');
@@ -239,7 +235,6 @@
             }
         }
         
-        // কনফিগারেশন লোড করা
         async function loadAppConfig() {
             try {
                 const response = await fetch(`${BASE_URL}/api/config`);
@@ -257,7 +252,6 @@
             }
         }
 
-        // ইউজার ডেটা লোড করা
         async function loadUserData(showLoading = true) {
             if (showLoading) {
                 usernameDisplay.textContent = "লোডিং...";
@@ -267,7 +261,6 @@
             }
 
             try {
-                // রেফারেল প্যারামিটার যোগ করা
                 let url = `${BASE_URL}/api/user_data?id=${TELEGRAM_ID}&username=${TELEGRAM_USERNAME}`;
                 if (TELEGRAM_START_PARAM) {
                     url += `&start=${TELEGRAM_START_PARAM}`;
@@ -289,9 +282,9 @@
                     
                     if (IS_ADMIN) adminBtn.classList.remove('hidden');
 
-                    // রেফারেল বোনাস বার্তা প্রদর্শন
-                    if (data.referralRewardGiven) {
-                        showMessage("অভিনন্দন!", "আপনি একজন নতুন ইউজার হিসেবে সফলভাবে বোনাস পয়েন্ট পেয়েছেন!", false);
+                    if (data.referralRewardGiven && data.user.referrer_id) {
+                         // শুধু একবার দেখানো হবে
+                        showMessage("রেফারেল বোনাস!", "আপনি একজন নতুন ইউজার হিসেবে সফলভাবে বোনাস পয়েন্ট পেয়েছেন!", false);
                     }
                     
                 } else {
@@ -312,7 +305,6 @@
             }
         }
 
-        // পয়েন্ট যোগ করা
         async function addPoints() {
             const addPointsBtn = document.getElementById('add-points-btn');
             addPointsBtn.disabled = true;
@@ -349,9 +341,7 @@
             }
         }
         
-        // রেফারেল লিংক কপি করা
         function copyReferralLink() {
-            // টেলিগ্রাম বটের লিংক: t.me/YourBotUsername?start=YOUR_TELEGRAM_ID
             const referralLink = `https://t.me/${BOT_USERNAME}?start=${TELEGRAM_ID}`;
             
             navigator.clipboard.writeText(referralLink).then(() => {
@@ -364,8 +354,6 @@
                 showMessage("কপি ত্রুটি", "আপনার ডিভাইস স্বয়ংক্রিয় কপি সমর্থন করছে না। লিংকটি ম্যানুয়ালি কপি করুন: " + referralLink, true);
             });
         }
-        
-        // ... [Withdrawal functions and Admin Panel functions from previous response] ...
         
         function toggleWithdrawModal(show) {
             const modal = document.getElementById('withdraw-modal');
@@ -431,9 +419,8 @@
             }
         }
         
-        // ADMIN PANEL LOGIC (Load/Render/Action functions are the same as before)
+        // Admin Panel Functions (Unchanged)
         async function loadWithdrawals() {
-            // ... (কোড অপরিবর্তিত)
             withdrawalList.innerHTML = '<p class="text-center text-gray-500 py-4"><span class="animate-spin mr-2">🔄</span> লোড হচ্ছে...</p>';
             noWithdrawals.classList.add('hidden');
 
@@ -456,7 +443,6 @@
         }
         
         function renderWithdrawals(withdrawals) {
-            // ... (কোড অপরিবর্তিত)
             withdrawalList.innerHTML = '';
             pendingCount.textContent = withdrawals.length;
 
@@ -485,7 +471,6 @@
         }
         
         async function handleAdminAction(requestId, action, button) {
-            // ... (কোড অপরিবর্তিত)
             button.disabled = true;
             button.textContent = 'Processing...';
 
@@ -514,16 +499,14 @@
                 console.error('Admin action error:', error);
                 showMessage("সংযোগ ত্রুটি", `অ্যাডমিন অ্যাকশন করতে সার্ভার অফলাইন।`, true);
             } finally {
-                // ...
             }
         }
 
 
-        // পেজ লোড হওয়ার পরে ডেটা আনা
         window.onload = () => {
             loadAppConfig(); 
             loadUserData(true); 
         };
     </script>
 </body>
-  </html>
+</html>
