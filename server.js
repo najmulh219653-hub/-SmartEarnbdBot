@@ -10,10 +10,8 @@ const PORT = process.env.PORT || 10000;
 
 app.use(bodyParser.json());
 
-// ফিক্স: 'public' ফোল্ডারকে স্ট্যাটিক ডিরেক্টরি হিসেবে সেট করা হলো
 app.use(express.static(path.join(__dirname, 'public'))); 
 
-// সার্ভার শুরু করার আগে ডাটাবেস সেটআপ নিশ্চিত করা
 db.setupDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`Server is running successfully on port ${PORT}`);
@@ -25,14 +23,13 @@ db.setupDatabase().then(() => {
 
 
 // =======================================================
-// API Endpoints
+// API Endpoints (Referral Logic Included)
 // =======================================================
 
-// ইউজার ডেটা লোড করার API
 app.get('/api/user_data', async (req, res) => {
     const telegramId = req.query.id; 
     const username = req.query.username || 'GuestUser'; 
-    const referrerIdFromUrl = req.query.start; // টেলিগ্রাম থেকে আসা রেফারার আইডি
+    const referrerIdFromUrl = req.query.start; 
 
     if (!telegramId) {
         return res.status(400).json({ success: false, message: 'Telegram ID is required.' });
@@ -42,18 +39,16 @@ app.get('/api/user_data', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // ইউজার ইতিমধ্যেই আছে কিনা চেক করা
         const existingUserResult = await client.query('SELECT telegram_id, referrer_id FROM users WHERE telegram_id = $1', [telegramId]);
         
         let referralRewardGiven = false;
 
         if (existingUserResult.rows.length === 0) {
-            // নতুন ইউজার রেজিস্ট্রেশন লজিক
             let referrerId = null;
             let referrerExists = false;
 
-            // রেফারেল আইডি বৈধ কিনা চেক করা
             if (referrerIdFromUrl && referrerIdFromUrl !== telegramId) {
+                // নিশ্চিত করা হচ্ছে রেফারার আইডি একটি বৈধ টেলিগ্রাম আইডি (সংখ্যা)
                 const referrerCheck = await client.query('SELECT telegram_id FROM users WHERE telegram_id = $1', [referrerIdFromUrl]);
                 if (referrerCheck.rows.length > 0) {
                     referrerId = referrerIdFromUrl;
@@ -101,7 +96,6 @@ app.get('/api/user_data', async (req, res) => {
             );
         }
 
-        // ইউজার ডেটা লোড করা
         const userResult = await client.query(
             'SELECT telegram_id, username, total_points, referrer_id, is_admin FROM users WHERE telegram_id = $1',
             [telegramId]
@@ -109,7 +103,6 @@ app.get('/api/user_data', async (req, res) => {
         
         const user = userResult.rows[0];
 
-        // রেফারেল কাউন্ট লোড করা
         const referralCountResult = await client.query(
             'SELECT COUNT(*) FROM users WHERE referrer_id = $1',
             [telegramId]
@@ -150,9 +143,7 @@ app.get('/api/config', async (req, res) => {
 });
 
 
-/**
- * 💥 পয়েন্ট যোগ করার API
- */
+// পয়েন্ট যোগ করার API (Add Points API - Unchanged)
 app.post('/api/add_points', async (req, res) => {
     const { telegramId, points } = req.body; 
     const pointsToAdd = parseInt(points);
@@ -201,9 +192,8 @@ app.post('/api/add_points', async (req, res) => {
     }
 });
 
-// ... [Admin, Withdraw API রিমেইনিং কোড অপরিবর্তিত আছে, যা আপনি আগের উত্তর থেকে কপি করবেন] ...
 
-// উইথড্র রিকোয়েস্ট করার API
+// উইথড্র রিকোয়েস্ট করার API (Withdraw API - Unchanged)
 app.post('/api/request_withdraw', async (req, res) => {
     const { telegramId, points, account } = req.body;
     const pointsRequested = parseInt(points);
@@ -263,7 +253,7 @@ app.post('/api/request_withdraw', async (req, res) => {
 });
 
 
-// এডমিন স্ট্যাটাস চেক করার মিডলওয়্যার
+// এডমিন প্যানেল API (Admin Panel APIs - Unchanged)
 async function checkAdmin(req, res, next) {
     const telegramId = req.query.id || req.body.adminId;
 
@@ -284,8 +274,6 @@ async function checkAdmin(req, res, next) {
     }
 }
 
-
-// পেন্ডিং উইথড্র রিকোয়েস্ট লোড করার API
 app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
     try {
         const query = `
@@ -310,8 +298,6 @@ app.get('/api/admin/withdrawals', checkAdmin, async (req, res) => {
     }
 });
 
-
-// উইথড্র রিকোয়েস্টের স্ট্যাটাস আপডেট করার API
 app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
     const { requestId, action } = req.body; 
 
@@ -365,7 +351,7 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
 });
 
 
-// 💡 রুট এবং 404 হ্যান্ডলার
+// রুট এবং 404 হ্যান্ডলার
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
