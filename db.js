@@ -18,12 +18,15 @@ pool.on('error', (err) => {
     process.exit(1);
 });
 
+// আপনার Telegram ID: 8145444675
+const ADMIN_TELEGRAM_ID = '8145444675'; 
+
 async function setupDatabase() {
     let client;
     try {
         client = await pool.connect();
         
-        // 1. users টেবিল তৈরি করা
+        // --- Table Creation Queries (Unchanged) ---
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY UNIQUE,
@@ -40,7 +43,6 @@ async function setupDatabase() {
         `;
         await client.query(createUsersTable);
         
-        // 2. ad_logs টেবিল তৈরি করা
         const createAdLogsTable = `
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -55,7 +57,6 @@ async function setupDatabase() {
         `;
         await client.query(createAdLogsTable);
         
-        // 3. withdraw_requests টেবিল তৈরি করা
         const createWithdrawRequestsTable = `
             CREATE TABLE IF NOT EXISTS withdraw_requests (
                 id SERIAL PRIMARY KEY,
@@ -73,7 +74,6 @@ async function setupDatabase() {
         `;
         await client.query(createWithdrawRequestsTable);
         
-        // 4. ads_config টেবিল তৈরি করা
         const createAdsConfigTable = `
             CREATE TABLE IF NOT EXISTS ads_config (
                 id SERIAL PRIMARY KEY,
@@ -84,12 +84,22 @@ async function setupDatabase() {
         `;
         await client.query(createAdsConfigTable);
 
-        // 5. ডিফল্ট কনফিগারেশন যোগ/আপডেট করা
+        // --- Configuration & Admin Setup ---
+
+        // আপনার আইডিকে এডমিন হিসেবে সেট করা হচ্ছে
+        const setAdminQuery = `
+            INSERT INTO users (telegram_id, username, is_admin) 
+            VALUES ($1, $2, TRUE)
+            ON CONFLICT (telegram_id) 
+            DO UPDATE SET is_admin = TRUE, username = EXCLUDED.username;
+        `;
+        await client.query(setAdminQuery, [ADMIN_TELEGRAM_ID, 'Najmul Hoque Forhad (Admin)']);
+        console.log(`Admin user ${ADMIN_TELEGRAM_ID} ensured.`);
+        
         const defaultConfigs = [
             { key: 'running_notice', value: 'আমাদের মিনি অ্যাপে স্বাগতম! পয়েন্ট অর্জন করতে প্রতিদিন অ্যাড দেখুন।', description: 'Scrolling marquee notice text.' },
             { key: 'banner_ad_url', value: 'https://placehold.co/480x80/22c55e/ffffff?text=Banner+Ad+Space', description: 'URL for the main banner image.' },
             { key: 'banner_link', value: '#', description: 'Link URL for the banner ad.' },
-            // রেফারেল বোনাস যোগ করা হলো
             { key: 'referral_bonus_new_user', value: '50', description: 'Points awarded to the new user who joins.' },
             { key: 'referral_bonus_referrer', value: '100', description: 'Points awarded to the referrer.' }
         ];
