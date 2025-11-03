@@ -1,512 +1,161 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnQuick_Official MiniApp</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary-green': '#10b981',
-                        'secondary-dark': '#1f2937',
-                        'bg-dark': '#0f172a',
-                        'error-red': '#ef4444',
-                    },
-                },
-            },
-        }
-    </script>
+    <title>EarnQuick Official</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a; 
-            color: white;
-            padding: 0;
+            font-family: Arial, sans-serif;
             margin: 0;
-            user-select: none;
+            padding: 20px;
+            background-color: #212529; /* Dark background like Telegram */
+            color: #f8f9fa;
+            text-align: center;
         }
-        .card {
-            background-color: #1f2937; 
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            padding: 16px;
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
         }
-        .btn-primary {
-            transition: background-color 0.2s, transform 0.1s;
+        .header {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #28a745; /* Green color */
         }
-        .btn-primary:active {
-            transform: scale(0.98);
+        .info-box {
+            background-color: #343a40;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
-        .text-error {
-            color: #ef4444; 
+        .points-display {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ffc107; /* Yellow for points */
+            margin: 10px 0;
         }
-        .marquee-container {
-            overflow: hidden;
-            white-space: nowrap;
-            background-color: #0d9488; 
-            padding: 6px 0;
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
         }
-        .marquee-content {
-            display: inline-block;
-            animation: marquee 15s linear infinite;
-        }
-        @keyframes marquee {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+        .btn-green { background-color: #28a745; color: white; }
+        .btn-blue { background-color: #007bff; color: white; }
+        .error-message {
+            color: #dc3545;
+            background-color: #493132;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
         }
     </style>
 </head>
-<body class="min-h-screen pb-20">
+<body>
+    <div class="container">
+        <div class="header">💰 EarnQuick Official Mini App</div>
 
-    <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onclick="hideMessage()">
-        <div class="card p-6 w-full max-w-sm text-center" onclick="event.stopPropagation()">
-            <h3 id="modal-title" class="text-xl font-bold mb-3"></h3>
-            <p id="modal-body" class="text-gray-300 mb-4"></p>
-            <button onclick="hideMessage()" class="mt-2 w-full py-2 bg-primary-green rounded-lg font-semibold hover:bg-opacity-80 transition duration-150">বন্ধ করুন</button>
+        <div id="connection-error" class="error-message" style="display: none;">
+            সার্ভার সংযোগ ত্রুটি। অনুগ্রহ করে পরে আবার চেষ্টা করুন।
         </div>
-    </div>
-
-    <div id="withdraw-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onclick="toggleWithdrawModal(false)">
-        <div class="card p-6 w-full max-w-sm" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-bold mb-4 text-primary-green">পয়েন্ট উইথড্র করুন</h3>
-            
-            <label for="withdraw-points" class="block text-sm font-medium text-gray-400 mb-1">উইথড্র পয়েন্ট (ন্যূনতম 5,000)</label>
-            <input type="number" id="withdraw-points" placeholder="পয়েন্টের সংখ্যা" class="w-full p-3 rounded-lg bg-secondary-dark border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-green mb-4 text-white" value="5000" min="5000">
-
-            <label for="withdraw-account" class="block text-sm font-medium text-gray-400 mb-1">পেমেন্ট অ্যাকাউন্ট (বিকাশ/নগদ নাম্বার)</label>
-            <input type="text" id="withdraw-account" placeholder="আপনার পেমেন্ট ডিটেইলস লিখুন" class="w-full p-3 rounded-lg bg-secondary-dark border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-green mb-6 text-white">
-
-            <button id="confirm-withdraw-btn" onclick="requestWithdrawal()" class="w-full py-3 text-lg font-bold bg-primary-green rounded-xl btn-primary disabled:opacity-50">
-                রিকোয়েস্ট পাঠান
-            </button>
-            <button onclick="toggleWithdrawModal(false)" class="w-full py-2 mt-2 text-sm text-gray-400 hover:text-white transition">বাতিল</button>
-        </div>
-    </div>
-    
-    <header class="text-center">
-        <h1 class="text-2xl font-bold text-gray-100 py-3">EarnQuick_Official</h1>
-    </header>
-
-    <div id="running-notice-container" class="marquee-container text-white text-sm font-medium mb-4">
-        <p id="running-notice" class="marquee-content px-4">সার্ভার সংযোগ ত্রুটি। নোটিশ লোড করা যায়নি।</p>
-    </div>
-
-    <div id="main-app-view" class="p-4 space-y-6 max-w-lg mx-auto">
         
-        <a id="banner-link-a" href="#" target="_blank" class="block rounded-xl overflow-hidden shadow-xl">
-            <img id="banner-ad-img" src="https://placehold.co/480x80/22c55e/ffffff?text=Loading+Ad" alt="Banner Advertisement" class="w-full h-auto object-cover">
-        </a>
-        
-        <div class="card p-4">
-            <div class="flex items-center justify-between mb-4">
-                <p class="text-sm text-gray-400">ইউজার: <span id="username-display" class="font-semibold text-white">লোডিং...</span></p>
-                <div class="flex items-center space-x-3">
-                    <button id="admin-btn" onclick="switchView('admin')" class="hidden text-red-400 hover:text-red-500 transition font-bold text-sm bg-red-900/50 px-2 py-1 rounded-full">
-                        Admin
-                    </button>
-                    <button onclick="loadUserData(true)" class="text-primary-green hover:text-green-400 transition">
-                        <svg id="reload-icon" class="w-6 h-6 transform transition duration-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.836 2.582a4.99 4.99 0 00-3.328-3.328m0 0a4.99 4.99 0 00-3.328-3.328M12 21a9 9 0 00-8.23-5.26M12 3a9 9 0 00-8.23 5.26" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="text-center bg-gray-700/50 p-4 rounded-lg">
-                <p class="text-lg text-gray-300">বর্তমান পয়েন্ট</p>
-                <p id="points-display" class="text-4xl font-extrabold text-primary-green mt-1">...</p>
-            </div>
+        <div class="info-box">
+            <p>ইউজার: <span id="username-display">অফলাইন</span></p>
+            <div class="points-display"><span id="points-display">...</span> পয়েন্ট</div>
         </div>
 
-        <button id="add-points-btn" onclick="addPoints()" class="w-full py-3 text-lg font-bold bg-primary-green rounded-xl btn-primary shadow-lg shadow-green-900/50 flex items-center justify-center space-x-2 disabled:opacity-50" disabled>
-            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1v-3" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V5M17 16H7" />
-            </svg>
-            <span>অ্যাড দেখুন ও ইনকাম করুন (১০ পয়েন্ট)</span>
-        </button>
-
-        <div class="grid grid-cols-2 gap-4">
-            <div class="card text-center">
-                <p class="text-gray-300 font-semibold text-sm">আপনার রেফারেল লিংক</p>
-                <button id="copy-referral-btn" onclick="copyReferralLink()" class="text-yellow-400 text-sm font-bold mt-1 hover:text-yellow-300">
-                    🔗 লিংক কপি করুন
-                </button>
+        <button class="button btn-green" onclick="addPoints()">অ্যাড দেখুন ও ইনকাম করুন (৫০ পয়েন্ট)</button>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+            <div class="info-box" style="width: 48%;">
+                <small>রেফারেল বোনাস:</small>
+                <p>২৫০ পয়েন্ট</p>
             </div>
-            <div class="card text-center">
-                <p class="text-gray-300 font-semibold text-sm">রেফারেল সংখ্যা</p>
-                <p id="referral-count-display" class="text-primary-green text-xl font-bold mt-1">...</p>
+            <div class="info-box" style="width: 48%;">
+                <small>রেফারেল সংখ্যা:</small>
+                <p><span id="referral-count-display">...</span> জন</p>
             </div>
         </div>
         
-        <div class="card text-center p-3">
-            <p class="text-gray-300 font-semibold text-sm mb-2">ন্যূনতম উইথড্র: <span class="text-yellow-400 font-bold">৫,০০০ পয়েন্ট</span></p>
-            <button onclick="toggleWithdrawModal(true)" id="withdraw-btn" class="w-full py-3 font-bold bg-blue-500 rounded-lg hover:bg-blue-600 transition btn-primary disabled:opacity-50" disabled>
-                পয়েন্ট উইথড্র করুন
-            </button>
+        <div class="info-box">
+            <small>ন্যূনতম উইথড্র: ৫,০০০ পয়েন্ট</small>
+            <button class="button btn-blue" onclick="requestWithdraw()">পয়েন্ট উইথড্র করুন</button>
         </div>
-
-    </div>
-    
-    <div id="admin-view" class="hidden p-4 space-y-6 max-w-2xl mx-auto">
-        <div class="flex items-center justify-between card p-3">
-            <h2 class="text-2xl font-bold text-red-400">🔥 Admin Panel</h2>
-            <button onclick="switchView('main')" class="text-gray-400 hover:text-white transition">← ফিরে যান</button>
-        </div>
-        
-        <div class="card">
-            <h3 class="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Pending Withdrawals (<span id="pending-count">0</span>)</h3>
-            <div id="withdrawal-list" class="space-y-3">
-                <p id="no-withdrawals" class="text-gray-500 text-center py-4">কোনো পেন্ডিং রিকোয়েস্ট নেই।</p>
-                </div>
-            <button onclick="loadWithdrawals()" class="mt-4 w-full py-2 text-sm bg-gray-600/50 rounded-lg hover:bg-gray-600 transition">Reload Withdrawals</button>
-        </div>
-        
     </div>
 
-    
     <script>
-        // 💡 গুরুত্বপূর্ণ তথ্য: আপনার প্রদত্ত URL এবং Bot Username
-        const BASE_URL = "https://smartearnbdbot.onrender.com"; 
-        const BOT_USERNAME = "EarnQuick_Official_bot"; // 🛑 এটি আপনার বটের সঠিক ইউজারনেম
-        
-        const MIN_WITHDRAWAL = 5000;
-        const POINTS_PER_AD = 10;
-        let CURRENT_VIEW = 'main';
+        // 🛑 আপনার বটের সঠিক ইউজারনেম
+        const BOT_USERNAME = "EarnQuick_Official_bot"; 
 
-        let TELEGRAM_ID = new URLSearchParams(window.location.search).get('id');
-        let TELEGRAM_USERNAME = new URLSearchParams(window.location.search).get('username') || 'GuestUser';
-        let TELEGRAM_START_PARAM = new URLSearchParams(window.location.search).get('start');
-        let IS_ADMIN = false;
+        const webApp = window.Telegram.WebApp;
 
-        // ডামি ID, যদি Telegram ID না পাওয়া যায় (পরীক্ষার জন্য)
-        if (!TELEGRAM_ID) {
-            console.warn('Telegram ID not found. Using DUMMY ID for dev.');
-            TELEGRAM_ID = '123456789'; 
-        }
+        // ডেটা লোড করার মূল ফাংশন
+        async function loadUserData() {
+            const errorElement = document.getElementById('connection-error');
+            errorElement.style.display = 'none';
 
-        let CURRENT_POINTS = 0; 
+            const tgData = webApp.initDataUnsafe.user;
+            const urlParams = new URLSearchParams(webApp.initData);
 
-        // DOM এলিমেন্ট (সংক্ষেপিত)
-        const pointsDisplay = document.getElementById('points-display');
-        const usernameDisplay = document.getElementById('username-display');
-        const adminBtn = document.getElementById('admin-btn');
-        const mainAppView = document.getElementById('main-app-view');
-        const adminView = document.getElementById('admin-view');
-        const reloadIcon = document.getElementById('reload-icon');
-        const bannerAdImg = document.getElementById('banner-ad-img');
-        const bannerLinkA = document.getElementById('banner-link-a');
-        const runningNotice = document.getElementById('running-notice');
-        const withdrawalList = document.getElementById('withdrawal-list');
-        const pendingCount = document.getElementById('pending-count');
-        const noWithdrawals = document.getElementById('no-withdrawals');
-        const copyReferralBtn = document.getElementById('copy-referral-btn');
-
-
-        function showMessage(title, body, isError = false) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-body').textContent = body;
-            document.getElementById('modal-title').classList.toggle('text-error', isError);
-            document.getElementById('modal-title').classList.toggle('text-primary-green', !isError);
-            document.getElementById('message-modal').classList.remove('hidden');
-        }
-
-        function hideMessage() {
-            document.getElementById('message-modal').classList.add('hidden');
-        }
-
-        function switchView(view) {
-            CURRENT_VIEW = view;
-            if (view === 'admin') {
-                if (!IS_ADMIN) {
-                    showMessage("Access Denied", "আপনি অ্যাডমিন নন।", true);
-                    return;
-                }
-                mainAppView.classList.add('hidden');
-                adminView.classList.remove('hidden');
-                loadWithdrawals();
-            } else {
-                adminView.classList.add('hidden');
-                mainAppView.classList.remove('hidden');
-                loadUserData(false);
+            if (!tgData) {
+                errorElement.innerText = "Telegram ডেটা পাওয়া যায়নি। বট-এর মাধ্যমে খুলুন।";
+                errorElement.style.display = 'block';
+                return;
             }
-        }
-        
-        async function loadAppConfig() {
-            try {
-                const response = await fetch(`${BASE_URL}/api/config`);
-                const data = await response.json();
-                
-                if (data.success && data.config) {
-                    const config = data.config;
-                    runningNotice.textContent = config.running_notice || 'স্বাগতম! কোনো নোটিশ নেই।';
-                    bannerAdImg.src = config.banner_ad_url || 'https://placehold.co/480x80/6b7280/ffffff?text=Ad+Not+Configured';
-                    bannerLinkA.href = config.banner_link || '#';
-                }
-            } catch (error) {
-                console.error('Failed to load app config:', error);
-                runningNotice.textContent = 'সার্ভার সংযোগ ত্রুটি। নোটিশ লোড করা যায়নি।';
-            }
-        }
 
-        async function loadUserData(showLoading = true) {
-            if (showLoading) {
-                usernameDisplay.textContent = "লোডিং...";
-                pointsDisplay.textContent = "...";
-                reloadIcon.classList.add('animate-spin'); 
-                adminBtn.classList.add('hidden');
-            }
+            const telegramId = tgData.id;
+            const username = tgData.username || tgData.first_name;
+            const startParam = urlParams.get('start'); 
+            
+            // সার্ভার API কল
+            const apiUrl = `/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
 
             try {
-                let url = `${BASE_URL}/api/user_data?id=${TELEGRAM_ID}&username=${TELEGRAM_USERNAME}`;
-                if (TELEGRAM_START_PARAM) {
-                    url += `&start=${TELEGRAM_START_PARAM}`;
-                }
-                
-                const response = await fetch(url);
+                const response = await fetch(apiUrl);
                 const data = await response.json();
 
                 if (data.success) {
-                    CURRENT_POINTS = data.user.total_points || 0;
-                    IS_ADMIN = data.user.is_admin; 
+                    // সফল হলে স্ক্রিন আপডেট করা
+                    document.getElementById('username-display').innerText = data.user.username; 
+                    document.getElementById('points-display').innerText = data.user.total_points.toLocaleString('bn-BD'); 
+                    document.getElementById('referral-count-display').innerText = data.user.referral_count.toLocaleString('bn-BD');
                     
-                    usernameDisplay.textContent = data.user.username;
-                    pointsDisplay.textContent = CURRENT_POINTS;
-                    document.getElementById('referral-count-display').textContent = data.user.referral_count || 0;
-                    
-                    document.getElementById('add-points-btn').disabled = false;
-                    document.getElementById('withdraw-btn').disabled = (CURRENT_POINTS < MIN_WITHDRAWAL);
-                    
-                    if (IS_ADMIN) adminBtn.classList.remove('hidden');
-
-                    if (data.referralRewardGiven && data.user.referrer_id) {
-                         // শুধু একবার দেখানো হবে
-                        showMessage("রেফারেল বোনাস!", "আপনি একজন নতুন ইউজার হিসেবে সফলভাবে বোনাস পয়েন্ট পেয়েছেন!", false);
+                    if(data.referralRewardGiven) {
+                        webApp.showAlert("অভিনন্দন! আপনি রেফারেল বোনাস পেয়েছেন!");
                     }
-                    
+
                 } else {
-                    usernameDisplay.textContent = "অফলাইন";
-                    pointsDisplay.textContent = "ERROR";
-                    pointsDisplay.classList.add('text-error');
-                    showMessage("ডেটা লোড ত্রুটি", data.message || "সার্ভারের সাথে সংযোগ করা যায়নি।", true);
+                    errorElement.innerText = data.message || "ইউজার ডেটা লোড করতে ব্যর্থ।";
+                    errorElement.style.display = 'block';
                 }
-
+                
             } catch (error) {
-                console.error('Fetch error during user data load:', error);
-                usernameDisplay.textContent = "অফলাইন";
-                pointsDisplay.textContent = "ERROR";
-                pointsDisplay.classList.add('text-error');
-                showMessage("সংযোগ ত্রুটি", "সার্ভার বা ইন্টারনেটের সংযোগ পরীক্ষা করুন।", true);
-            } finally {
-                reloadIcon.classList.remove('animate-spin'); 
+                console.error("Data loading failed:", error);
+                errorElement.innerText = "সার্ভার সংযোগ ত্রুটি। আপনার সার্ভার বা ইন্টারনেট পরীক্ষা করুন।";
+                errorElement.style.display = 'block';
             }
         }
 
-        async function addPoints() {
-            const addPointsBtn = document.getElementById('add-points-btn');
-            addPointsBtn.disabled = true;
-            addPointsBtn.innerHTML = '<span class="animate-pulse">পয়েন্ট যোগ হচ্ছে...</span>';
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/add_points`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId: TELEGRAM_ID, points: Number(POINTS_PER_AD) }),
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    CURRENT_POINTS = data.newPoints;
-                    pointsDisplay.textContent = CURRENT_POINTS;
-                    document.getElementById('withdraw-btn').disabled = (CURRENT_POINTS < MIN_WITHDRAWAL);
-                    showMessage("সফল!", `অভিনন্দন! আপনি ${POINTS_PER_AD} পয়েন্ট অর্জন করেছেন।`, false);
-                } else {
-                    showMessage("পয়েন্ট যোগ ত্রুটি", data.message || "পয়েন্ট যোগ করতে সার্ভার ত্রুটি।", true);
-                }
-
-            } catch (error) {
-                console.error('Add points fetch error:', error);
-                showMessage("সংযোগ ত্রুটি", "পয়েন্ট যোগ করতে সার্ভার অফলাইন।", true);
-            } finally {
-                addPointsBtn.disabled = false;
-                addPointsBtn.innerHTML = `<svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1v-3" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V5M17 16H7" />
-                                        </svg>
-                                        <span>অ্যাড দেখুন ও ইনকাম করুন (${POINTS_PER_AD} পয়েন্ট)</span>`;
-            }
+        // পয়েন্ট যোগ করার ডামি ফাংশন (আপনাকে এর API কল লজিক পরে লিখতে হবে)
+        function addPoints() {
+            webApp.showAlert("অ্যাড দেখার লজিক এখানে যুক্ত হবে।");
         }
         
-        function copyReferralLink() {
-            const referralLink = `https://t.me/${BOT_USERNAME}?start=${TELEGRAM_ID}`;
-            
-            navigator.clipboard.writeText(referralLink).then(() => {
-                const originalText = copyReferralBtn.textContent;
-                copyReferralBtn.textContent = '✅ লিংক কপি হয়েছে!';
-                setTimeout(() => {
-                    copyReferralBtn.textContent = originalText;
-                }, 1500);
-            }).catch(err => {
-                showMessage("কপি ত্রুটি", "আপনার ডিভাইস স্বয়ংক্রিয় কপি সমর্থন করছে না। লিংকটি ম্যানুয়ালি কপি করুন: " + referralLink, true);
-            });
+        // উইথড্র করার ডামি ফাংশন (আপনাকে এর API কল লজিক পরে লিখতে হবে)
+        function requestWithdraw() {
+            webApp.showAlert("উইথড্র করার ফর্ম এবং লজিক এখানে যুক্ত হবে।");
         }
         
-        function toggleWithdrawModal(show) {
-            const modal = document.getElementById('withdraw-modal');
-            if (show) {
-                if (CURRENT_POINTS < MIN_WITHDRAWAL) {
-                    showMessage("উইথড্র অসম্ভব", `উইথড্র করতে আপনার ন্যূনতম ${MIN_WITHDRAWAL} পয়েন্ট প্রয়োজন।`, true);
-                    return;
-                }
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-        
-        async function requestWithdrawal() {
-            const points = parseInt(document.getElementById('withdraw-points').value);
-            const account = document.getElementById('withdraw-account').value.trim();
-
-            if (points < MIN_WITHDRAWAL || isNaN(points) || account === '') {
-                showMessage("ইনপুট ত্রুটি", "উইথড্র পয়েন্টের সংখ্যা অবশ্যই ৫,০০০ বা তার বেশি হতে হবে এবং অ্যাকাউন্ট ডিটেইলস প্রয়োজন।", true);
-                return;
-            }
-
-            if (points > CURRENT_POINTS) {
-                 showMessage("পয়েন্ট কম", "আপনার অ্যাকাউন্টে পর্যাপ্ত পয়েন্ট নেই।", true);
-                 return;
-            }
-            
-            const confirmWithdrawBtn = document.getElementById('confirm-withdraw-btn');
-            confirmWithdrawBtn.disabled = true;
-            confirmWithdrawBtn.innerHTML = '<span class="animate-pulse">প্রসেস হচ্ছে...</span>';
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/request_withdraw`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        telegramId: TELEGRAM_ID, 
-                        points: points,
-                        account: account
-                    }),
-                });
-
-                const data = await response.json();
-                document.getElementById('withdraw-modal').classList.add('hidden');
-
-                if (data.success) {
-                    CURRENT_POINTS = data.newPoints;
-                    pointsDisplay.textContent = CURRENT_POINTS;
-                    document.getElementById('withdraw-btn').disabled = (CURRENT_POINTS < MIN_WITHDRAWAL);
-                    showMessage("রিকোয়েস্ট সফল!", `আপনার ${points} পয়েন্টের উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে।`, false);
-                } else {
-                    showMessage("রিকোয়েস্ট ত্রুটি", data.message || "উইথড্র রিকোয়েস্ট জমা দেওয়া সম্ভব হয়নি।", true);
-                }
-
-            } catch (error) {
-                console.error('Withdrawal fetch error:', error);
-                document.getElementById('withdraw-modal').classList.add('hidden');
-                showMessage("সংযোগ ত্রুটি", "উইথড্র রিকোয়েস্ট পাঠাতে সার্ভার অফলাইন।", true);
-            } finally {
-                confirmWithdrawBtn.disabled = false;
-                confirmWithdrawBtn.textContent = 'রিকোয়েস্ট পাঠান';
-            }
-        }
-        
-        // Admin Panel Functions (Unchanged)
-        async function loadWithdrawals() {
-            withdrawalList.innerHTML = '<p class="text-center text-gray-500 py-4"><span class="animate-spin mr-2">🔄</span> লোড হচ্ছে...</p>';
-            noWithdrawals.classList.add('hidden');
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/admin/withdrawals?id=${TELEGRAM_ID}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    renderWithdrawals(data.withdrawals);
-                } else {
-                    if (response.status === 403) switchView('main');
-                    showMessage("Admin Error", data.message || "উইথড্রয়াল লোড করা যায়নি। অ্যাডমিন স্ট্যাটাস চেক করুন।", true);
-                    withdrawalList.innerHTML = '<p class="text-center text-error py-4">❌ লোড ত্রুটি।</p>';
-                }
-            } catch (error) {
-                console.error('Admin fetch error:', error);
-                showMessage("সংযোগ ত্রুটি", "অ্যাডমিন ডেটা লোড করতে সার্ভার অফলাইন।", true);
-                withdrawalList.innerHTML = '<p class="text-center text-error py-4">❌ সার্ভার অফলাইন।</p>';
-            }
-        }
-        
-        function renderWithdrawals(withdrawals) {
-            withdrawalList.innerHTML = '';
-            pendingCount.textContent = withdrawals.length;
-
-            if (withdrawals.length === 0) {
-                noWithdrawals.classList.remove('hidden');
-                return;
-            }
-            noWithdrawals.classList.add('hidden');
-
-            withdrawals.forEach(req => {
-                const details = JSON.parse(req.payment_details);
-                const item = document.createElement('div');
-                item.className = 'bg-gray-700/50 p-3 rounded-lg border-l-4 border-yellow-500 space-y-2';
-                item.innerHTML = `
-                    <p class="text-sm text-gray-400">Request ID: <span class="font-mono text-xs text-yellow-400">${req.id}</span></p>
-                    <p class="text-lg font-bold text-white">${req.points_requested.toLocaleString()} Points</p>
-                    <p class="text-sm text-gray-300">User: <span class="font-semibold text-primary-green">${req.username} (${req.user_telegram_id})</span></p>
-                    <p class="text-sm text-gray-300">Account: <span class="font-semibold">${details.account}</span></p>
-                    <div class="flex space-x-3 mt-3">
-                        <button onclick="handleAdminAction(${req.id}, 'Approve', this)" class="flex-1 py-2 text-sm bg-green-600 rounded-lg hover:bg-green-700 transition font-semibold">Approve</button>
-                        <button onclick="handleAdminAction(${req.id}, 'Reject', this)" class="flex-1 py-2 text-sm bg-red-600 rounded-lg hover:bg-red-700 transition font-semibold">Reject</button>
-                    </div>
-                `;
-                withdrawalList.appendChild(item);
-            });
-        }
-        
-        async function handleAdminAction(requestId, action, button) {
-            button.disabled = true;
-            button.textContent = 'Processing...';
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/admin/update_withdrawal`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        adminId: TELEGRAM_ID, 
-                        requestId: requestId,
-                        action: action
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showMessage("সফল!", `রিকোয়েস্ট ${requestId} সফলভাবে ${action} করা হয়েছে।`, false);
-                    loadWithdrawals(); 
-                    loadUserData(false); 
-                } else {
-                    showMessage("ত্রুটি", data.message || `অ্যাকশন ব্যর্থ: ${action}`, true);
-                }
-
-            } catch (error) {
-                console.error('Admin action error:', error);
-                showMessage("সংযোগ ত্রুটি", `অ্যাডমিন অ্যাকশন করতে সার্ভার অফলাইন।`, true);
-            } finally {
-            }
-        }
-
-
-        window.onload = () => {
-            loadAppConfig(); 
-            loadUserData(true); 
-        };
+        // টেলিগ্রাম অ্যাপ লোড হলে
+        webApp.ready(() => {
+            webApp.expand(); // ফুল স্ক্রিন
+            loadUserData();  // ডেটা লোড করা শুরু করুন
+        });
     </script>
 </body>
 </html>
