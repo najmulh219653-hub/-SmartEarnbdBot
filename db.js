@@ -22,7 +22,7 @@ async function setupDatabase() {
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        // ... (অন্যান্য টেবিল তৈরির কোড) ...
+        // ... (অন্যান্য টেবিল) ...
         await client.query(`
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -66,7 +66,7 @@ async function setupDatabase() {
         }
         
         // এডমিন ইউজার নিশ্চিত করা
-        const adminTelegramId = process.env.ADMIN_TELEGRAM_ID || '8145444675'; // 🛑 আপনার আইডি এখানে ব্যবহার করুন
+        const adminTelegramId = process.env.ADMIN_TELEGRAM_ID || 'YOUR_ADMIN_ID'; 
         await client.query(
             `INSERT INTO users (telegram_id, username, is_admin) 
              VALUES ($1, 'AdminUser', TRUE)
