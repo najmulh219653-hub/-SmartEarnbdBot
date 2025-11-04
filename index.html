@@ -5,158 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EarnQuick Official Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <style>
-        /* কালার থিম এবং স্টাইল */
+        /* (এখানে সমস্ত স্টাইল কোড থাকবে) */
         :root {
-            --primary-color: #28a745; /* Action Green */
-            --secondary-color: #007bff; /* Button Blue */
-            --background-color: #1a1a1a; /* Professional Dark Background */
-            --card-color: #2c2c2c; /* Card Background */
+            --primary-color: #28a745; 
+            --secondary-color: #007bff; 
+            --background-color: #1a1a1a; 
+            --card-color: #2c2c2c; 
             --text-color: #ffffff;
-            --highlight-color: #ffc107; /* Points Yellow */
-            --danger-color: #dc3545;
+            --highlight-color: #ffc107; 
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding-bottom: 55px;
+            padding-bottom: 55px; 
             background-color: var(--background-color);
             color: var(--text-color);
-            overscroll-behavior-y: none;
         }
-        .container {
-            padding: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .header {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-color);
-            padding: 10px 0;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        
-        /* চলমান হেডলাইন (Marquee) */
-        .marquee-container {
-            background-color: #333333;
-            color: var(--highlight-color);
-            padding: 8px;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        }
-        .marquee {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 20s linear infinite;
-        }
-        @keyframes marquee {
-            0%   { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-        
-        /* কার্ড ডিজাইন */
-        .card {
-            background-color: var(--card-color);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .points-box {
-            background-color: #404040;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-        .points-display {
-            font-size: 44px;
-            font-weight: bold;
-            color: var(--highlight-color);
-            margin: 5px 0;
-        }
-        .button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-action { 
-            background-color: var(--primary-color); 
-            color: var(--text-color); 
-        }
-        .btn-secondary { 
-            background-color: var(--secondary-color); 
-            color: var(--text-color); 
-        }
-        .stats-grid {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .stat-item {
-            flex-grow: 1;
-            padding: 10px;
-            background-color: #383838;
-            border-radius: 8px;
-            font-size: 14px;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-        }
-        .stat-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--highlight-color);
-            margin-top: 5px;
-        }
-        
-        /* Fixed Footer Menu */
-        .footer-menu {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 55px;
-            background-color: #111;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-        }
-        .menu-item {
-            color: #888;
-            text-align: center;
-            font-size: 11px;
-            cursor: pointer;
-            padding: 5px 0;
-            width: 25%;
-            transition: color 0.2s;
-        }
-        .menu-item i {
-            font-size: 22px;
-            display: block;
-            margin-bottom: 2px;
-        }
-        .menu-item.active {
-            color: var(--primary-color);
-        }
-        /* Icon Dummies (ফন্ট আইকনের পরিবর্তে ব্যবহৃত হচ্ছে) */
-        .fa-home:before { content: "🏠"; }
-        .fa-link:before { content: "🔗"; }
-        .fa-money:before { content: "💸"; }
-        .fa-user-cog:before { content: "⚙️"; }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        .header { font-size: 24px; font-weight: 700; color: var(--primary-color); padding: 10px 0; margin-bottom: 10px; text-align: center; }
+        .marquee-container { background-color: #333333; color: var(--highlight-color); padding: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; margin-bottom: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); }
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0%   { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        .card { background-color: var(--card-color); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); margin-bottom: 15px; text-align: center; }
+        .points-box { background-color: #404040; padding: 15px; border-radius: 10px; margin: 10px 0; }
+        .points-display { font-size: 44px; font-weight: bold; color: var(--highlight-color); margin: 5px 0; }
+        .button { width: 100%; padding: 14px; margin-top: 10px; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
+        .btn-action { background-color: var(--primary-color); color: var(--text-color); }
+        .btn-secondary { background-color: var(--secondary-color); color: var(--text-color); }
+        .stats-grid { display: flex; justify-content: space-between; gap: 10px; }
+        .stat-item { flex-grow: 1; padding: 10px; background-color: #383838; border-radius: 8px; font-size: 14px; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); }
+        .stat-value { font-size: 20px; font-weight: bold; color: var(--highlight-color); margin-top: 5px; }
+        .footer-menu { position: fixed; bottom: 0; left: 0; right: 0; height: 55px; background-color: #111; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.7); z-index: 1000; }
+        .menu-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; padding: 5px 0; width: 25%; transition: color 0.2s; }
+        .menu-item.active { color: var(--primary-color); }
+        .fa-home:before { content: "🏠"; } .fa-link:before { content: "🔗"; } .fa-money:before { content: "💸"; } .fa-user-cog:before { content: "⚙️"; }
     </style>
 </head>
 <body>
@@ -191,7 +75,7 @@
                 </div>
                 <div class="stat-item">
                     <small>ন্যূনতম উইথড্র</small>
-                    <div class="stat-value">৫,০০০ pt</div>
+                    <div class="stat-value"><span id="min-withdraw-display">৫,০০০ pt</span></div>
                 </div>
             </div>
             
@@ -218,23 +102,16 @@
     </div>
 
     <div class="footer-menu">
-        <div class="menu-item active" onclick="webApp.showAlert('হোম পেইজ!')">
-            <i class="fa-home"></i> হোম
-        </div>
-        <div class="menu-item" onclick="webApp.showAlert('রেফার করুন লজিক!')">
-            <i class="fa-link"></i> রেফার
-        </div>
-        <div class="menu-item" onclick="requestWithdraw()">
-            <i class="fa-money"></i> উইথড্র
-        </div>
-        <div class="menu-item" id="admin-menu-item" style="display:none;" onclick="webApp.showAlert('এডমিন প্যানেল!')">
-            <i class="fa-user-cog"></i> এডমিন
-        </div>
+        <div class="menu-item active" onclick="webApp.showAlert('হোম পেইজ!')"><i class="fa-home"></i> হোম</div>
+        <div class="menu-item" onclick="webApp.showAlert('রেফার করুন লজিক!')"><i class="fa-link"></i> রেফার</div>
+        <div class="menu-item" onclick="requestWithdraw()"><i class="fa-money"></i> উইথড্র</div>
+        <div class="menu-item" id="admin-menu-item" style="display:none;" onclick="webApp.showAlert('এডমিন প্যানেল!')"><i class="fa-user-cog"></i> এডমিন</div>
     </div>
 
 
     <script>
         const webApp = window.Telegram.WebApp;
+        let MIN_WITHDRAW_POINTS = 5000; // ডিফল্ট
 
         async function loadUserData() {
             const tgData = webApp.initDataUnsafe.user;
@@ -266,16 +143,19 @@
                     document.getElementById('points-display').innerText = data.user.total_points.toLocaleString('bn-BD'); 
                     document.getElementById('referral-count-display').innerText = data.user.referral_count.toLocaleString('bn-BD');
                     
-                    const adminMenuItem = document.getElementById('admin-menu-item');
                     if (data.user.is_admin) {
-                         adminMenuItem.style.display = 'flex'; 
+                         document.getElementById('admin-menu-item').style.display = 'flex'; 
                     } else {
-                         adminMenuItem.style.display = 'none'; 
+                         document.getElementById('admin-menu-item').style.display = 'none'; 
                     }
                     
-                    if(data.referralRewardGiven) {
-                        webApp.showAlert("অভিনন্দন! রেফারেল বোনাস পেয়েছেন!");
-                    }
+                    // কনফিগারেশন লোড করো (ঐচ্ছিক: সার্ভার থেকে কনফিগারেশন আনলে)
+                    // const configResponse = await fetch('/api/config');
+                    // const configData = await configResponse.json();
+                    // if (configData.success) {
+                    //    MIN_WITHDRAW_POINTS = parseInt(configData.config.min_withdraw_points) || 5000;
+                    //    document.getElementById('min-withdraw-display').innerText = MIN_WITHDRAW_POINTS.toLocaleString('bn-BD') + ' pt';
+                    // }
 
                 } else {
                     webApp.showAlert("ডেটা লোড করতে ব্যর্থ: " + (data.message || "সার্ভার এরর।"));
@@ -284,6 +164,7 @@
                 
             } catch (error) {
                 console.error("Data loading failed:", error);
+                // 🛑 ডেটাবেস সংযোগে সমস্যা হলে এখানে 'অফলাইন' দেখাবে
                 webApp.showAlert("🛑 সংযোগ ত্রুটি। সার্ভার বা ইন্টারনেট পরীক্ষা করুন।");
                 document.getElementById('username-display').innerText = 'অফলাইন';
                 document.getElementById('points-display').innerText = 'ERROR';
@@ -292,8 +173,7 @@
 
         // Monetag SDK ইন্টিগ্রেশন (ডামি হ্যান্ডলার)
         const adHandler = () => {
-            // 🛑 এখানে আপনার আসল Monetag SDK call (যেমন: createAdHandler('YOUR_ZONE_ID')) আসবে
-            // আপনার দেওয়া লজিকের জন্য, একটি প্রমিস ব্যবহার করে 3 সেকেন্ডের ডেমো অ্যাড চালানো হলো:
+            // 🛑 আসল Monetag SDK call এখানে (যেমন: createAdHandler('YOUR_ZONE_ID')())
             return new Promise((resolve, reject) => {
                  webApp.showPopup({
                      title: 'বিজ্ঞাপন চলছে...',
@@ -338,7 +218,7 @@
 
                         if (data.success) {
                             webApp.showAlert(`🎉 সফল! আপনি ${POINTS_TO_ADD} পয়েন্ট পেয়েছেন!`);
-                            loadUserData(); // ব্যালেন্স আপডেট
+                            loadUserData();
                         } else {
                             webApp.showAlert("পয়েন্ট যোগ করতে ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
                         }
@@ -351,10 +231,56 @@
                 });
         }
         
-        // উইথড্র ফাংশন (ফর্ম এবং লজিক যুক্ত করতে হবে)
-        function requestWithdraw() {
-            webApp.showAlert("উইথড্র করার ফর্ম এবং লজিক এখানে যুক্ত হবে।");
-            // 🛑 এখানে আপনার উইথড্র ফর্ম এবং /api/request_withdraw কল করার লজিক লিখতে হবে।
+        // উইথড্র ফাংশন (চূড়ান্ত ফর্ম এবং API লজিক)
+        async function requestWithdraw() {
+            if (!webApp.initDataUnsafe.user || !webApp.initDataUnsafe.user.id) {
+                webApp.showAlert("ইউজার ডেটা লোড হয়নি। অ্যাপ পুনরায় চালু করুন।");
+                return;
+            }
+
+            const telegramId = webApp.initDataUnsafe.user.id;
+            
+            webApp.showPopup({
+                title: '💸 উইথড্র রিকোয়েস্ট',
+                message: `ন্যূনতম উইথড্র: ${MIN_WITHDRAW_POINTS} পয়েন্ট। আপনার পেমেন্ট ডিটেইলস (বিকাশ/নগদ নম্বর) এবং পয়েন্ট লিখুন।`,
+                buttons: [
+                    { id: 'submit', text: 'রিকোয়েস্ট জমা দিন', type: 'default' },
+                    { id: 'cancel', text: 'বাতিল করুন', type: 'destructive' }
+                ]
+            }, async (buttonId) => {
+                if (buttonId === 'submit') {
+                    const points = prompt("আপনি কত পয়েন্ট উইথড্র করতে চান (যেমন: 5000)?");
+                    const account = prompt("আপনার পেমেন্ট অ্যাকাউন্ট নম্বরটি দিন (যেমন: 01xxxxxxxxxx):");
+
+                    const pointsRequested = parseInt(points);
+
+                    if (!points || !account || isNaN(pointsRequested) || pointsRequested < MIN_WITHDRAW_POINTS) {
+                        webApp.showAlert(`❌ ভুল ইনপুট। ন্যূনতম ${MIN_WITHDRAW_POINTS} পয়েন্ট প্রয়োজন।`);
+                        return;
+                    }
+                    
+                    // API কল
+                    try {
+                        const response = await fetch('/api/request_withdraw', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ telegramId, points: pointsRequested, account })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            webApp.showAlert(`✅ সফল! ${pointsRequested} পয়েন্টের উইথড্র রিকোয়েস্ট জমা দেওয়া হয়েছে।`);
+                            loadUserData(); // ব্যালেন্স আপডেট
+                        } else {
+                            webApp.showAlert("❌ উইথড্র ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
+                        }
+                    } catch (error) {
+                        console.error("Withdraw API call failed:", error);
+                        webApp.showAlert("🛑 সংযোগ ত্রুটি। উইথড্র জমা দেওয়া যায়নি।");
+                    }
+                }
+            });
         }
         
         // টেলিগ্রাম অ্যাপ লোড হলে
@@ -364,4 +290,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
