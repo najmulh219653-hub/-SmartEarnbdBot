@@ -2,9 +2,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
+// নিশ্চিত করুন যে db.js ফাইলটি একই ডিরেক্টরিতে আছে
 const db = require('./db'); 
 
 const app = express();
+// Render-এর জন্য Port ব্যবহার
 const PORT = process.env.PORT || 10000; 
 
 // Render-এর জন্য প্রক্সি ট্রাস্ট সক্ষম করা
@@ -12,27 +14,31 @@ app.set('trust proxy', true);
 
 app.use(bodyParser.json());
 
-// 💡 পরিবর্তন ১: 'public' ফোল্ডার বাদ দেওয়া হয়েছে, index.html মেইন ডিরেক্টরিতে আছে।
+// 💡 সমাধান: static ফাইল লোড করার জন্য, যেখানে index.html আছে 
+// যেহেতু index.html main directory তে আছে, তাই শুধু __dirname ব্যবহার করা হলো।
 app.use(express.static(path.join(__dirname))); 
 
-// Port scan timeout সমস্যা সমাধানের জন্য: ডাটাবেস সংযোগের আগেই সার্ভার চালু করুন।
-// যদি ডাটাবেস সংযোগ ব্যর্থ হয়, তবুও সার্ভার অন্তত পোর্ট এ চালু থাকবে।
+// সার্ভার এবং ডাটাবেস সেটআপ লজিক
+// Port scan timeout ত্রুটি এড়াতে ডাটাবেস সংযোগের আগেই সার্ভার চালু করার জন্য লজিকটিকে সরল করা হলো।
+// ডাটাবেস সংযোগ চেষ্টা করবে, ব্যর্থ হলেও সার্ভার চালু থাকবে।
 db.setupDatabase().then(() => {
     console.log('Database setup complete and successful.');
 }).catch(err => {
+    // ডাটাবেস সংযোগ ব্যর্থ হলেও Render যেন Port scan timeout না দেখায়, তাই সার্ভার চালু থাকবে।
     console.error('Warning: Database setup failed. Server will start but API calls may fail:', err);
 });
 
-// সরাসরি সার্ভার শুরু করুন
+// সরাসরি সার্ভার শুরু করুন (Port scan timeout ত্রুটির সমাধান)
 app.listen(PORT, () => {
     console.log(`Server is running successfully on port ${PORT}`);
 });
 
 
 // =======================================================
-// API Endpoints (Referral Logic Included)
+// API Endpoints
 // =======================================================
 
+// ইউজার ডেটা লোড এবং রেজিস্ট্রেশন (রেফারেল সহ)
 app.get('/api/user_data', async (req, res) => {
     const telegramId = req.query.id; 
     const username = req.query.username || 'GuestUser'; 
@@ -51,6 +57,7 @@ app.get('/api/user_data', async (req, res) => {
         let referralRewardGiven = false;
 
         if (existingUserResult.rows.length === 0) {
+            // নতুন ইউজার রেজিস্ট্রেশন এবং রেফারেল লজিক
             let referrerId = null;
             let referrerExists = false;
 
@@ -69,6 +76,7 @@ app.get('/api/user_data', async (req, res) => {
             );
 
             if (referrerExists) {
+                // রেফারেল বোনাস লজিক
                 const configResult = await client.query('SELECT config_key, config_value FROM ads_config WHERE config_key IN ($1, $2)', ['referral_bonus_new_user', 'referral_bonus_referrer']);
                 const config = configResult.rows.reduce((acc, row) => {
                     acc[row.config_key] = parseInt(row.config_value) || 0;
@@ -98,6 +106,7 @@ app.get('/api/user_data', async (req, res) => {
             );
         }
 
+        // ইউজার ডেটা লোড
         const userResult = await client.query(
             'SELECT telegram_id, username, total_points, referrer_id, is_admin FROM users WHERE telegram_id = $1',
             [telegramId]
@@ -105,6 +114,7 @@ app.get('/api/user_data', async (req, res) => {
         
         const user = userResult.rows[0];
 
+        // রেফারেল কাউন্ট
         const referralCountResult = await client.query(
             'SELECT COUNT(*) FROM users WHERE referrer_id = $1',
             [telegramId]
@@ -359,6 +369,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// অন্য কোনো রুট বা 404 হলেও index.html দেখাবে, যদি API কল না হয়
 app.use((req, res, next) => {
     if (req.originalUrl.startsWith('/api')) {
         next(); 
