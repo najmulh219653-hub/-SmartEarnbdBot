@@ -1,4 +1,4 @@
-// server.js (চূড়ান্ত সংশোধিত কোড - ফাইল পাথ ঠিক করা হয়েছে)
+// server.js (চূড়ান্ত সংশোধিত কোড)
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -15,15 +15,17 @@ app.use(bodyParser.json());
 // 💡 পরিবর্তন ১: 'public' ফোল্ডার বাদ দেওয়া হয়েছে, index.html মেইন ডিরেক্টরিতে আছে।
 app.use(express.static(path.join(__dirname))); 
 
+// Port scan timeout সমস্যা সমাধানের জন্য: ডাটাবেস সংযোগের আগেই সার্ভার চালু করুন।
+// যদি ডাটাবেস সংযোগ ব্যর্থ হয়, তবুও সার্ভার অন্তত পোর্ট এ চালু থাকবে।
 db.setupDatabase().then(() => {
-    // এখানে সার্ভার শুরু হওয়ার আগে ডাটাবেস সংযোগ সফল হয়েছে নিশ্চিত হবে (যদি DATABASE_URL সেট করা থাকে)
-    app.listen(PORT, () => {
-        console.log(`Server is running successfully on port ${PORT}`);
-    });
+    console.log('Database setup complete and successful.');
 }).catch(err => {
-    console.error('FATAL: Failed to start server due to database setup error:', err);
-    // যদি ডাটাবেস সংযোগ না হয়, সার্ভার বন্ধ হবে। (Render এ DATABASE_URL না থাকার কারণে হয়)
-    process.exit(1); 
+    console.error('Warning: Database setup failed. Server will start but API calls may fail:', err);
+});
+
+// সরাসরি সার্ভার শুরু করুন
+app.listen(PORT, () => {
+    console.log(`Server is running successfully on port ${PORT}`);
 });
 
 
@@ -44,7 +46,7 @@ app.get('/api/user_data', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const existingUserResult = await client.query('SELECT telegram_id, referrer_id FROM users WHERE telegram_id = $1', [telegramId]);
+        const existingUserResult = await client.query('SELECT telegram_id, referrer_id, is_admin FROM users WHERE telegram_id = $1', [telegramId]);
         
         let referralRewardGiven = false;
 
@@ -89,6 +91,7 @@ app.get('/api/user_data', async (req, res) => {
                 referralRewardGiven = true;
             }
         } else {
+             // বিদ্যমান ব্যবহারকারীর জন্য ইউজারনেম আপডেট করা
              await client.query(
                 'UPDATE users SET username = $1 WHERE telegram_id = $2',
                 [username, telegramId]
@@ -351,7 +354,7 @@ app.post('/api/admin/update_withdrawal', checkAdmin, async (req, res) => {
 
 
 // রুট এবং 404 হ্যান্ডলার
-// 💡 পরিবর্তন ২: 'public' ফোল্ডার বাদ দেওয়া হয়েছে
+// 💡 index.html লোড করার জন্য
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -360,7 +363,6 @@ app.use((req, res, next) => {
     if (req.originalUrl.startsWith('/api')) {
         next(); 
     } else {
-        // 💡 পরিবর্তন ৩: 'public' ফোল্ডার বাদ দেওয়া হয়েছে
         res.sendFile(path.join(__dirname, 'index.html'));
     }
 });
