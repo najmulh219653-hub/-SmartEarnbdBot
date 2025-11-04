@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <title>EarnQuick Official Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
+    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
     
     <style>
         /* (এখানে সমস্ত স্টাইল কোড থাকবে) */
@@ -16,12 +19,20 @@
             --text-color: #ffffff;
             --highlight-color: #ffc107; 
         }
+        
+        /* 🟢 Zoom Fix 2: <html> এর জন্য */
+        html {
+            -ms-content-zooming: none;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding-bottom: 55px; 
             background-color: var(--background-color);
             color: var(--text-color);
+            overscroll-behavior-y: none; /* বাউন্স বন্ধের জন্য */
+            touch-action: pan-x pan-y; /* কিছু জুম আচরণ বন্ধের জন্য */
         }
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
         .header { font-size: 24px; font-weight: 700; color: var(--primary-color); padding: 10px 0; margin-bottom: 10px; text-align: center; }
@@ -41,6 +52,13 @@
         .menu-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; padding: 5px 0; width: 25%; transition: color 0.2s; }
         .menu-item.active { color: var(--primary-color); }
         .fa-home:before { content: "🏠"; } .fa-link:before { content: "🔗"; } .fa-money:before { content: "💸"; } .fa-user-cog:before { content: "⚙️"; }
+        
+        /* 🟢 Zoom Fix 3: ডাবল ট্যাপ জুম বন্ধের জন্য (ঐচ্ছিক) */
+        @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+            body {
+                -webkit-text-size-adjust: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -92,13 +110,11 @@
                     'params' : {}
                 };
             </script>
-            <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
         </div>
         
         <div class="card" style="padding: 5px; text-align: center; background-color: #1a1a1a;">
              <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
         </div>
-
     </div>
 
     <div class="footer-menu">
@@ -110,8 +126,11 @@
 
 
     <script>
+        // 🟢 API URL: Render-এ হোস্ট করলে এটি খালি রাখা সবচেয়ে নিরাপদ
+        const BASE_API_URL = ""; 
+
         const webApp = window.Telegram.WebApp;
-        let MIN_WITHDRAW_POINTS = 5000; // ডিফল্ট
+        let MIN_WITHDRAW_POINTS = 5000; 
 
         async function loadUserData() {
             const tgData = webApp.initDataUnsafe.user;
@@ -127,7 +146,8 @@
             const username = tgData.username || tgData.first_name || 'Guest';
             const startParam = urlParams.get('start'); 
             
-            const apiUrl = `/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
+            // API URL-এ BASE_API_URL যোগ করা হয়েছে
+            const apiUrl = `${BASE_API_URL}/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
 
             try {
                 const response = await fetch(apiUrl);
@@ -148,15 +168,6 @@
                     } else {
                          document.getElementById('admin-menu-item').style.display = 'none'; 
                     }
-                    
-                    // কনফিগারেশন লোড করো (ঐচ্ছিক: সার্ভার থেকে কনফিগারেশন আনলে)
-                    // const configResponse = await fetch('/api/config');
-                    // const configData = await configResponse.json();
-                    // if (configData.success) {
-                    //    MIN_WITHDRAW_POINTS = parseInt(configData.config.min_withdraw_points) || 5000;
-                    //    document.getElementById('min-withdraw-display').innerText = MIN_WITHDRAW_POINTS.toLocaleString('bn-BD') + ' pt';
-                    // }
-
                 } else {
                     webApp.showAlert("ডেটা লোড করতে ব্যর্থ: " + (data.message || "সার্ভার এরর।"));
                     document.getElementById('points-display').innerText = 'ERROR';
@@ -164,16 +175,13 @@
                 
             } catch (error) {
                 console.error("Data loading failed:", error);
-                // 🛑 ডেটাবেস সংযোগে সমস্যা হলে এখানে 'অফলাইন' দেখাবে
                 webApp.showAlert("🛑 সংযোগ ত্রুটি। সার্ভার বা ইন্টারনেট পরীক্ষা করুন।");
                 document.getElementById('username-display').innerText = 'অফলাইন';
                 document.getElementById('points-display').innerText = 'ERROR';
             }
         }
 
-        // Monetag SDK ইন্টিগ্রেশন (ডামি হ্যান্ডলার)
         const adHandler = () => {
-            // 🛑 আসল Monetag SDK call এখানে (যেমন: createAdHandler('YOUR_ZONE_ID')())
             return new Promise((resolve, reject) => {
                  webApp.showPopup({
                      title: 'বিজ্ঞাপন চলছে...',
@@ -192,7 +200,6 @@
             });
         };
         
-        // অ্যাড পয়েন্ট ফাংশন
         function addPoints() {
             const POINTS_TO_ADD = 50; 
             
@@ -208,7 +215,7 @@
                     webApp.showAlert(`অভিনন্দন! ${POINTS_TO_ADD} পয়েন্ট যুক্ত হচ্ছে...`);
 
                     try {
-                        const response = await fetch('/api/add_points', {
+                        const response = await fetch(`${BASE_API_URL}/api/add_points`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ telegramId, points: POINTS_TO_ADD })
@@ -231,7 +238,6 @@
                 });
         }
         
-        // উইথড্র ফাংশন (চূড়ান্ত ফর্ম এবং API লজিক)
         async function requestWithdraw() {
             if (!webApp.initDataUnsafe.user || !webApp.initDataUnsafe.user.id) {
                 webApp.showAlert("ইউজার ডেটা লোড হয়নি। অ্যাপ পুনরায় চালু করুন।");
@@ -259,9 +265,8 @@
                         return;
                     }
                     
-                    // API কল
                     try {
-                        const response = await fetch('/api/request_withdraw', {
+                        const response = await fetch(`${BASE_API_URL}/api/request_withdraw`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ telegramId, points: pointsRequested, account })
@@ -271,19 +276,17 @@
 
                         if (data.success) {
                             webApp.showAlert(`✅ সফল! ${pointsRequested} পয়েন্টের উইথড্র রিকোয়েস্ট জমা দেওয়া হয়েছে।`);
-                            loadUserData(); // ব্যালেন্স আপডেট
+                            loadUserData(); 
                         } else {
                             webApp.showAlert("❌ উইথড্র ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
                         }
                     } catch (error) {
-                        console.error("Withdraw API call failed:", error);
                         webApp.showAlert("🛑 সংযোগ ত্রুটি। উইথড্র জমা দেওয়া যায়নি।");
                     }
                 }
             });
         }
         
-        // টেলিগ্রাম অ্যাপ লোড হলে
         webApp.ready(() => {
             webApp.expand(); 
             loadUserData();
