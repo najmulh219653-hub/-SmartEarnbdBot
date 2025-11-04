@@ -1,296 +1,159 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>EarnQuick Official Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+// server.js (চূড়ান্ত এবং সংশোধিত)
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
+const db = require('./db');
+
+const app = express();
+const PORT = process.env.PORT || 10000; 
+
+app.set('trust proxy', true); 
+app.use(bodyParser.json());
+
+// 🟢 ফিক্স: express.static ব্যবহার করে রুট ডিরেক্টরি থেকে স্ট্যাটিক ফাইল লোড করা
+app.use(express.static(path.join(__dirname))); 
+
+// সার্ভার স্টার্ট করুন (ডাটাবেস প্রস্তুত হওয়ার পরে)
+db.setupDatabase().then(() => {
+    console.log('Database setup complete and successful.');
     
-    <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
+    // 🟢 ফিক্স: ডাটাবেস সেটআপ সফল হওয়ার পরই সার্ভার চালু হবে
+    app.listen(PORT, () => {
+        console.log(`Server is running successfully on port ${PORT}`);
+    });
+
+}).catch(err => {
+    // ডাটাবেস সেটআপ ব্যর্থ হলে (গুরুত্বপূর্ণ ত্রুটি)
+    console.error('CRITICAL: Database setup failed. Server will start but API calls will fail:', err);
     
-    <style>
-        /* (এখানে সমস্ত স্টাইল কোড থাকবে) */
-        :root {
-            --primary-color: #28a745; 
-            --secondary-color: #007bff; 
-            --background-color: #1a1a1a; 
-            --card-color: #2c2c2c; 
-            --text-color: #ffffff;
-            --highlight-color: #ffc107; 
-        }
-        
-        /* 🟢 Zoom Fix 2: <html> এর জন্য */
-        html {
-            -ms-content-zooming: none;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding-bottom: 55px; 
-            background-color: var(--background-color);
-            color: var(--text-color);
-            overscroll-behavior-y: none; /* বাউন্স বন্ধের জন্য */
-            touch-action: pan-x pan-y; /* কিছু জুম আচরণ বন্ধের জন্য */
-        }
-        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
-        .header { font-size: 24px; font-weight: 700; color: var(--primary-color); padding: 10px 0; margin-bottom: 10px; text-align: center; }
-        .marquee-container { background-color: #333333; color: var(--highlight-color); padding: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; margin-bottom: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); }
-        .marquee { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
-        @keyframes marquee { 0%   { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-        .card { background-color: var(--card-color); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); margin-bottom: 15px; text-align: center; }
-        .points-box { background-color: #404040; padding: 15px; border-radius: 10px; margin: 10px 0; }
-        .points-display { font-size: 44px; font-weight: bold; color: var(--highlight-color); margin: 5px 0; }
-        .button { width: 100%; padding: 14px; margin-top: 10px; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
-        .btn-action { background-color: var(--primary-color); color: var(--text-color); }
-        .btn-secondary { background-color: var(--secondary-color); color: var(--text-color); }
-        .stats-grid { display: flex; justify-content: space-between; gap: 10px; }
-        .stat-item { flex-grow: 1; padding: 10px; background-color: #383838; border-radius: 8px; font-size: 14px; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); }
-        .stat-value { font-size: 20px; font-weight: bold; color: var(--highlight-color); margin-top: 5px; }
-        .footer-menu { position: fixed; bottom: 0; left: 0; right: 0; height: 55px; background-color: #111; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.7); z-index: 1000; }
-        .menu-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; padding: 5px 0; width: 25%; transition: color 0.2s; }
-        .menu-item.active { color: var(--primary-color); }
-        .fa-home:before { content: "🏠"; } .fa-link:before { content: "🔗"; } .fa-money:before { content: "💸"; } .fa-user-cog:before { content: "⚙️"; }
-        
-        /* 🟢 Zoom Fix 3: ডাবল ট্যাপ জুম বন্ধের জন্য (ঐচ্ছিক) */
-        @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
-            body {
-                -webkit-text-size-adjust: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="marquee-container">
-            <span class="marquee" id="running-notice">
-                📢 দ্রুত ইনকামের সুযোগ! প্রতিদিন অ্যাড দেখুন এবং আপনার পয়েন্ট উইথড্র করুন! 🚀
-            </span>
-        </div>
-
-        <div class="header">EarnQuick Official</div>
-
-        <div class="card">
-            <p style="margin: 0; color: #aaa;">ইউজার: <span id="username-display">লোডিং...</span></p>
-            <div class="points-box">
-                <p style="margin: 0; font-size: 16px;">আপনার বর্তমান ব্যালেন্স</p>
-                <div class="points-display"><span id="points-display">...</span></div>
-            </div>
-            <button class="button btn-action" onclick="addPoints()">🎬 অ্যাড দেখুন ও ইনকাম করুন (৫০ পয়েন্ট)</button>
-        </div>
-
-        <div class="card">
-            <h3>রেফারেল ও উইথড্র তথ্য</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <small>রেফারেল বোনাস</small>
-                    <div class="stat-value">২৫০ pt</div>
-                </div>
-                <div class="stat-item">
-                    <small>রেফারেল সংখ্যা</small>
-                    <div class="stat-value"><span id="referral-count-display">...</span></div>
-                </div>
-                <div class="stat-item">
-                    <small>ন্যূনতম উইথড্র</small>
-                    <div class="stat-value"><span id="min-withdraw-display">৫,০০০ pt</span></div>
-                </div>
-            </div>
-            
-            <button class="button btn-secondary" onclick="requestWithdraw()">💸 পয়েন্ট উইথড্র করুন</button>
-        </div>
-
-        <div class="card" style="padding: 5px; text-align: center; background-color: #1a1a1a;">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : '00605022df81b880d400151bfc7c2185',
-                    'format' : 'iframe',
-                    'height' : 90,
-                    'width' : 728,
-                    'params' : {}
-                };
-            </script>
-        </div>
-        
-        <div class="card" style="padding: 5px; text-align: center; background-color: #1a1a1a;">
-             <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
-        </div>
-    </div>
-
-    <div class="footer-menu">
-        <div class="menu-item active" onclick="webApp.showAlert('হোম পেইজ!')"><i class="fa-home"></i> হোম</div>
-        <div class="menu-item" onclick="webApp.showAlert('রেফার করুন লজিক!')"><i class="fa-link"></i> রেফার</div>
-        <div class="menu-item" onclick="requestWithdraw()"><i class="fa-money"></i> উইথড্র</div>
-        <div class="menu-item" id="admin-menu-item" style="display:none;" onclick="webApp.showAlert('এডমিন প্যানেল!')"><i class="fa-user-cog"></i> এডমিন</div>
-    </div>
+    // API কল ব্যর্থ হলেও সার্ভারকে চালু করুন যাতে অন্তত HTML ফাইল লোড হয়
+    app.listen(PORT, () => {
+        console.error(`Server running on port ${PORT} with CRITICAL DB error.`);
+    });
+});
 
 
-    <script>
-        // 🟢 API URL: Render-এ হোস্ট করলে এটি খালি রাখা সবচেয়ে নিরাপদ
-        const BASE_API_URL = ""; 
+// =======================================================
+// API Endpoints (এগুলো অপরিবর্তিত থাকবে)
+// =======================================================
 
-        const webApp = window.Telegram.WebApp;
-        let MIN_WITHDRAW_POINTS = 5000; 
+// 1. ইউজার ডেটা লোড এবং রেজিস্ট্রেশন
+app.get('/api/user_data', async (req, res) => {
+    const telegramId = req.query.id; 
+    const username = req.query.username || 'GuestUser'; 
+    const referrerIdFromUrl = req.query.start; 
+    
+    // (বাকি API কোড... এই অংশটি পূর্বে নিশ্চিত করা হয়েছে)
+    if (!telegramId) { return res.status(400).json({ success: false, message: 'Telegram ID is required.' }); }
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+        const existingUserResult = await client.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
+        let referralRewardGiven = false;
 
-        async function loadUserData() {
-            const tgData = webApp.initDataUnsafe.user;
-            const urlParams = new URLSearchParams(webApp.initData);
+        if (existingUserResult.rows.length === 0) {
+            let referrerId = null;
+            let referrerExists = false;
 
-            if (!tgData) {
-                document.getElementById('username-display').innerText = 'ERROR';
-                webApp.showAlert("Telegram ডেটা নেই। বট-এর মাধ্যমে খুলুন।");
-                return;
-            }
-
-            const telegramId = tgData.id;
-            const username = tgData.username || tgData.first_name || 'Guest';
-            const startParam = urlParams.get('start'); 
-            
-            // API URL-এ BASE_API_URL যোগ করা হয়েছে
-            const apiUrl = `${BASE_API_URL}/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
-
-            try {
-                const response = await fetch(apiUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`সার্ভার রেসপন্স ত্রুটি: ${response.status}`);
+            if (referrerIdFromUrl && referrerIdFromUrl !== telegramId) {
+                const referrerCheck = await client.query('SELECT telegram_id FROM users WHERE telegram_id = $1', [referrerIdFromUrl]);
+                if (referrerCheck.rows.length > 0) {
+                    referrerId = referrerIdFromUrl;
+                    referrerExists = true;
                 }
-                
-                const data = await response.json();
-
-                if (data.success) {
-                    document.getElementById('username-display').innerText = data.user.username; 
-                    document.getElementById('points-display').innerText = data.user.total_points.toLocaleString('bn-BD'); 
-                    document.getElementById('referral-count-display').innerText = data.user.referral_count.toLocaleString('bn-BD');
-                    
-                    if (data.user.is_admin) {
-                         document.getElementById('admin-menu-item').style.display = 'flex'; 
-                    } else {
-                         document.getElementById('admin-menu-item').style.display = 'none'; 
-                    }
-                } else {
-                    webApp.showAlert("ডেটা লোড করতে ব্যর্থ: " + (data.message || "সার্ভার এরর।"));
-                    document.getElementById('points-display').innerText = 'ERROR';
-                }
-                
-            } catch (error) {
-                console.error("Data loading failed:", error);
-                webApp.showAlert("🛑 সংযোগ ত্রুটি। সার্ভার বা ইন্টারনেট পরীক্ষা করুন।");
-                document.getElementById('username-display').innerText = 'অফলাইন';
-                document.getElementById('points-display').innerText = 'ERROR';
             }
-        }
-
-        const adHandler = () => {
-            return new Promise((resolve, reject) => {
-                 webApp.showPopup({
-                     title: 'বিজ্ঞাপন চলছে...',
-                     message: 'অ্যাড দেখার পরে আপনি পয়েন্ট পাবেন। (ডেমো: 3 সেকেন্ড অপেক্ষা করুন)',
-                     buttons: [{ text: 'অ্যাড বাতিল করুন', type: 'destructive' }]
-                 }, (buttonId) => {
-                     if (buttonId) {
-                         reject(new Error("Ad skipped or failed."));
-                     }
-                 });
-
-                 setTimeout(() => {
-                     webApp.closePopup();
-                     resolve(); 
-                 }, 3000); 
-            });
-        };
-        
-        function addPoints() {
-            const POINTS_TO_ADD = 50; 
             
-            if (!webApp.initDataUnsafe.user || !webApp.initDataUnsafe.user.id) {
-                webApp.showAlert("ইউজার ডেটা লোড হয়নি। অ্যাপ পুনরায় চালু করুন।");
-                return;
+            await client.query(
+                `INSERT INTO users (telegram_id, username, referrer_id) VALUES ($1, $2, $3)`,
+                [telegramId, username, referrerId]
+            );
+            // ... (Referral Bonus Logic) ...
+            if (referrerExists) {
+                const configResult = await client.query('SELECT config_key, config_value FROM ads_config WHERE config_key IN ($1, $2)', ['referral_bonus_new_user', 'referral_bonus_referrer']);
+                const config = configResult.rows.reduce((acc, row) => { acc[row.config_key] = parseInt(row.config_value) || 0; return acc; }, {});
+                const newUserBonus = config.referral_bonus_new_user || 50;
+                const referrerBonus = config.referral_bonus_referrer || 100;
+                await client.query('UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2', [newUserBonus, telegramId]);
+                await client.query('UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2', [referrerBonus, referrerId]);
+                referralRewardGiven = true;
             }
-
-            const telegramId = webApp.initDataUnsafe.user.id;
-            
-            adHandler()
-                .then(async () => {
-                    webApp.showAlert(`অভিনন্দন! ${POINTS_TO_ADD} পয়েন্ট যুক্ত হচ্ছে...`);
-
-                    try {
-                        const response = await fetch(`${BASE_API_URL}/api/add_points`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ telegramId, points: POINTS_TO_ADD })
-                        });
-                        
-                        const data = await response.json();
-
-                        if (data.success) {
-                            webApp.showAlert(`🎉 সফল! আপনি ${POINTS_TO_ADD} পয়েন্ট পেয়েছেন!`);
-                            loadUserData();
-                        } else {
-                            webApp.showAlert("পয়েন্ট যোগ করতে ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
-                        }
-                    } catch (error) {
-                        webApp.showAlert("🛑 সংযোগ ত্রুটি। পয়েন্ট যোগ হয়নি।");
-                    }
-                })
-                .catch((error) => {
-                    webApp.showAlert("অ্যাড দেখা সফল হয়নি। কোনো পয়েন্ট যোগ হয়নি।");
-                });
+        } else {
+             await client.query('UPDATE users SET username = $1 WHERE telegram_id = $2', [username, telegramId]);
         }
-        
-        async function requestWithdraw() {
-            if (!webApp.initDataUnsafe.user || !webApp.initDataUnsafe.user.id) {
-                webApp.showAlert("ইউজার ডেটা লোড হয়নি। অ্যাপ পুনরায় চালু করুন।");
-                return;
-            }
+        // ... (Fetch final data) ...
+        const userResult = await client.query('SELECT telegram_id, username, total_points, referrer_id, is_admin FROM users WHERE telegram_id = $1', [telegramId]);
+        const user = userResult.rows[0];
+        const referralCountResult = await client.query('SELECT COUNT(*) FROM users WHERE referrer_id = $1', [telegramId]);
+        user.referral_count = parseInt(referralCountResult.rows[0].count) || 0;
 
-            const telegramId = webApp.initDataUnsafe.user.id;
-            
-            webApp.showPopup({
-                title: '💸 উইথড্র রিকোয়েস্ট',
-                message: `ন্যূনতম উইথড্র: ${MIN_WITHDRAW_POINTS} পয়েন্ট। আপনার পেমেন্ট ডিটেইলস (বিকাশ/নগদ নম্বর) এবং পয়েন্ট লিখুন।`,
-                buttons: [
-                    { id: 'submit', text: 'রিকোয়েস্ট জমা দিন', type: 'default' },
-                    { id: 'cancel', text: 'বাতিল করুন', type: 'destructive' }
-                ]
-            }, async (buttonId) => {
-                if (buttonId === 'submit') {
-                    const points = prompt("আপনি কত পয়েন্ট উইথড্র করতে চান (যেমন: 5000)?");
-                    const account = prompt("আপনার পেমেন্ট অ্যাকাউন্ট নম্বরটি দিন (যেমন: 01xxxxxxxxxx):");
+        await client.query('COMMIT');
+        res.json({ success: true, user, referralRewardGiven });
 
-                    const pointsRequested = parseInt(points);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error fetching user data/registration:', error.stack);
+        res.status(500).json({ success: false, message: 'Server error during user data load.' });
+    } finally {
+        client.release();
+    }
+});
 
-                    if (!points || !account || isNaN(pointsRequested) || pointsRequested < MIN_WITHDRAW_POINTS) {
-                        webApp.showAlert(`❌ ভুল ইনপুট। ন্যূনতম ${MIN_WITHDRAW_POINTS} পয়েন্ট প্রয়োজন।`);
-                        return;
-                    }
-                    
-                    try {
-                        const response = await fetch(`${BASE_API_URL}/api/request_withdraw`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ telegramId, points: pointsRequested, account })
-                        });
 
-                        const data = await response.json();
+// 2. পয়েন্ট যোগ করার API
+app.post('/api/add_points', async (req, res) => {
+    const { telegramId, points } = req.body; 
+    const pointsToAdd = parseInt(points);
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN'); 
+        const updateQuery = `UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2 RETURNING total_points`;
+        const updateResult = await client.query(updateQuery, [pointsToAdd, telegramId]);
+        const logQuery = `INSERT INTO ad_logs (user_telegram_id, points_awarded) VALUES ($1, $2)`;
+        await client.query(logQuery, [telegramId, pointsToAdd]); 
+        await client.query('COMMIT'); 
+        res.json({ success: true, newPoints: updateResult.rows[0].total_points });
+    } catch (error) {
+        await client.query('ROLLBACK'); 
+        res.status(500).json({ success: false, message: 'Server error while adding points.' });
+    } finally {
+        client.release();
+    }
+});
 
-                        if (data.success) {
-                            webApp.showAlert(`✅ সফল! ${pointsRequested} পয়েন্টের উইথড্র রিকোয়েস্ট জমা দেওয়া হয়েছে।`);
-                            loadUserData(); 
-                        } else {
-                            webApp.showAlert("❌ উইথড্র ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
-                        }
-                    } catch (error) {
-                        webApp.showAlert("🛑 সংযোগ ত্রুটি। উইথড্র জমা দেওয়া যায়নি।");
-                    }
-                }
-            });
-        }
-        
-        webApp.ready(() => {
-            webApp.expand(); 
-            loadUserData();
-        });
-    </script>
-</body>
-</html>
+// 3. উইথড্র রিকোয়েস্ট করার API
+app.post('/api/request_withdraw', async (req, res) => {
+    const { telegramId, points, account } = req.body;
+    const pointsRequested = parseInt(points);
+    const MIN_WITHDRAW_POINTS = 5000; 
+    
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userCheckResult = await client.query('SELECT total_points FROM users WHERE telegram_id = $1 FOR UPDATE', [telegramId]);
+        const updatePointsResult = await client.query('UPDATE users SET total_points = total_points - $1 WHERE telegram_id = $2 RETURNING total_points', [pointsRequested, telegramId]);
+        const logWithdrawalQuery = `INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_details) VALUES ($1, $2, $3)`;
+        await client.query(logWithdrawalQuery, [telegramId, pointsRequested, JSON.stringify({ account })]);
+        await client.query('COMMIT');
+        res.json({ success: true, newPoints: updatePointsResult.rows[0].total_points });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, message: 'Server error while processing withdrawal.' });
+    } finally {
+        client.release();
+    }
+});
+
+
+// 🟢 রুট হ্যান্ডলার index.html-কে সরাসরি সার্ভ করবে
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use((req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+        next(); 
+    } else {
+        res.sendFile(path.join(__dirname, 'index.html'));
+    }
+});
