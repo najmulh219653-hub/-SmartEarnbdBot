@@ -20,7 +20,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding-bottom: 55px; /* Fixed menu এর জন্য স্পেস */
+            padding-bottom: 55px;
             background-color: var(--background-color);
             color: var(--text-color);
             overscroll-behavior-y: none;
@@ -54,7 +54,7 @@
         .marquee {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 20s linear infinite; /* স্পিড কমানো হলো */
+            animation: marquee 20s linear infinite;
         }
         @keyframes marquee {
             0%   { transform: translate(0, 0); }
@@ -71,7 +71,7 @@
             text-align: center;
         }
         .points-box {
-            background-color: #404040; /* Slightly lighter for focus */
+            background-color: #404040;
             padding: 15px;
             border-radius: 10px;
             margin: 10px 0;
@@ -141,7 +141,7 @@
             font-size: 11px;
             cursor: pointer;
             padding: 5px 0;
-            width: 25%; /* চার বাটন এর জন্য ২৫% */
+            width: 25%;
             transition: color 0.2s;
         }
         .menu-item i {
@@ -173,7 +173,7 @@
             <p style="margin: 0; color: #aaa;">ইউজার: <span id="username-display">লোডিং...</span></p>
             <div class="points-box">
                 <p style="margin: 0; font-size: 16px;">আপনার বর্তমান ব্যালেন্স</p>
-                <div class="points-display"><span id="points-display">০</span></div>
+                <div class="points-display"><span id="points-display">...</span></div>
             </div>
             <button class="button btn-action" onclick="addPoints()">🎬 অ্যাড দেখুন ও ইনকাম করুন (৫০ পয়েন্ট)</button>
         </div>
@@ -187,7 +187,7 @@
                 </div>
                 <div class="stat-item">
                     <small>রেফারেল সংখ্যা</small>
-                    <div class="stat-value"><span id="referral-count-display">০</span></div>
+                    <div class="stat-value"><span id="referral-count-display">...</span></div>
                 </div>
                 <div class="stat-item">
                     <small>ন্যূনতম উইথড্র</small>
@@ -234,13 +234,9 @@
 
 
     <script>
-        const BOT_USERNAME = "EarnQuick_Official_bot"; 
         const webApp = window.Telegram.WebApp;
-        let IS_ADMIN = false;
 
         async function loadUserData() {
-            // ত্রুটির জন্য কোনো ডিফল্ট UI element না রেখে সরাসরি webApp.showAlert() ব্যবহার করা হলো।
-            
             const tgData = webApp.initDataUnsafe.user;
             const urlParams = new URLSearchParams(webApp.initData);
 
@@ -254,13 +250,11 @@
             const username = tgData.username || tgData.first_name || 'Guest';
             const startParam = urlParams.get('start'); 
             
-            // সার্ভার API কল
             const apiUrl = `/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
 
             try {
                 const response = await fetch(apiUrl);
                 
-                // যদি সার্ভার 200 রেসপন্স না দেয়
                 if (!response.ok) {
                     throw new Error(`সার্ভার রেসপন্স ত্রুটি: ${response.status}`);
                 }
@@ -268,18 +262,15 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // সফল হলে স্ক্রিন আপডেট করা
                     document.getElementById('username-display').innerText = data.user.username; 
                     document.getElementById('points-display').innerText = data.user.total_points.toLocaleString('bn-BD'); 
                     document.getElementById('referral-count-display').innerText = data.user.referral_count.toLocaleString('bn-BD');
                     
-                    // 🛑 এডমিন বাটন নিয়ন্ত্রণ
-                    IS_ADMIN = data.user.is_admin;
                     const adminMenuItem = document.getElementById('admin-menu-item');
-                    if (IS_ADMIN) {
-                         adminMenuItem.style.display = 'flex'; // এডমিন হলে দেখাও
+                    if (data.user.is_admin) {
+                         adminMenuItem.style.display = 'flex'; 
                     } else {
-                         adminMenuItem.style.display = 'none'; // না হলে লুকিয়ে রাখো
+                         adminMenuItem.style.display = 'none'; 
                     }
                     
                     if(data.referralRewardGiven) {
@@ -288,33 +279,89 @@
 
                 } else {
                     webApp.showAlert("ডেটা লোড করতে ব্যর্থ: " + (data.message || "সার্ভার এরর।"));
-                    document.getElementById('username-display').innerText = 'ERROR';
+                    document.getElementById('points-display').innerText = 'ERROR';
                 }
                 
             } catch (error) {
                 console.error("Data loading failed:", error);
                 webApp.showAlert("🛑 সংযোগ ত্রুটি। সার্ভার বা ইন্টারনেট পরীক্ষা করুন।");
-                document.getElementById('username-display').innerText = 'ERROR';
+                document.getElementById('username-display').innerText = 'অফলাইন';
+                document.getElementById('points-display').innerText = 'ERROR';
             }
         }
 
+        // Monetag SDK ইন্টিগ্রেশন (ডামি হ্যান্ডলার)
+        const adHandler = () => {
+            // 🛑 এখানে আপনার আসল Monetag SDK call (যেমন: createAdHandler('YOUR_ZONE_ID')) আসবে
+            // আপনার দেওয়া লজিকের জন্য, একটি প্রমিস ব্যবহার করে 3 সেকেন্ডের ডেমো অ্যাড চালানো হলো:
+            return new Promise((resolve, reject) => {
+                 webApp.showPopup({
+                     title: 'বিজ্ঞাপন চলছে...',
+                     message: 'অ্যাড দেখার পরে আপনি পয়েন্ট পাবেন। (ডেমো: 3 সেকেন্ড অপেক্ষা করুন)',
+                     buttons: [{ text: 'অ্যাড বাতিল করুন', type: 'destructive' }]
+                 }, (buttonId) => {
+                     if (buttonId) {
+                         reject(new Error("Ad skipped or failed."));
+                     }
+                 });
+
+                 setTimeout(() => {
+                     webApp.closePopup();
+                     resolve(); 
+                 }, 3000); 
+            });
+        };
+        
         // অ্যাড পয়েন্ট ফাংশন
         function addPoints() {
-            // এই ফাংশনে অ্যাড দেখার পরে /api/add_points API কল করার লজিক লিখতে হবে।
-            webApp.showAlert("অ্যাড দেখার লজিক এখানে যুক্ত হবে।");
+            const POINTS_TO_ADD = 50; 
+            
+            if (!webApp.initDataUnsafe.user || !webApp.initDataUnsafe.user.id) {
+                webApp.showAlert("ইউজার ডেটা লোড হয়নি। অ্যাপ পুনরায় চালু করুন।");
+                return;
+            }
+
+            const telegramId = webApp.initDataUnsafe.user.id;
+            
+            adHandler()
+                .then(async () => {
+                    webApp.showAlert(`অভিনন্দন! ${POINTS_TO_ADD} পয়েন্ট যুক্ত হচ্ছে...`);
+
+                    try {
+                        const response = await fetch('/api/add_points', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ telegramId, points: POINTS_TO_ADD })
+                        });
+                        
+                        const data = await response.json();
+
+                        if (data.success) {
+                            webApp.showAlert(`🎉 সফল! আপনি ${POINTS_TO_ADD} পয়েন্ট পেয়েছেন!`);
+                            loadUserData(); // ব্যালেন্স আপডেট
+                        } else {
+                            webApp.showAlert("পয়েন্ট যোগ করতে ব্যর্থ: " + (data.message || "সার্ভার ত্রুটি।"));
+                        }
+                    } catch (error) {
+                        webApp.showAlert("🛑 সংযোগ ত্রুটি। পয়েন্ট যোগ হয়নি।");
+                    }
+                })
+                .catch((error) => {
+                    webApp.showAlert("অ্যাড দেখা সফল হয়নি। কোনো পয়েন্ট যোগ হয়নি।");
+                });
         }
         
-        // উইথড্র ফাংশন
+        // উইথড্র ফাংশন (ফর্ম এবং লজিক যুক্ত করতে হবে)
         function requestWithdraw() {
-            // এই ফাংশনে উইথড্র ফর্ম দেখিয়ে /api/request_withdraw API কল করার লজিক লিখতে হবে।
             webApp.showAlert("উইথড্র করার ফর্ম এবং লজিক এখানে যুক্ত হবে।");
+            // 🛑 এখানে আপনার উইথড্র ফর্ম এবং /api/request_withdraw কল করার লজিক লিখতে হবে।
         }
         
         // টেলিগ্রাম অ্যাপ লোড হলে
         webApp.ready(() => {
-            webApp.expand(); // ফুল স্ক্রিন
-            loadUserData();  // ডেটা লোড করা শুরু
+            webApp.expand(); 
+            loadUserData();
         });
     </script>
 </body>
-</html>
+    </html>
