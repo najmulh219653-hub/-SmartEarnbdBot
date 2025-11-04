@@ -1,4 +1,4 @@
-// db.js
+// db.js (চূড়ান্ত এবং ত্রুটিমুক্ত)
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -12,6 +12,8 @@ async function setupDatabase() {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        
+        // 1. users টেবিল তৈরি (IF NOT EXISTS থাকায় দ্বিতীয়বার ত্রুটি হবে না)
         await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id VARCHAR(20) PRIMARY KEY,
@@ -22,7 +24,7 @@ async function setupDatabase() {
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        // ... (অন্যান্য টেবিল) ...
+        // 2. অন্যান্য টেবিল তৈরি
         await client.query(`
             CREATE TABLE IF NOT EXISTS ad_logs (
                 id SERIAL PRIMARY KEY,
@@ -49,7 +51,7 @@ async function setupDatabase() {
             );
         `);
 
-        // ডিফল্ট কনফিগারেশন
+        // 3. ডিফল্ট কনফিগারেশন যুক্ত করা
         const defaultConfigs = [
             { key: 'min_withdraw_points', value: '5000' },
             { key: 'points_per_ad', value: '50' },
@@ -65,15 +67,21 @@ async function setupDatabase() {
             );
         }
         
-        // এডমিন ইউজার নিশ্চিত করা
-        const adminTelegramId = process.env.ADMIN_TELEGRAM_ID || 'YOUR_ADMIN_ID'; 
-        await client.query(
-            `INSERT INTO users (telegram_id, username, is_admin) 
-             VALUES ($1, 'AdminUser', TRUE)
-             ON CONFLICT (telegram_id) 
-             DO UPDATE SET is_admin = TRUE, username = EXCLUDED.username`,
-            [adminTelegramId]
-        );
+        // 4. এডমিন ইউজার নিশ্চিত করা (ADMIN_TELEGRAM_ID এর সুরক্ষা সহ)
+        const adminTelegramId = process.env.ADMIN_TELEGRAM_ID; 
+
+        if (adminTelegramId && /^\d+$/.test(adminTelegramId)) {
+            await client.query(
+                `INSERT INTO users (telegram_id, username, is_admin) 
+                 VALUES ($1, 'AdminUser', TRUE)
+                 ON CONFLICT (telegram_id) 
+                 DO UPDATE SET is_admin = TRUE, username = EXCLUDED.username`,
+                [adminTelegramId]
+            );
+        } else {
+             // এই সতর্কতাটি লগে দেখা যাবে যদি ADMIN_TELEGRAM_ID ঠিক না থাকে
+             console.warn("ADMIN_TELEGRAM_ID is missing or invalid. Admin user was not set.");
+        }
 
         await client.query('COMMIT');
     } catch (error) {
