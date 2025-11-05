@@ -1,159 +1,103 @@
-// server.js (চূড়ান্ত এবং সংশোধিত)
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const db = require('./db');
-
 const app = express();
-const PORT = process.env.PORT || 10000; 
+const PORT = process.env.PORT || 10000;
 
-app.set('trust proxy', true); 
+// Middleware
 app.use(bodyParser.json());
 
-// 🟢 ফিক্স: express.static ব্যবহার করে রুট ডিরেক্টরি থেকে স্ট্যাটিক ফাইল লোড করা
-app.use(express.static(path.join(__dirname))); 
+// 🟢 চূড়ান্ত ফিক্স: রুট ডিরেক্টরি থেকে index.html সার্ভ করার জন্য
+app.use(express.static(path.join(__dirname)));
 
-// সার্ভার স্টার্ট করুন (ডাটাবেস প্রস্তুত হওয়ার পরে)
-db.setupDatabase().then(() => {
-    console.log('Database setup complete and successful.');
-    
-    // 🟢 ফিক্স: ডাটাবেস সেটআপ সফল হওয়ার পরই সার্ভার চালু হবে
-    app.listen(PORT, () => {
-        console.log(`Server is running successfully on port ${PORT}`);
-    });
-
-}).catch(err => {
-    // ডাটাবেস সেটআপ ব্যর্থ হলে (গুরুত্বপূর্ণ ত্রুটি)
-    console.error('CRITICAL: Database setup failed. Server will start but API calls will fail:', err);
-    
-    // API কল ব্যর্থ হলেও সার্ভারকে চালু করুন যাতে অন্তত HTML ফাইল লোড হয়
-    app.listen(PORT, () => {
-        console.error(`Server running on port ${PORT} with CRITICAL DB error.`);
-    });
-});
-
-
-// =======================================================
-// API Endpoints (এগুলো অপরিবর্তিত থাকবে)
-// =======================================================
-
-// 1. ইউজার ডেটা লোড এবং রেজিস্ট্রেশন
+// API Route for fetching user data and handling referrals
 app.get('/api/user_data', async (req, res) => {
-    const telegramId = req.query.id; 
-    const username = req.query.username || 'GuestUser'; 
-    const referrerIdFromUrl = req.query.start; 
-    
-    // (বাকি API কোড... এই অংশটি পূর্বে নিশ্চিত করা হয়েছে)
-    if (!telegramId) { return res.status(400).json({ success: false, message: 'Telegram ID is required.' }); }
-    const client = await db.pool.connect();
+    const { id, username, start } = req.query;
+
+    if (!id) {
+        return res.status(400).json({ success: false, message: 'Telegram ID is required.' });
+    }
+
     try {
-        await client.query('BEGIN');
-        const existingUserResult = await client.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
-        let referralRewardGiven = false;
+        const user = await db.findOrCreateUser(id, username, start);
+        const referralCount = await db.getReferralCount(id);
 
-        if (existingUserResult.rows.length === 0) {
-            let referrerId = null;
-            let referrerExists = false;
+        // Check if the user is the Admin (using environment variable ADMIN_TELEGRAM_ID)
+        const isAdmin = (process.env.ADMIN_TELEGRAM_ID === id.toString());
 
-            if (referrerIdFromUrl && referrerIdFromUrl !== telegramId) {
-                const referrerCheck = await client.query('SELECT telegram_id FROM users WHERE telegram_id = $1', [referrerIdFromUrl]);
-                if (referrerCheck.rows.length > 0) {
-                    referrerId = referrerIdFromUrl;
-                    referrerExists = true;
-                }
+        res.json({
+            success: true,
+            user: {
+                ...user,
+                referral_count: referralCount,
+                is_admin: isAdmin
             }
-            
-            await client.query(
-                `INSERT INTO users (telegram_id, username, referrer_id) VALUES ($1, $2, $3)`,
-                [telegramId, username, referrerId]
-            );
-            // ... (Referral Bonus Logic) ...
-            if (referrerExists) {
-                const configResult = await client.query('SELECT config_key, config_value FROM ads_config WHERE config_key IN ($1, $2)', ['referral_bonus_new_user', 'referral_bonus_referrer']);
-                const config = configResult.rows.reduce((acc, row) => { acc[row.config_key] = parseInt(row.config_value) || 0; return acc; }, {});
-                const newUserBonus = config.referral_bonus_new_user || 50;
-                const referrerBonus = config.referral_bonus_referrer || 100;
-                await client.query('UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2', [newUserBonus, telegramId]);
-                await client.query('UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2', [referrerBonus, referrerId]);
-                referralRewardGiven = true;
-            }
-        } else {
-             await client.query('UPDATE users SET username = $1 WHERE telegram_id = $2', [username, telegramId]);
-        }
-        // ... (Fetch final data) ...
-        const userResult = await client.query('SELECT telegram_id, username, total_points, referrer_id, is_admin FROM users WHERE telegram_id = $1', [telegramId]);
-        const user = userResult.rows[0];
-        const referralCountResult = await client.query('SELECT COUNT(*) FROM users WHERE referrer_id = $1', [telegramId]);
-        user.referral_count = parseInt(referralCountResult.rows[0].count) || 0;
-
-        await client.query('COMMIT');
-        res.json({ success: true, user, referralRewardGiven });
+        });
 
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error fetching user data/registration:', error.stack);
-        res.status(500).json({ success: false, message: 'Server error during user data load.' });
-    } finally {
-        client.release();
+        console.error('API Error: get /api/user_data:', error);
+        res.status(500).json({ success: false, message: 'Server error while fetching user data.' });
     }
 });
 
-
-// 2. পয়েন্ট যোগ করার API
+// API Route for adding points (after viewing an ad)
 app.post('/api/add_points', async (req, res) => {
-    const { telegramId, points } = req.body; 
-    const pointsToAdd = parseInt(points);
-    const client = await db.pool.connect();
+    const { telegramId, points } = req.body;
+
+    if (!telegramId || typeof points !== 'number' || points <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid input.' });
+    }
+
     try {
-        await client.query('BEGIN'); 
-        const updateQuery = `UPDATE users SET total_points = total_points + $1 WHERE telegram_id = $2 RETURNING total_points`;
-        const updateResult = await client.query(updateQuery, [pointsToAdd, telegramId]);
-        const logQuery = `INSERT INTO ad_logs (user_telegram_id, points_awarded) VALUES ($1, $2)`;
-        await client.query(logQuery, [telegramId, pointsToAdd]); 
-        await client.query('COMMIT'); 
-        res.json({ success: true, newPoints: updateResult.rows[0].total_points });
+        await db.addPoints(telegramId, points);
+        // Logging the ad view action (optional but good practice)
+        await db.logAdView(telegramId, points); 
+
+        res.json({ success: true, message: `${points} points added.` });
     } catch (error) {
-        await client.query('ROLLBACK'); 
+        console.error('API Error: post /api/add_points:', error);
         res.status(500).json({ success: false, message: 'Server error while adding points.' });
-    } finally {
-        client.release();
     }
 });
 
-// 3. উইথড্র রিকোয়েস্ট করার API
+// API Route for submitting a withdraw request
 app.post('/api/request_withdraw', async (req, res) => {
     const { telegramId, points, account } = req.body;
-    const pointsRequested = parseInt(points);
-    const MIN_WITHDRAW_POINTS = 5000; 
-    
-    const client = await db.pool.connect();
-    try {
-        await client.query('BEGIN');
-        const userCheckResult = await client.query('SELECT total_points FROM users WHERE telegram_id = $1 FOR UPDATE', [telegramId]);
-        const updatePointsResult = await client.query('UPDATE users SET total_points = total_points - $1 WHERE telegram_id = $2 RETURNING total_points', [pointsRequested, telegramId]);
-        const logWithdrawalQuery = `INSERT INTO withdraw_requests (user_telegram_id, points_requested, payment_details) VALUES ($1, $2, $3)`;
-        await client.query(logWithdrawalQuery, [telegramId, pointsRequested, JSON.stringify({ account })]);
-        await client.query('COMMIT');
-        res.json({ success: true, newPoints: updatePointsResult.rows[0].total_points });
 
+    if (!telegramId || typeof points !== 'number' || points <= 0 || !account) {
+        return res.status(400).json({ success: false, message: 'Invalid input for withdrawal.' });
+    }
+
+    try {
+        const result = await db.requestWithdraw(telegramId, points, account);
+        if (result.success) {
+            res.json({ success: true, message: result.message });
+        } else {
+            res.status(400).json({ success: false, message: result.message });
+        }
     } catch (error) {
-        await client.query('ROLLBACK');
-        res.status(500).json({ success: false, message: 'Server error while processing withdrawal.' });
-    } finally {
-        client.release();
+        console.error('API Error: post /api/request_withdraw:', error);
+        res.status(500).json({ success: false, message: 'Server error while processing withdrawal request.' });
     }
 });
 
-
-// 🟢 রুট হ্যান্ডলার index.html-কে সরাসরি সার্ভ করবে
+// Serve index.html as the default route for the Mini App
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.use((req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) {
-        next(); 
-    } else {
-        res.sendFile(path.join(__dirname, 'index.html'));
-    }
-});
+// Start the server ONLY after the database is set up
+db.setupDatabase()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running successfully on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        // 🛑 চূড়ান্ত ফিক্স: ডাটাবেস সেটআপ ব্যর্থ হলে CRITICAL error দেখানো
+        console.error('CRITICAL: Database setup failed. Server will start but API calls will fail:', err);
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT} with CRITICAL DB error.`);
+        });
+    });
