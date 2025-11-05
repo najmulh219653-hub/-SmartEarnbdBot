@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <title>EarnQuick Official Mini App</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <script type="text/javascript" src="//milestonebreathdilate.com/00605022df81b880d400151bfc7c2185/invoke.js"></script>
     <script src='//libtl.com/sdk.js' data-zone='10070523' data-sdk='show_10070523'></script>
     
     <style>
-        /* (স্টাইল কোড এখানে থাকবে - জুম ফিক্স স্টাইল সহ) */
         :root {
             --primary-color: #28a745; 
             --secondary-color: #007bff; 
@@ -19,6 +19,7 @@
             --text-color: #ffffff;
             --highlight-color: #ffc107; 
         }
+        /* জুম/স্কেলিং বন্ধ করতে অতিরিক্ত CSS ফিক্স */
         html { -ms-content-zooming: none; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -114,7 +115,7 @@
 
 
     <script>
-        // 🟢 API URL: Render URL নিশ্চিত করা হয়েছে
+        // 🟢 চূড়ান্ত ফিক্স: সঠিক Render URL নিশ্চিত করা হয়েছে
         const BASE_API_URL = "https://smartearnbdbot.onrender.com"; 
 
         const webApp = window.Telegram.WebApp;
@@ -134,6 +135,7 @@
             const username = tgData.username || tgData.first_name || 'Guest';
             const startParam = urlParams.get('start'); 
             
+            // API কল এখন সঠিক URL ব্যবহার করবে
             const apiUrl = `${BASE_API_URL}/api/user_data?id=${telegramId}&username=${username}&start=${startParam}`;
 
             try {
@@ -157,9 +159,10 @@
                 
             } catch (error) {
                 console.error("Data loading failed:", error);
+                // যদি API কল ব্যর্থ হয়, অফলাইন বা লোডিং বার্তা দেখাবে
                 webApp.showAlert("🛑 সংযোগ ত্রুটি। সার্ভার বা ইন্টারনেট পরীক্ষা করুন।");
                 document.getElementById('username-display').innerText = 'অফলাইন';
-                document.getElementById('points-display').innerText = 'ERROR';
+                document.getElementById('points-display').innerText = '...';
             }
         }
 
